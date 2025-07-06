@@ -1,0 +1,18 @@
+.ranking-page-container { display: flex; flex-direction: column; gap: 1rem; }
+.tabs-container { display: flex; background-color: rgba(20, 26, 60, 0.5); border-radius: 9999px; padding: 0.25rem; }
+.tab-button {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  color: #9CA3AF;
+  font-weight: 600;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.tab-button.active {
+  background-image: linear-gradient(to right, #F871B5, #6D28D9);
+  color: white;
+  box-shadow: 0 0 10px rgba(109, 40, 217, 0.5);
+}

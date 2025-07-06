@@ -1,0 +1,39 @@
+.balance-card {
+    background-color: rgba(20, 26, 60, 0.5);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.currency-label {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #9CA3AF;
+}
+.balance-amount {
+    font-size: 1.875rem;
+    font-weight: 700;
+}
+.card-footer {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    color: #9CA3AF;
+}
+.sub-balance {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+.sub-balance span:last-child {
+    color: white;
+    font-weight: 600;
+}

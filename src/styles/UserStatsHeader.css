@@ -1,0 +1,78 @@
+/* src/styles/UserStatsHeader.css */
+.stats-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: rgba(20, 26, 60, 0.3);
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.avatar-placeholder { 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%; 
+    background-color: rgba(255, 255, 255, 0.1); 
+    /* En el futuro, puedes poner una imagen de fondo aquí */
+}
+
+.name-id { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+}
+
+.username { 
+    font-weight: 600; 
+}
+
+.userid { 
+    font-size: 0.75rem; 
+    color: #9CA3AF; /* text-text-secondary */
+}
+
+.settings-icon { 
+    font-size: 1.5rem; 
+    color: #9CA3AF; 
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.settings-icon:hover {
+    color: white;
+}
+
+.stats-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.stat-card {
+    background-color: rgba(13, 17, 40, 0.5); /* Un poco más oscuro para contraste */
+    border-radius: 0.75rem;
+    padding: 1rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-card .stat-label { 
+    font-size: 0.75rem; 
+    color: #9CA3AF; 
+    text-transform: uppercase;
+}
+
+.stat-card .stat-value { 
+    font-size: 1.125rem; 
+    font-weight: 700; 
+    color: #3B82F6; /* brand-blue */
+}

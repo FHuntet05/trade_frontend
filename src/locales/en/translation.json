@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "home": "Mine",
+    "ranking": "Ranking",
+    "upgrade": "Upgrade",
+    "team": "Team",
+    "profile": "Me"
+  },
+  "profile": {
+    "recharge": "Recharge",
+    "withdraw": "Withdraw",
+    "records": "Records",
+    "exchange": "NTX/USDT",
+    "invite": "Invite",
+    "password": "Password",
+    "language": "Language",
+    "faq": "FAQ",
+    "about": "About us",
+    "support": "Customer Support",
+    "logout": "Log Out",
+    "comingSoon": {
+      "withdraw": "Withdrawal function coming soon.",
+      "records": "Financial history coming soon.",
+      "exchange": "NTX/USDT exchange coming soon.",
+      "password": "Password management coming soon.",
+      "faq": "FAQ coming soon.",
+      "about": "'About us' page coming soon.",
+      "support": "Contact support coming soon."
+    }
+  },
+  "tools": {
+    "title": "Mining Tools",
+    "subtitle": "Upgrade your equipment to increase your earnings.",
+    "loading": "Loading...",
+    "error": "Could not load the tools."
+  },
+"home": {
+  "miningRate": "NTX/H",
+  "mined": "NTX",
+  "claimButton": {
+    "claim": "CLAIM",
+    "claiming": "CLAIMING...",
+    "mining": "MINING..."
+  },
+  "claimToast": {
+    "loading": "Claiming your rewards...",
+    "success": "Rewards added to your balance!",
+    "error": "Error claiming. Please try again."
+  }
+ }
+}

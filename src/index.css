@@ -1,0 +1,14 @@
+/* frontend/src/index.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Esta regla es la más importante. Le decimos al navegador que el
+  cuerpo de la página NO TENGA NINGÚN COLOR DE FONDO, para que
+  pueda verse el fondo que definimos en nuestro Layout.
+*/
+body {
+  background-color: transparent;
+}

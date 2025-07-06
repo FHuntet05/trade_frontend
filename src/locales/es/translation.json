@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "home": "Mío",
+    "ranking": "Clasificación",
+    "upgrade": "Mejora",
+    "team": "Equipo",
+    "profile": "A mí"
+  },
+  "profile": {
+    "recharge": "Recargar",
+    "withdraw": "Retirar",
+    "records": "Registros",
+    "exchange": "NTX/USDT",
+    "invite": "Invitar",
+    "password": "Contraseña",
+    "language": "Idioma",
+    "faq": "FAQ",
+    "about": "Sobre nosotros",
+    "support": "Atención al Cliente",
+    "logout": "Cerrar Sesión",
+    "comingSoon": {
+      "withdraw": "Función de retiro próximamente.",
+      "records": "Historial financiero próximamente.",
+      "exchange": "Intercambio NTX/USDT próximamente.",
+      "password": "Gestión de contraseña próximamente.",
+      "faq": "Preguntas frecuentes próximamente.",
+      "about": "Página 'Sobre nosotros' próximamente.",
+      "support": "Contacto con soporte próximamente."
+    }
+  },
+  "tools": {
+    "title": "Herramientas de Minería",
+    "subtitle": "Mejora tu equipamiento para aumentar tus ganancias.",
+    "loading": "Cargando...",
+    "error": "No se pudieron cargar las herramientas."
+  },
+"home": {
+  "miningRate": "NTX/H",
+  "mined": "NTX",
+  "claimButton": {
+    "claim": "RECLAMAR",
+    "claiming": "RECLAMANDO...",
+    "mining": "MINANDO..."
+  },
+  "claimToast": {
+    "loading": "Reclamando tus recompensas...",
+    "success": "¡Recompensas añadidas a tu saldo!",
+    "error": "Error al reclamar. Inténtalo de nuevo."
+  }
+ }
+}
