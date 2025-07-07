@@ -1,9 +1,9 @@
-// frontend/src/store/userStore.js (VERSIÓN FINAL CON checkAuthStatus)
+// frontend/src/store/userStore.js (VERSIÓN COMPLETA Y CORREGIDA)
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
-// El interceptor se mantiene igual, es una excelente implementación.
 api.interceptors.request.use(
   (config) => {
     const token = useUserStore.getState().token;
@@ -25,23 +25,23 @@ const useUserStore = create(
       checkAuthStatus: async () => {
         const token = get().token;
         if (!token) {
-          set({ user: null }); // No hay token, no hay sesión.
-          return 'no-token'; // Devolvemos un estado para que App.jsx sepa qué hacer.
+          set({ user: null });
+          return 'no-token';
         }
         try {
           const response = await api.get('/auth/profile');
           set({ user: response.data, error: null });
-          return 'authenticated'; // Sesión válida.
+          return 'authenticated';
         } catch (error) {
           console.error("Token inválido o expirado:", error);
           set({ user: null, token: null, error: 'Tu sesión ha expirado.' });
-          return 'invalid-token'; // Sesión inválida.
+          return 'invalid-token';
         }
       },
 
-      // --- FUNCIÓN DE LOGIN MODIFICADA ---
-      // Ahora solo acepta la 'initData' de Telegram.
-      login: async (initData) => {
+      // --- FUNCIÓN DE LOGIN CORREGIDA PARA REFERIDOS ---
+      // Ahora acepta un objeto con initData y startParam
+      login: async ({ initData, startParam }) => {
         if (!initData) {
           const errorMessage = "No se pudo obtener la información de Telegram (initData).";
           set({ error: errorMessage, token: null, user: null });
@@ -50,8 +50,9 @@ const useUserStore = create(
         
         set({ error: null });
         try {
-          // Enviamos la initData completa al backend.
-          const response = await api.post('/auth/telegram', { initData });
+          // Enviamos ambos datos al backend. El backend validará initData
+          // y usará startParam si está presente.
+          const response = await api.post('/auth/telegram', { initData, startParam });
           const { token, user } = response.data;
           set({ user, token, error: null });
         } catch (error) {

@@ -1,6 +1,6 @@
-// frontend/src/App.jsx (VERSIÓN ESTABILIZADA SIN PARPADEO)
+// frontend/src/App.jsx (VERSIÓN COMPLETA Y CORREGIDA PARA REFERIDOS)
 
-import React, { useState, useLayoutEffect } from 'react'; // Importa useState
+import React, { useState, useLayoutEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
@@ -25,11 +25,8 @@ import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 
 function App() {
-  // Obtenemos el usuario y el error de nuestro store
   const user = useUserStore((state) => state.user);
   const authError = useUserStore((state) => state.error);
-
-  // 1. Creamos un estado de carga local. Este será nuestra única fuente de verdad para mostrar el Loader inicial.
   const [isInitializing, setIsInitializing] = useState(true);
 
   useLayoutEffect(() => {
@@ -40,27 +37,31 @@ function App() {
 
       if (status === 'no-token' || status === 'invalid-token') {
         try {
-          // Lógica de polling para esperar a Telegram, ahora dentro de una Promesa para un código más limpio.
-          const initData = await new Promise((resolve, reject) => {
+          const tgData = await new Promise((resolve, reject) => {
             let attempts = 0;
-            const maxAttempts = 30; // Intentará durante 3 segundos (30 * 100ms)
+            const maxAttempts = 30;
             
             const interval = setInterval(() => {
               const tg = window.Telegram?.WebApp;
               attempts++;
               
-              if (tg && tg.initData && tg.initData !== "") {
+              if (tg && tg.initData) {
                 clearInterval(interval);
-                resolve(tg.initData);
+                // CORRECCIÓN: Resolvemos con un objeto que contiene ambos datos
+                resolve({
+                  initData: tg.initData,
+                  startParam: tg.initDataUnsafe?.start_param,
+                });
               } else if (attempts >= maxAttempts) {
                 clearInterval(interval);
-                reject(new Error("Timeout: initData no se encontró después de 3 segundos."));
+                reject(new Error("Timeout: initData no se encontró."));
               }
-            }, 100); // Revisa cada 100ms
+            }, 100);
           });
           
-          console.log("initData encontrada. Intentando login...");
-          await login(initData);
+          console.log("Datos de Telegram encontrados. Intentando login...", tgData);
+          // CORRECCIÓN: Pasamos el objeto completo a la función login
+          await login(tgData);
 
         } catch (e) {
           console.error(e.message);
@@ -68,16 +69,12 @@ function App() {
         }
       }
       
-      // 2. Al finalizar TODO el proceso de autenticación, sea cual sea el resultado (éxito, fracaso o token válido),
-      //    desactivamos el estado de inicialización para proceder al renderizado final.
       setIsInitializing(false);
     };
 
     initializeAuth();
   }, []);
   
-  // 3. Nuestra nueva lógica de renderizado: más simple y robusta.
-  //    Primero, verificamos si la app está en su fase de carga inicial.
   if (isInitializing) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-space-background">
@@ -86,12 +83,10 @@ function App() {
     );
   }
 
-  //    Solo si YA NO ESTÁ inicializando, verificamos si el usuario es nulo (lo que significa un error de autenticación definitivo).
   if (user === null) {
-    return <AuthErrorScreen message={authError || "Autenticación fallida. Por favor, reinicia la Mini App dentro de Telegram."} />;
+    return <AuthErrorScreen message={authError || "Autenticación fallida. Por favor, reinicia la Mini App."} />;
   }
   
-  //    Si no está inicializando y el usuario no es nulo, mostramos la aplicación completa.
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
