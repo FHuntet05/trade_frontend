@@ -13,7 +13,7 @@ const TaskItem = ({ task, isClaimed, isCompleted, referralCount, onClaimSuccess 
     if (isClaimed || !isCompleted || isProcessing) return;
 
     setIsProcessing(true);
-    const claimPromise = api.post('/tasks/claim', { taskName: task.id });
+    const claimPromise = api.post('/wallet/tasks/claim', { taskName: task.id });
 
     toast.promise(claimPromise, {
       loading: 'Reclamando recompensa...',
