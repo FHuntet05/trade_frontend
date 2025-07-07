@@ -8,13 +8,13 @@ import Loader from '../common/Loader';
 // --- DEFINIMOS LAS MONEDAS QUE VAMOS A ACEPTAR ---
 // Puedes expandir esta lista fácilmente en el futuro.
 // Usamos logos de un CDN confiable (CryptoCompare).
+// --- LISTA DE MONEDAS ACTUALIZADA ---
 const SUPPORTED_CURRENCIES = [
-  //{ name: 'Bitcoin', ticker: 'BTC', logo: 'https://www.cryptocompare.com/media/37746251/btc.png' },
-  //{ name: 'Ethereum', ticker: 'ETH', logo: 'https://www.cryptocompare.com/media/37746238/eth.png' },
-  //{ name: 'Litecoin', ticker: 'LTC', logo: 'https://www.cryptocompare.com/media/37746243/ltc.png' },
+  // Nota: CryptoCloud maneja las redes. Al especificar 'USDT', ellos suelen dar opción de TRC20/ERC20.
+  // Para BEP20, es mejor usar 'BNB' y que el usuario pague con BNB en la red BEP20.
+  { name: 'USDT (TRC20/ERC20)', ticker: 'USDT', logo: 'https://www.cryptocompare.com/media/37746338/usdt.png' },
+  { name: 'BNB (BEP20)', ticker: 'BNB', logo: 'https://www.cryptocompare.com/media/37746242/bnb.png' },
   { name: 'Tron', ticker: 'TRX', logo: 'https://www.cryptocompare.com/media/37746888/trx.png' },
-  // Descomenta para añadir más monedas. Asegúrate de que CryptoCloud las soporte.
-   { name: 'USDT (TRC20)', ticker: 'USDT', logo: 'https://www.cryptocompare.com/media/37746338/usdt.png' },
 ];
 
 const backdropVariants = {
