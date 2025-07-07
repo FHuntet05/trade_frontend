@@ -1,8 +1,9 @@
-// src/components/layout/Layout.jsx (VERSIÓN CON ANIMACIÓN DE SALIDA ÚNICAMENTE)
+// frontend/src/components/layout/Layout.jsx (VERSIÓN OPTIMIZADA CON ANIMACIÓN CSS)
+
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import BottomNavBar from './BottomNavBar';
+import './LayoutAnimations.css'; // Importaremos un nuevo archivo CSS
 
 const Layout = () => {
   const location = useLocation();
@@ -14,22 +15,16 @@ const Layout = () => {
   return (
     <div className={`w-full min-h-screen text-text-primary font-sans ${backgroundClass}`}>
       <div className="container mx-auto max-w-lg min-h-screen flex flex-col bg-transparent">
-        <main className="flex-grow p-4 flex flex-col overflow-hidden">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              // --- CAMBIO CLAVE AQUÍ ---
-              // Hemos eliminado las propiedades 'initial' y 'animate'.
-              // La página ahora aparecerá instantáneamente.
-              
-              // Solo conservamos la animación de 'exit' para una salida suave.
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="flex flex-col flex-grow"
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+        <main className="flex-grow p-4 flex flex-col overflow-y-auto">
+          {/* 
+            - Eliminamos AnimatePresence y motion.div.
+            - Usamos un div simple. La 'key' le dice a React que este es un nuevo componente
+              en cada cambio de ruta, lo que nos permite volver a aplicar la animación.
+            - 'fade-in' es nuestra nueva clase de animación CSS.
+          */}
+          <div key={location.pathname} className="flex flex-col flex-grow fade-in">
+            <Outlet />
+          </div>
         </main>
         <footer className="sticky bottom-0 z-50">
           <BottomNavBar />

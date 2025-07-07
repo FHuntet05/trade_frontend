@@ -1,0 +1,22 @@
+/* frontend/src/components/layout/LayoutAnimations.css */
+
+/* 
+  Definimos una animación de @keyframes llamada 'fadeIn'.
+  Esta animación va de una opacidad 0 a 1. Es simple, rápida y eficiente.
+*/
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+  Aplicamos esta animación a cualquier elemento con la clase '.fade-in'.
+  La animación durará 0.3 segundos y tendrá un efecto 'ease-in-out' para suavizarla.
+*/
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
