@@ -1,4 +1,4 @@
-// frontend/src/App.jsx (VERSIÓN FINAL CON AUTENTICACIÓN COMPLETA)
+// frontend/src/App.jsx (VERSIÓN ROBUSTA CON POLLING PARA AUTENTICACIÓN)
 
 import React, { useLayoutEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -8,9 +8,9 @@ import useUserStore from './store/userStore';
 import AuthGuard from './components/AuthGuard';
 import Layout from './components/layout/Layout';
 import Loader from './components/common/Loader';
-import AuthErrorScreen from './components/AuthErrorScreen'; // Asegúrate de crear este componente
+import AuthErrorScreen from './components/AuthErrorScreen';
 
-// Importación de páginas...
+// ... (todas tus importaciones de páginas)
 import HomePage from './pages/HomePage';
 import ToolsPage from './pages/ToolsPage';
 import RankingPage from './pages/RankingPage';
@@ -24,7 +24,6 @@ import AboutPage from './pages/AboutPage';
 import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 
-
 function App() {
   const user = useUserStore((state) => state.user);
   const authError = useUserStore((state) => state.error);
@@ -36,26 +35,36 @@ function App() {
       const status = await checkAuthStatus();
 
       if (status === 'no-token' || status === 'invalid-token') {
-        try {
-          const tg = window.Telegram?.WebApp;
+        // --- INICIO DEL CAMBIO: LÓGICA DE POLLING ---
+        let attempts = 0;
+        const maxAttempts = 30; // Intentará durante 3 segundos (30 * 100ms)
 
-          if (tg && tg.initData) {
+        const pollForInitData = setInterval(async () => {
+          const tg = window.Telegram?.WebApp;
+          attempts++;
+
+          // Condición de éxito: encontramos initData
+          if (tg && tg.initData && tg.initData !== "") {
+            clearInterval(pollForInitData);
+            console.log(`initData encontrada en el intento #${attempts}. Intentando login...`);
             await login(tg.initData);
-          } else {
-            console.warn("No se está ejecutando en Telegram o initData no está disponible.");
-            logout(); 
+          } 
+          // Condición de fracaso: se acabaron los intentos
+          else if (attempts >= maxAttempts) {
+            clearInterval(pollForInitData);
+            console.error(`Timeout: initData no se encontró después de ${maxAttempts} intentos.`);
+            logout();
           }
-        } catch (e) {
-          console.error("Error catastrófico durante el login inicial:", e);
-          logout();
-        }
+        }, 100); // Revisa cada 100ms
+        // --- FIN DEL CAMBIO ---
       }
     };
 
     initializeAuth();
   }, []);
   
-  // Estado 1: La verificación inicial está en curso (user es 'undefined').
+  // (El resto del componente no necesita cambios)
+  
   if (user === undefined) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-space-background">
@@ -64,13 +73,10 @@ function App() {
     );
   }
 
-  // Estado 2: La autenticación ha fallado definitivamente (user es 'null').
-  // Esto sucede si no estamos en Telegram o si el login con initData falló.
   if (user === null) {
     return <AuthErrorScreen message={authError || "Autenticación fallida. Por favor, reinicia la Mini App dentro de Telegram."} />;
   }
   
-  // Estado 3: Autenticación exitosa (user es un objeto).
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
