@@ -1,4 +1,4 @@
-// frontend/src/store/userStore.js (VERSIÓN COMPLETA Y CORREGIDA)
+// frontend/src/store/userStore.js (VERSIÓN FINAL CON RUTA DE LOGIN CORREGIDA)
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -39,8 +39,6 @@ const useUserStore = create(
         }
       },
 
-      // --- FUNCIÓN DE LOGIN CORREGIDA PARA REFERIDOS ---
-      // Ahora acepta un objeto con initData y startParam
       login: async ({ initData, startParam }) => {
         if (!initData) {
           const errorMessage = "No se pudo obtener la información de Telegram (initData).";
@@ -50,9 +48,9 @@ const useUserStore = create(
         
         set({ error: null });
         try {
-          // Enviamos ambos datos al backend. El backend validará initData
-          // y usará startParam si está presente.
-          const response = await api.post('/auth/telegram', { initData, startParam });
+          // --- LA CORRECCIÓN ESTÁ AQUÍ ---
+          // Cambiamos '/auth/telegram' por '/auth/login' para que coincida con el backend.
+          const response = await api.post('/auth/login', { initData, startParam });
           const { token, user } = response.data;
           set({ user, token, error: null });
         } catch (error) {
