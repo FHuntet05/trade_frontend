@@ -1,71 +1,97 @@
-// frontend/src/components/tasks/TaskItem.jsx
-
-import React from 'react';
+// frontend/src/components/tasks/TaskItem.jsx (NUEVO ARCHIVO REFACTORIZADO)
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import useUserStore from '../../store/userStore';
 import api from '../../api/axiosConfig';
+import { FaCheck, FaAngleRight, FaGift } from 'react-icons/fa';
 
-const TaskItem = ({ task, isClaimed, isCompleted, referralCount, onClaimSuccess }) => {
-  const [isProcessing, setIsProcessing] = React.useState(false);
+const TaskItem = ({ task, isCompleted, isClaimed, referralCount, onClaimSuccess }) => {
+  const navigate = useNavigate();
+  const [isClaiming, setIsClaiming] = useState(false);
 
   const handleClaim = async () => {
-    if (isClaimed || !isCompleted || isProcessing) return;
-
-    setIsProcessing(true);
-    const claimPromise = api.post('/wallet/tasks/claim', { taskName: task.id });
-
-    toast.promise(claimPromise, {
-      loading: 'Reclamando recompensa...',
-      success: (res) => {
-        onClaimSuccess(res.data.user); // Actualizamos el usuario en el estado global
-        return res.data.message;
-      },
-      error: (err) => err.response?.data?.message || 'No se pudo reclamar la recompensa.',
-    }).finally(() => setIsProcessing(false));
+    if (isClaiming) return;
+    setIsClaiming(true);
+    toast.loading('Reclamando recompensa...', { id: `task-${task.id}` });
+    try {
+      // <<< LLAMADA A LA API: Asumimos esta ruta. La confirmaremos con tus archivos.
+      const response = await api.post('/api/tasks/claim', { taskName: task.id });
+      toast.success(response.data.message || '¡Recompensa reclamada!', { id: `task-${task.id}` });
+      onClaimSuccess(response.data.user);
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'No se pudo reclamar la recompensa.';
+      toast.error(errorMessage, { id: `task-${task.id}` });
+    } finally {
+      setIsClaiming(false);
+    }
   };
 
-  const getButtonState = () => {
+  const handleNavigation = () => {
+    if (task.id === 'boughtUpgrade') navigate('/tools');
+    if (task.id === 'invitedTenFriends') navigate('/team');
+    if (task.id === 'joinedTelegram' && task.link) {
+      window.open(task.link, '_blank');
+      // Opcional: Marcar como completada localmente para habilitar el reclamo inmediato
+      // Esto es una mejora de UX, la validación final la hace el backend.
+    }
+  };
+
+  const renderButton = () => {
     if (isClaimed) {
-      return { text: 'Reclamado', disabled: true, className: 'bg-gray-500/30 text-text-secondary' };
+      return (
+        <button disabled className="flex items-center justify-center gap-2 w-28 text-sm font-semibold px-4 py-2 rounded-lg bg-green-500/30 text-green-300 cursor-default">
+          <FaCheck />
+          Reclamado
+        </button>
+      );
     }
     if (isCompleted) {
-      return { text: 'Reclamar', disabled: isProcessing, className: 'bg-accent-start hover:bg-accent-start/80 text-white' };
+      return (
+        <motion.button
+          onClick={handleClaim}
+          disabled={isClaiming}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex items-center justify-center gap-2 w-28 bg-gradient-to-r from-accent-start to-accent-end text-white text-sm font-bold px-4 py-2 rounded-lg"
+        >
+          <FaGift />
+          Reclamar
+        </motion.button>
+      );
     }
-    // Estado "en progreso"
-    return { text: 'Ir', disabled: false, className: 'bg-blue-500/80 hover:bg-blue-500/60 text-white' };
+    return (
+      <motion.button
+        onClick={handleNavigation}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="flex items-center justify-center gap-2 w-28 bg-white/20 text-white text-sm font-semibold px-4 py-2 rounded-lg"
+      >
+        Ir
+        <FaAngleRight />
+      </motion.button>
+    );
   };
 
-  const buttonState = getButtonState();
-
-  const handleGo = () => {
-    if (task.id === 'joinedTelegram' && task.link) {
-        window.open(task.link, '_blank');
+  const getTaskDescription = () => {
+    if (task.id === 'invitedTenFriends') {
+      return `Tu equipo debe tener 10 miembros (${referralCount}/10).`;
     }
-    // Aquí se podría añadir lógica para navegar a otras páginas si la tarea lo requiere.
+    return task.description;
   };
 
   return (
-    <div className="flex items-center justify-between p-4 bg-white/10 backdrop-blur-lg rounded-xl border border-white/10">
-      <div className="flex-1">
-        <h3 className="font-bold text-white">{task.title}</h3>
-        <p className="text-sm text-text-secondary">{task.description}</p>
-        {task.id === 'invitedTenFriends' && !isCompleted && (
-            <p className="text-xs text-accent-start/80 mt-1">Progreso: {referralCount} / 10</p>
-        )}
+    <div className="bg-dark-secondary p-3 rounded-xl border border-white/10 flex items-center justify-between gap-4">
+      <div className="flex-grow">
+        <h4 className="font-bold text-white">{task.title}</h4>
+        <p className="text-xs text-text-secondary">{getTaskDescription()}</p>
       </div>
-      <div className="flex items-center gap-4 ml-4">
+      <div className="flex-shrink-0 flex items-center gap-4">
         <div className="text-right">
-            <p className="font-bold text-lg text-yellow-400">+{task.reward}</p>
-            <p className="text-xs text-yellow-400/70">NTX</p>
+          <p className="font-bold text-lg text-accent-start">+{task.reward.toLocaleString()}</p>
+          <p className="text-xs text-text-secondary">NTX</p>
         </div>
-        <button
-          onClick={buttonState.text === 'Ir' ? handleGo : handleClaim}
-          disabled={buttonState.disabled}
-          className={`w-24 py-2 font-bold rounded-full transition-colors text-sm ${buttonState.className}`}
-        >
-          {isProcessing ? '...' : buttonState.text}
-        </button>
+        {renderButton()}
       </div>
     </div>
   );

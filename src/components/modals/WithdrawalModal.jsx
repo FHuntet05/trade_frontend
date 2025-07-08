@@ -1,4 +1,4 @@
-// frontend/src/components/modals/WithdrawalModal.jsx (VERSIÓN FINAL CON SELECT PERSONALIZADO)
+// frontend/src/components/modals/WithdrawalModal.jsx (VERSIÓN CORREGIDA CON RETIRO ÚNICO)
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -7,8 +7,8 @@ import toast from 'react-hot-toast';
 import useUserStore from '../../store/userStore';
 import api from '../../api/axiosConfig';
 
-// Importamos el nuevo componente de Select personalizado
-import CustomSelect from '../ui/CustomSelect';
+// <<< ELIMINACIÓN: Ya no necesitamos el componente de Select personalizado.
+// import CustomSelect from '../ui/CustomSelect';
 
 const WithdrawalModal = ({ onClose }) => {
   const { user, updateUser } = useUserStore();
@@ -16,28 +16,22 @@ const WithdrawalModal = ({ onClose }) => {
 
   // Estados para los campos del formulario
   const [amount, setAmount] = useState('');
-  const [network, setNetwork] = useState(''); // Inicialmente vacío
+  // <<< CAMBIO: El estado de la red ahora es un valor fijo.
+  const [network] = useState('USDT-BEP20'); 
   const [walletAddress, setWalletAddress] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Opciones para nuestro CustomSelect, definidas aquí para mayor claridad
-  const networkOptions = [
-    { value: 'USDT-TRC20', label: 'USDT (TRC20)' },
-    { value: 'USDT-BEP20', label: 'USDT (BEP20)' },
-    { value: 'TRX', label: 'Tron (TRX)' },
-    { value: 'BNB', label: 'BNB (BEP20)' },
-  ];
-
   const handleMaxClick = () => {
-    setAmount(userBalance.toFixed(8));
+    // Dejamos 8 decimales por si el usuario tiene un saldo muy preciso
+    setAmount(userBalance.toFixed(8)); 
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validaciones de entrada
-    if (!amount || !network || !walletAddress) {
-      toast.error('Todos los campos son obligatorios.');
+    if (!amount || !walletAddress) {
+      toast.error('La cantidad y la dirección de billetera son obligatorias.');
       return;
     }
     const numericAmount = parseFloat(amount);
@@ -50,21 +44,10 @@ const WithdrawalModal = ({ onClose }) => {
       return;
     }
 
-    // Validación de formato de dirección de billetera con Regex
-    const addressRegex = {
-      'TRX': /^T[1-9A-HJ-NP-Za-km-z]{33}$/,
-      'BNB': /^0x[a-fA-F0-9]{40}$/
-    };
-
-    let isValidAddress = false;
-    if (network === 'USDT-TRC20' || network === 'TRX') {
-      isValidAddress = addressRegex.TRX.test(walletAddress);
-    } else if (network === 'USDT-BEP20' || network === 'BNB') {
-      isValidAddress = addressRegex.BNB.test(walletAddress);
-    }
-
-    if (!isValidAddress) {
-      toast.error(`La dirección de billetera no tiene un formato válido para la red ${network}.`);
+    // <<< CAMBIO: Validación de dirección simplificada para BEP20 (EVM)
+    const addressRegex = /^0x[a-fA-F0-9]{40}$/;
+    if (!addressRegex.test(walletAddress)) {
+      toast.error('La dirección de billetera no tiene un formato válido para la red BEP20.');
       return;
     }
     
@@ -72,7 +55,7 @@ const WithdrawalModal = ({ onClose }) => {
     setIsProcessing(true);
     const withdrawalPromise = api.post('/wallet/request-withdrawal', {
       amount: numericAmount,
-      network,
+      network: network, // <<< Se envía el valor fijo 'USDT-BEP20'
       walletAddress,
     });
 
@@ -123,22 +106,19 @@ const WithdrawalModal = ({ onClose }) => {
             </div>
           </div>
 
-          {/* REEMPLAZO DEL SELECT NATIVO POR EL COMPONENTE PERSONALIZADO */}
+          {/* <<< REEMPLAZO DEL SELECT POR INFORMACIÓN ESTÁTICA >>> */}
           <div>
             <label className="text-sm text-text-secondary mb-1 block">Red de Retiro</label>
-            <CustomSelect 
-              value={network}
-              onValueChange={setNetwork}
-              placeholder="Selecciona una red..."
-              options={networkOptions}
-            />
+            <div className="w-full bg-dark-primary/50 p-3 rounded-lg text-white/80">
+              USDT (BEP20)
+            </div>
           </div>
 
           <div>
-            <label className="text-sm text-text-secondary mb-1 block">Dirección de tu Billetera</label>
+            <label className="text-sm text-text-secondary mb-1 block">Dirección de Billetera (BEP20)</label>
             <input
               type="text"
-              placeholder="Pega tu dirección aquí"
+              placeholder="Pega tu dirección 0x... aquí"
               value={walletAddress}
               onChange={(e) => setWalletAddress(e.target.value)}
               className="w-full bg-dark-primary/50 p-3 rounded-lg focus:outline-none border-2 border-transparent focus:border-accent-start"

@@ -1,4 +1,4 @@
-// src/pages/HomePage.jsx (VERSIÓN MODIFICADA PARA EL NUEVO CICLO DE BOTONES)
+// src/pages/HomePage.jsx (VERSIÓN CORREGIDA CON LAYOUT DINÁMICO)
 import React from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
@@ -8,7 +8,6 @@ import UserInfoHeader from '../components/home/UserInfoHeader';
 import RealTimeClock from '../components/home/RealTimeClock';
 import AnimatedCounter from '../components/home/AnimatedCounter';
 import TaskCenter from '../components/home/TaskCenter';
-import NotificationFeed from '../components/home/NotificationFeed';
 import { useMiningLogic } from '../hooks/useMiningLogic';
 
 const HomePage = () => {
@@ -16,17 +15,14 @@ const HomePage = () => {
 
   const lastClaim = user?.lastMiningClaim;
   const miningRate = user?.effectiveMiningRate ?? 0;
-  // --- CAMBIO: Pasamos el nuevo estado al hook ---
   const miningStatus = user?.miningStatus ?? 'IDLE'; 
   
-  // --- CAMBIO: El hook ahora devolverá el estado del botón ---
   const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
     lastClaim,
     miningRate,
     miningStatus
   );
 
-  // --- NUEVA FUNCIÓN: Para manejar el clic en "Iniciar" ---
   const handleStartMining = async () => {
     toast.loading('Iniciando ciclo...', { id: 'mining_control' });
     try {
@@ -40,7 +36,6 @@ const HomePage = () => {
   };
 
   const handleClaim = async () => {
-    // La lógica de 'isClaimable' ahora estará dentro de buttonState === 'SHOW_CLAIM'
     toast.loading('Reclamando...', { id: 'mining_control' });
     try {
       const response = await api.post('/wallet/claim');
@@ -52,7 +47,6 @@ const HomePage = () => {
     }
   };
 
-  // --- NUEVA FUNCIÓN: Para renderizar el botón correcto ---
   const renderControlButton = () => {
     switch (buttonState) {
       case 'SHOW_START':
@@ -75,19 +69,23 @@ const HomePage = () => {
         );
       case 'HIDDEN':
       default:
-        // No renderiza ningún botón si está minando o no hay herramientas.
         return null; 
     }
   };
 
-  return (
-    <div className="flex flex-col h-full animate-fade-in gap-4">
-      <UserInfoHeader />
-      <RealTimeClock />
+  // <<< INICIO DE LA CORRECCIÓN (Punto #5): Condicional para `flex-grow` >>>
+  const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
 
-      <div className="flex-grow flex flex-col items-center justify-center text-center">
-        {/* ... (Video y contador sin cambios) ... */}
-        <video src="/assets/mining-animation.webm" autoPlay loop muted playsInline className="w-52 h-52 mx-auto" />
+  return (
+    // Se ha añadido `overflow-y-auto` para permitir el scroll si el contenido crece
+    <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
+      <div className="px-4 pt-4"> {/* Añadimos padding a los elementos superiores */}
+        <UserInfoHeader />
+        <RealTimeClock />
+      </div>
+
+      <div className="flex flex-col items-center justify-center text-center px-4">
+        <video src="/assets/mining-animation.webm" autoPlay loop muted playsInline className="w-48 h-48 sm:w-52 sm:h-52 mx-auto" />
         <AnimatedCounter value={parseFloat(accumulatedNtx.toFixed(2))} />
         
         <div className="w-full max-w-xs mx-auto mt-4 space-y-2">
@@ -103,13 +101,18 @@ const HomePage = () => {
         </div>
       </div>
       
-      {/* --- CAMBIO: Área de botón ahora usa el renderizador condicional --- */}
-      <div className="w-full px-4 mb-2 h-16 flex items-center justify-center">
-        {renderControlButton()}
-      </div>
+      {/* Contenedor principal para los elementos inferiores */}
+      <div className="flex flex-col flex-grow px-4 space-y-4">
+        {/* El contenedor del botón siempre existe, pero el botón solo se renderiza si es necesario */}
+        <div className="w-full h-16 flex items-center justify-center">
+          {renderControlButton()}
+        </div>
       
-      <TaskCenter />
-      <NotificationFeed />
+        {/* TaskCenter ahora tiene `flex-grow` si el botón está oculto */}
+        <div className={!shouldShowButton ? 'flex-grow' : ''}>
+          <TaskCenter />
+        </div>
+      </div>
     </div>
   );
 };

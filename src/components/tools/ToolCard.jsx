@@ -24,7 +24,7 @@ const ToolCard = ({ tool, onBuyClick, ownedCount, isLocked }) => {
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
           <span className="text-text-secondary">Producción por hora</span> 
-          <span className="font-semibold">{tool.miningBoost || 0} NTX/H</span>
+          <span className="font-semibold">{tool.miningBoost || 0} NTX/24h</span>
         </div>
         <div className="flex justify-between">
           <span className="text-text-secondary">Días válidos</span>

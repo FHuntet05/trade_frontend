@@ -1,31 +1,28 @@
-// frontend/src/components/home/TaskCenter.jsx (VERSIÓN FINAL DINÁMICA)
-
+// frontend/src/components/home/TaskCenter.jsx (VERSIÓN CORREGIDA)
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../../api/axiosConfig';
 import useUserStore from '../../store/userStore';
-// 1. Importamos el componente de item de tarea que creamos previamente
-import TaskItem from '../tasks/TaskItem'; 
-// Asegúrate de que la ruta de importación sea correcta.
-// Si no lo creaste, dime y te lo proporciono de nuevo.
+import TaskItem from '../tasks/TaskItem'; // <<< Asegúrate de que esta ruta sea correcta
 
 const TaskCenter = () => {
   const { user, updateUser } = useUserStore();
   const [taskStatus, setTaskStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 2. Definimos nuestras tareas, ordenadas por recompensa (mayor a menor)
+  // <<< CORRECCIÓN: Título centrado y sin lógica extra aquí
   const allTasks = [
     { id: 'boughtUpgrade', title: 'Primera Mejora', description: 'Compra cualquier herramienta VIP.', reward: 1500 },
     { id: 'invitedTenFriends', title: 'Invitar 10 Amigos', description: 'Tu equipo debe tener 10 miembros.', reward: 1000 },
-    { id: 'joinedTelegram', title: 'Unirse al Canal', description: 'Únete a nuestra comunidad oficial.', reward: 500, link: 'https://t.me/TuCanalDeTelegram' }, // Reemplaza con tu link real
+    { id: 'joinedTelegram', title: 'Unirse al Canal', description: 'Únete a nuestra comunidad oficial.', reward: 500, link: process.env.REACT_APP_TELEGRAM_CHANNEL_URL || 'https://t.me/telegram' },
   ];
 
-  // 3. useEffect para cargar el estado de las tareas al montar el componente
   useEffect(() => {
     const fetchTaskStatus = async () => {
+      setLoading(true);
       try {
-        const response = await api.get('/tasks/status');
+        // <<< LLAMADA A LA API: Asumimos esta ruta. La confirmaremos.
+        const response = await api.get('/api/tasks/status');
         setTaskStatus(response.data);
       } catch (err) {
         console.error("Error al cargar el estado de las tareas:", err);
@@ -34,29 +31,30 @@ const TaskCenter = () => {
       }
     };
     fetchTaskStatus();
-  }, []);
+  }, [user]); // <<< Se re-ejecuta si el usuario cambia para mayor consistencia
 
-  // 4. Función para actualizar el estado global y local después de un reclamo exitoso
   const handleClaimSuccess = (updatedUser) => {
     updateUser(updatedUser);
-    // Volvemos a pedir el estado para actualizar la UI sin recargar la página
-    api.get('/tasks/status').then(res => setTaskStatus(res.data));
+    // Para reflejar el cambio en 'claimedTasks', volvemos a fetchear el estado.
+    api.get('/api/tasks/status').then(res => setTaskStatus(res.data));
   };
   
-  // Renderizamos un esqueleto o nada mientras carga
-  if (loading) {
+  if (loading && !taskStatus) {
     return (
-        <div className="w-full space-y-4 bg-white/10 backdrop-blur-lg p-4 rounded-2xl border border-white/10">
-            <h2 className="text-xl font-bold text-white text-left mb-2">Centro de Tareas</h2>
-            <div className="h-10 bg-white/5 rounded-xl animate-pulse"></div>
-            <div className="h-10 bg-white/5 rounded-xl animate-pulse"></div>
+        <div className="w-full space-y-4 bg-dark-secondary p-4 rounded-2xl border border-white/10">
+            {/* <<< CORRECCIÓN (Punto #6): Título centrado */}
+            <h2 className="text-xl font-bold text-white text-center mb-2">Centro de Tareas</h2>
+            <div className="h-16 bg-dark-primary rounded-xl animate-pulse"></div>
+            <div className="h-16 bg-dark-primary rounded-xl animate-pulse"></div>
+            <div className="h-16 bg-dark-primary rounded-xl animate-pulse"></div>
         </div>
     );
   }
 
   return (
-    <div className="w-full space-y-4 bg-white/10 backdrop-blur-lg p-4 rounded-2xl border border-white/10">
-      <h2 className="text-xl font-bold text-white text-left mb-2">Centro de Tareas</h2>
+    <div className="w-full space-y-4 bg-dark-secondary p-4 rounded-2xl border border-white/10">
+      {/* <<< CORRECCIÓN (Punto #6): Título centrado */}
+      <h2 className="text-xl font-bold text-white text-center mb-2">Centro de Tareas</h2>
       <motion.div 
         className="space-y-3"
         initial={{ opacity: 0 }}
@@ -64,28 +62,22 @@ const TaskCenter = () => {
         transition={{ duration: 0.5 }}
       >
         {allTasks.map(task => {
-          if (!taskStatus) return null; // No renderizar nada si el estado no ha cargado
+          if (!taskStatus) return null;
 
           const isClaimed = taskStatus.claimedTasks?.[task.id] || false;
-          let isCompleted = isClaimed;
+          let isCompleted = false; // <<< Lógica de completado simplificada, el backend es la fuente de verdad
 
-          // Lógica para determinar si una tarea está completada pero no reclamada
-          if (!isClaimed) {
-            if (task.id === 'boughtUpgrade') {
-              isCompleted = user?.activeTools?.length > 0;
-            } else if (task.id === 'invitedTenFriends') {
-              isCompleted = taskStatus.referralCount >= 10;
-            } else if (task.id === 'joinedTelegram') {
-              isCompleted = true; // El botón "Ir" se encarga de la acción. Es reclamable por defecto.
-            }
-          }
-
+          // El backend nos dice si una tarea es completable o no.
+          if (task.id === 'boughtUpgrade') isCompleted = taskStatus.canClaim.boughtUpgrade;
+          if (task.id === 'invitedTenFriends') isCompleted = taskStatus.canClaim.invitedTenFriends;
+          if (task.id === 'joinedTelegram') isCompleted = taskStatus.canClaim.joinedTelegram;
+          
           return (
             <TaskItem
               key={task.id}
               task={task}
               isClaimed={isClaimed}
-              isCompleted={isCompleted}
+              isCompleted={isCompleted && !isClaimed} // <<< Solo está 'completada' si no ha sido reclamada
               referralCount={taskStatus.referralCount || 0}
               onClaimSuccess={handleClaimSuccess}
             />
