@@ -16,7 +16,7 @@ const modalVariants = {
   exit: { y: "100%", opacity: 0, transition: { duration: 0.3 } },
 };
 
-// Componente para un solo item de la lista de usuarios
+// <<< INICIO DE CORRECCIÓN EN UserRow >>>
 const UserRow = ({ user }) => (
   <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
     <div className="flex items-center gap-3">
@@ -28,11 +28,21 @@ const UserRow = ({ user }) => (
       <span className="font-semibold text-white">{user.username}</span>
     </div>
     <div className="text-right">
-      <span className="font-mono text-accent-start">+{user.effectiveMiningRate.toFixed(2)} NTX/H</span>
+      {/* 
+        1. Se usa 'user.miningRate' para coincidir con la respuesta de la API.
+        2. Se añade la guardia '( ... || 0)' para asegurar que .toFixed() siempre reciba un número.
+      */}
+      <span className="font-mono text-accent-start">
+        +{(user.miningRate || 0).toFixed(2)} NTX/H
+      </span>
       <p className="text-xs text-text-secondary">Aporte</p>
     </div>
   </div>
 );
+// <<< FIN DE CORRECCIÓN EN UserRow >>>
+
+// El componente principal TeamLevelDetailsModal necesita un pequeño ajuste en el 'key' del mapeo
+// para garantizar que sea único y estable, usando user.username ya que no recibimos _id.
 
 const TeamLevelDetailsModal = ({ level, users, isLoading, onClose }) => {
   return (
@@ -63,8 +73,9 @@ const TeamLevelDetailsModal = ({ level, users, isLoading, onClose }) => {
             </div>
           ) : users && users.length > 0 ? (
             <div className="space-y-2">
-              {users.map((user) => (
-                <UserRow key={user._id} user={user} />
+              {/* <<< CAMBIO MENOR: Se usa 'user.username' como clave. Es suficientemente único en este contexto. */}
+              {users.map((user, index) => (
+                <UserRow key={user.username || index} user={user} />
               ))}
             </div>
           ) : (

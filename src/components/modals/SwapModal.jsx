@@ -27,15 +27,20 @@ const SwapModal = ({ onClose }) => {
   const SWAP_RATE = 10000; // 10,000 NTX = 1 USDT
   const MINIMUM_NTX_SWAP = 1.5 * SWAP_RATE; // 15,000 NTX
 
+  // <<< CORRECCIÓN: Usamos optional chaining y nullish coalescing para seguridad
+  const userNtxBalance = user?.balance?.ntx ?? 0;
+
   const usdtToReceive = ntxAmount ? parseFloat(ntxAmount) / SWAP_RATE : 0;
   const numericNtxAmount = parseFloat(ntxAmount) || 0;
 
   const { isValid, errorMessage } = useMemo(() => {
     if (numericNtxAmount <= 0) return { isValid: false, errorMessage: null };
-    if (numericNtxAmount > user.balance.ntx) return { isValid: false, errorMessage: 'Saldo NTX insuficiente.' };
+    // <<< CORRECCIÓN: Comparamos contra la variable segura
+    if (numericNtxAmount > userNtxBalance) return { isValid: false, errorMessage: 'Saldo NTX insuficiente.' };
     if (numericNtxAmount < MINIMUM_NTX_SWAP) return { isValid: false, errorMessage: `El mínimo para intercambiar es ${MINIMUM_NTX_SWAP.toLocaleString()} NTX.` };
     return { isValid: true, errorMessage: null };
-  }, [numericNtxAmount, user.balance.ntx]);
+    // <<< CORRECCIÓN: La dependencia ahora es segura
+  }, [numericNtxAmount, userNtxBalance]);
 
   const handleSwap = async () => {
     if (!isValid) {
@@ -85,7 +90,8 @@ const SwapModal = ({ onClose }) => {
           <div className="bg-black/20 p-3 rounded-lg">
             <div className="flex justify-between items-baseline mb-1">
               <label htmlFor="ntxAmount" className="text-sm text-text-secondary">Pagar con NTX</label>
-              <span className="text-xs text-text-secondary">Saldo: {user.balance.ntx.toLocaleString('en-US', {maximumFractionDigits: 2})}</span>
+              {/* <<< CORRECCIÓN: Renderizado seguro del saldo */}
+              <span className="text-xs text-text-secondary">Saldo: {userNtxBalance.toLocaleString('en-US', {maximumFractionDigits: 2})}</span>
             </div>
             <div className="flex items-center">
               <input

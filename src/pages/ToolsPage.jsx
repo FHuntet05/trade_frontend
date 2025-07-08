@@ -1,4 +1,3 @@
-// frontend/src/pages/ToolsPage.jsx (VERSIÓN CORREGIDA SEGÚN NUEVA REGLA)
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import useToolsStore from '../store/toolsStore';
@@ -24,12 +23,7 @@ const itemVariants = {
   visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 120 } },
 };
 
-// --- INICIO DE NUEVA LÓGICA ---
-// Definimos los nombres de los niveles que NO se bloquean.
-// Es mejor usar los nombres exactos o un identificador único si lo tienes.
-// Usaré los nombres que mencionaste: "VIP 4" y "VIP 5".
-const UNLOCKABLE_TOOL_NAMES = ["VIP 4", "VIP 5"]; 
-// --- FIN DE NUEVA LÓGICA ---
+const SINGLE_PURCHASE_TOOL_NAMES = ["VIP 1", "VIP 2", "VIP 3"];
 
 
 const ToolsPage = () => {
@@ -41,47 +35,56 @@ const ToolsPage = () => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [modalStep, setModalStep] = useState('none');
   const [paymentInfo, setPaymentInfo] = useState(null);
+  // <<< NUEVO ESTADO: Para almacenar la cantidad de la compra
+  const [purchaseQuantity, setPurchaseQuantity] = useState(1);
 
   useEffect(() => {
     fetchTools();
   }, [fetchTools]);
 
-  // --- INICIO DE LÓGICA REVISADA ---
   const { ownedToolIds, toolCounts } = useMemo(() => {
-    if (!user || !user.tools || user.tools.length === 0) {
+    if (!user || !user.activeTools || user.activeTools.length === 0) {
       return { ownedToolIds: new Set(), toolCounts: {} };
     }
-
     const ids = new Set();
     const counts = {};
-
-    user.tools.forEach(tool => {
-      ids.add(tool._id);
-      counts[tool._id] = (counts[tool._id] || 0) + 1;
+    user.activeTools.forEach(toolPurchase => {
+      if (toolPurchase.tool && toolPurchase.tool._id) {
+          const toolId = toolPurchase.tool._id;
+          ids.add(toolId);
+          counts[toolId] = (counts[toolId] || 0) + 1;
+      }
     });
-
     return { ownedToolIds: ids, toolCounts: counts };
   }, [user]);
-  // --- FIN DE LÓGICA REVISADA ---
 
 
   const handleBuyClick = (tool) => {
     setSelectedTool(tool);
     setModalStep('purchase_options');
+    setPurchaseQuantity(1); // <<< Resetear la cantidad al iniciar una nueva compra
   };
 
   const handleCloseAllModals = () => {
     setSelectedTool(null);
     setModalStep('none');
     setPaymentInfo(null);
+    setPurchaseQuantity(1); // <<< Resetear la cantidad al cerrar
+  };
+  
+  // <<< NUEVA FUNCIÓN: Maneja la transición del primer al segundo modal
+  const handleProceedToCryptoSelection = (quantity) => {
+    setPurchaseQuantity(quantity); // Guardamos la cantidad seleccionada
+    setModalStep('select_crypto'); // Pasamos al siguiente modal
   };
 
+  // <<< FUNCIÓN ACTUALIZADA: Envía la cantidad a la API
   const handleCryptoCurrencySelect = async (currency) => {
-    // ... (sin cambios aquí)
     setIsProcessingPayment(true);
     try {
       const response = await api.post('/wallet/create-direct-deposit', {
         toolId: selectedTool._id,
+        quantity: purchaseQuantity, // <<< Usamos la cantidad guardada en el estado
         currency: currency,
       });
       setPaymentInfo(response.data);
@@ -115,21 +118,18 @@ const ToolsPage = () => {
             animate="visible"
           >
             {tools.map(tool => {
-              // --- LÓGICA DE BLOQUEO REVISADA ---
               const hasBeenPurchased = ownedToolIds.has(tool._id);
-              const isUnlockable = UNLOCKABLE_TOOL_NAMES.includes(tool.name);
-              
-              const isLocked = hasBeenPurchased && !isUnlockable;
+              const isSinglePurchase = SINGLE_PURCHASE_TOOL_NAMES.includes(tool.name);
+              const isLocked = hasBeenPurchased && isSinglePurchase;
               const ownedCount = toolCounts[tool._id] || 0;
-              // --- FIN LÓGICA DE BLOQUEO REVISADA ---
 
               return (
                 <motion.div key={tool._id} variants={itemVariants}>
                   <ToolCard 
                     tool={tool} 
                     onBuyClick={handleBuyClick}
-                    ownedCount={ownedCount} // Mantenemos el contador, es útil
-                    isLocked={isLocked}     // Prop de bloqueo con la nueva lógica
+                    ownedCount={ownedCount}
+                    isLocked={isLocked}
                   />
                 </motion.div>
               );
@@ -138,13 +138,14 @@ const ToolsPage = () => {
         )}
       </AnimatePresence>
 
-      {/* --- GESTIÓN DE MODALES CON EL NUEVO SISTEMA DE PASOS --- */}
+      {/* --- Gestión de modales actualizada --- */}
       <AnimatePresence>
         {modalStep === 'purchase_options' && selectedTool && (
           <PurchaseFlowModal 
             tool={selectedTool}
             onClose={handleCloseAllModals}
-            onSelectCrypto={() => setModalStep('select_crypto')} // <-- Va al modal de selección
+            // <<< Pasamos la nueva función que recibe la cantidad
+            onSelectCrypto={handleProceedToCryptoSelection} 
           />
         )}
 
