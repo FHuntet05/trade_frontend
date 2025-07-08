@@ -58,20 +58,39 @@ function App() {
               }
             }, 100);
           });
-          
-          console.log("Datos de Telegram encontrados. Intentando login...", tgData);
-          // CORRECCIÓN: Pasamos el objeto completo a la función login
-          await login(tgData);
+          // <<< INICIO DE LA LÓGICA CRÍTICA CORREGIDA >>>
 
-        } catch (e) {
-          console.error(e.message);
-          logout();
+        // La presencia de start_param indica un nuevo flujo (potencialmente un referido).
+        // En este caso, SIEMPRE debemos forzar un nuevo login, ignorando cualquier token antiguo.
+        if (tgData.startParam) {
+          console.log("Parámetro de inicio detectado. Forzando nuevo login de referido...");
+          await login(tgData);
+        } else {
+          // Si NO hay start_param, procedemos con el flujo normal:
+          // 1. Verificamos si hay un token existente y válido.
+          const status = await checkAuthStatus();
+
+          // 2. Si no hay token o es inválido, intentamos un login normal.
+          if (status === 'no-token' || status === 'invalid-token') {
+            console.log("Sin token válido. Intentando login estándar...");
+            await login(tgData);
+          }
+          // 3. Si el token era válido ('authenticated'), no hacemos nada, el usuario ya está cargado.
+          else {
+            console.log("Sesión existente válida encontrada.");
+          }
         }
+        // <<< FIN DE LA LÓGICA CRÍTICA CORREGIDA >>>
+         } catch (e) {
+        console.error("Error fatal en la inicialización:", e.message);
+        logout();
+      } finally {
+        setIsInitializing(false);
       }
-      
-      setIsInitializing(false);
     };
 
+    initializeAuth();
+    };
     initializeAuth();
   }, []);
   
