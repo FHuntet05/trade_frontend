@@ -1,16 +1,15 @@
-// frontend/src/components/home/TaskCenter.jsx (VERSIÓN CORREGIDA)
+// frontend/src/components/home/TaskCenter.jsx (VERSIÓN CON LLAMADA A API CORREGIDA)
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import api from '../../api/axiosConfig';
 import useUserStore from '../../store/userStore';
-import TaskItem from '../tasks/TaskItem'; // <<< Asegúrate de que esta ruta sea correcta
+import TaskItem from '../tasks/TaskItem';
 
 const TaskCenter = () => {
   const { user, updateUser } = useUserStore();
   const [taskStatus, setTaskStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // <<< CORRECCIÓN: Título centrado y sin lógica extra aquí
   const allTasks = [
     { id: 'boughtUpgrade', title: 'Primera Mejora', description: 'Compra cualquier herramienta VIP.', reward: 1500 },
     { id: 'invitedTenFriends', title: 'Invitar 10 Amigos', description: 'Tu equipo debe tener 10 miembros.', reward: 1000 },
@@ -21,8 +20,10 @@ const TaskCenter = () => {
     const fetchTaskStatus = async () => {
       setLoading(true);
       try {
-        // <<< LLAMADA A LA API: Asumimos esta ruta. La confirmaremos.
-        const response = await api.get('/api/tasks/status');
+        // <<< INICIO DE LA CORRECCIÓN CRÍTICA: Se quita '/api' de la llamada >>>
+        // ANTES: const response = await api.get('/api/tasks/status');
+        const response = await api.get('/tasks/status');
+        // <<< FIN DE LA CORRECCIÓN CRÍTICA >>>
         setTaskStatus(response.data);
       } catch (err) {
         console.error("Error al cargar el estado de las tareas:", err);
@@ -30,19 +31,25 @@ const TaskCenter = () => {
         setLoading(false);
       }
     };
-    fetchTaskStatus();
-  }, [user]); // <<< Se re-ejecuta si el usuario cambia para mayor consistencia
+    
+    // Solo fetcheamos si tenemos un usuario, para evitar llamadas innecesarias
+    if (user) {
+        fetchTaskStatus();
+    } else {
+        setLoading(false);
+    }
+  }, [user]);
 
   const handleClaimSuccess = (updatedUser) => {
     updateUser(updatedUser);
     // Para reflejar el cambio en 'claimedTasks', volvemos a fetchear el estado.
-    api.get('/api/tasks/status').then(res => setTaskStatus(res.data));
+    // <<< CORRECCIÓN APLICADA TAMBIÉN AQUÍ >>>
+    api.get('/tasks/status').then(res => setTaskStatus(res.data));
   };
   
-  if (loading && !taskStatus) {
+  if (loading) {
     return (
         <div className="w-full space-y-4 bg-dark-secondary p-4 rounded-2xl border border-white/10">
-            {/* <<< CORRECCIÓN (Punto #6): Título centrado */}
             <h2 className="text-xl font-bold text-white text-center mb-2">Centro de Tareas</h2>
             <div className="h-16 bg-dark-primary rounded-xl animate-pulse"></div>
             <div className="h-16 bg-dark-primary rounded-xl animate-pulse"></div>
@@ -51,9 +58,13 @@ const TaskCenter = () => {
     );
   }
 
+  // Si no hay estado de tareas (por un error o porque no hay usuario), no mostramos nada.
+  if (!taskStatus) {
+      return null;
+  }
+
   return (
     <div className="w-full space-y-4 bg-dark-secondary p-4 rounded-2xl border border-white/10">
-      {/* <<< CORRECCIÓN (Punto #6): Título centrado */}
       <h2 className="text-xl font-bold text-white text-center mb-2">Centro de Tareas</h2>
       <motion.div 
         className="space-y-3"
@@ -62,22 +73,16 @@ const TaskCenter = () => {
         transition={{ duration: 0.5 }}
       >
         {allTasks.map(task => {
-          if (!taskStatus) return null;
-
           const isClaimed = taskStatus.claimedTasks?.[task.id] || false;
-          let isCompleted = false; // <<< Lógica de completado simplificada, el backend es la fuente de verdad
-
-          // El backend nos dice si una tarea es completable o no.
-          if (task.id === 'boughtUpgrade') isCompleted = taskStatus.canClaim.boughtUpgrade;
-          if (task.id === 'invitedTenFriends') isCompleted = taskStatus.canClaim.invitedTenFriends;
-          if (task.id === 'joinedTelegram') isCompleted = taskStatus.canClaim.joinedTelegram;
+          // Usamos optional chaining para evitar errores si 'canClaim' no existe
+          const isCompleted = taskStatus.canClaim?.[task.id] || false;
           
           return (
             <TaskItem
               key={task.id}
               task={task}
               isClaimed={isClaimed}
-              isCompleted={isCompleted && !isClaimed} // <<< Solo está 'completada' si no ha sido reclamada
+              isCompleted={isCompleted && !isClaimed}
               referralCount={taskStatus.referralCount || 0}
               onClaimSuccess={handleClaimSuccess}
             />

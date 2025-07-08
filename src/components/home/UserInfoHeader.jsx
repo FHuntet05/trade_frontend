@@ -24,7 +24,7 @@ const UserInfoHeader = () => {
       
       <div className="text-right bg-white/10 backdrop-blur-lg p-2 px-4 rounded-full border border-white/10">
         <span className="text-lg font-bold text-accent-end">
-          {miningRate.toFixed(2)} NTX/Día {/* Cambiado a Día para ser consistente con la lógica de TAREA 28 */}
+          {miningRate.toFixed(2)} NTX/Día
         </span>
         <p className="text-xs text-text-secondary">Tasa de Minado</p>
       </div>
