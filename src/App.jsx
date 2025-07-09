@@ -1,4 +1,4 @@
-// frontend/src/App.jsx (VERSIÓN COMPLETA Y CORREGIDA PARA REFERIDOS)
+// frontend/src/App.jsx (VERSIÓN CORREGIDA Y SIMPLIFICADA)
 
 import React, { useState, useLayoutEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -33,66 +33,71 @@ function App() {
     const initializeAuth = async () => {
       const { checkAuthStatus, login, logout } = useUserStore.getState();
       
-      const status = await checkAuthStatus();
-
-      if (status === 'no-token' || status === 'invalid-token') {
-        try {
-          const tgData = await new Promise((resolve, reject) => {
-            let attempts = 0;
-            const maxAttempts = 30;
+      try {
+        // --- PASO 1: ESPERAR A QUE TELEGRAM ESTÉ LISTO ---
+        // Este es el único punto de espera. Obtenemos los datos de Telegram o fallamos si no están disponibles.
+        const tgData = await new Promise((resolve, reject) => {
+          let attempts = 0;
+          const maxAttempts = 30; // 30 intentos * 100ms = 3 segundos de timeout
+          
+          const interval = setInterval(() => {
+            const tg = window.Telegram?.WebApp;
+            attempts++;
             
-            const interval = setInterval(() => {
-              const tg = window.Telegram?.WebApp;
-              attempts++;
-              
-              if (tg && tg.initData) {
-                clearInterval(interval);
-                // CORRECCIÓN: Resolvemos con un objeto que contiene ambos datos
-                resolve({
-                  initData: tg.initData,
-                  startParam: tg.initDataUnsafe?.start_param,
-                });
-              } else if (attempts >= maxAttempts) {
-                clearInterval(interval);
-                reject(new Error("Timeout: initData no se encontró."));
-              }
-            }, 100);
-          });
-          // <<< INICIO DE LA LÓGICA CRÍTICA CORREGIDA >>>
+            if (tg && tg.initData) {
+              clearInterval(interval);
+              resolve({
+                initData: tg.initData,
+                startParam: tg.initDataUnsafe?.start_param,
+              });
+            } else if (attempts >= maxAttempts) {
+              clearInterval(interval);
+              reject(new Error("Timeout: Telegram initData no encontrado."));
+            }
+          }, 100);
+        });
 
-        // La presencia de start_param indica un nuevo flujo (potencialmente un referido).
-        // En este caso, SIEMPRE debemos forzar un nuevo login, ignorando cualquier token antiguo.
+        // --- PASO 2: DECIDIR LA ESTRATEGIA DE AUTENTICACIÓN ---
+        
+        // Estrategia 1: Es un referido (o un enlace con start_param).
+        // La presencia de start_param tiene máxima prioridad. Siempre forzamos un nuevo login para
+        // asegurar que el referido se registre correctamente, ignorando cualquier sesión local.
         if (tgData.startParam) {
-          console.log("Parámetro de inicio detectado. Forzando nuevo login de referido...");
+          console.log(`Parámetro de inicio '${tgData.startParam}' detectado. Forzando login de referido.`);
           await login(tgData);
         } else {
-          // Si NO hay start_param, procedemos con el flujo normal:
-          // 1. Verificamos si hay un token existente y válido.
+          // Estrategia 2: No es un referido. Flujo de usuario normal.
+          // Primero, verificamos si ya existe una sesión local válida.
           const status = await checkAuthStatus();
 
-          // 2. Si no hay token o es inválido, intentamos un login normal.
-          if (status === 'no-token' || status === 'invalid-token') {
-            console.log("Sin token válido. Intentando login estándar...");
+          if (status === 'authenticated') {
+            // El usuario ya tiene una sesión válida. No hacemos nada.
+            // El store ya cargó al usuario desde el token.
+            console.log("Sesión local válida encontrada. Saltando login.");
+          } else {
+            // No hay sesión válida ('no-token', 'invalid-token').
+            // Procedemos con un login estándar. Esto cubre tanto a usuarios nuevos
+            // sin referido como a usuarios existentes que abren la app de nuevo.
+            console.log("Sin sesión válida. Realizando login estándar.");
             await login(tgData);
           }
-          // 3. Si el token era válido ('authenticated'), no hacemos nada, el usuario ya está cargado.
-          else {
-            console.log("Sesión existente válida encontrada.");
-          }
         }
-        // <<< FIN DE LA LÓGICA CRÍTICA CORREGIDA >>>
-         } catch (e) {
-        console.error("Error fatal en la inicialización:", e.message);
+
+      } catch (e) {
+        console.error("Error fatal en la inicialización de la app:", e.message);
+        // Si algo falla, limpiamos el estado para evitar bucles.
         logout();
       } finally {
+        // Este bloque SIEMPRE se ejecutará, ya sea que la autenticación tuvo éxito o falló,
+        // garantizando que salgamos de la pantalla de carga.
         setIsInitializing(false);
       }
     };
 
+    // --- CORRECCIÓN CRÍTICA: Se llama a la función UNA SOLA VEZ ---
     initializeAuth();
-    };
-    initializeAuth();
-  }, []);
+
+  }, []); // El array vacío asegura que este efecto se ejecute solo una vez.
   
   if (isInitializing) {
     return (
@@ -102,8 +107,9 @@ function App() {
     );
   }
 
+  // Si después de inicializar no hay usuario, mostramos un error claro.
   if (user === null) {
-    return <AuthErrorScreen message={authError || "Autenticación fallida. Por favor, reinicia la Mini App."} />;
+    return <AuthErrorScreen message={authError || "No se pudo autenticar. Por favor, reinicia la Mini App."} />;
   }
   
   return (
