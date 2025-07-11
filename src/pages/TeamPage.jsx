@@ -1,17 +1,16 @@
-// frontend/src/pages/TeamPage.jsx (VERSIÓN FINAL CON MODAL DE DETALLES INTEGRADO)
+// frontend/src/pages/TeamPage.jsx (REDiseñado con nuevo layout y botón de compartir)
 import React, { useState, useEffect } from 'react';
 import useUserStore from '../store/userStore';
 import useTeamStore from '../store/teamStore';
-import api from '../api/axiosConfig'; // Importamos axios
-import toast from 'react-hot-toast'; // Importamos toast para errores
+import api from '../api/axiosConfig';
+import toast from 'react-hot-toast';
 
 import TeamStatCard from '../components/team/TeamStatCard';
 import TeamLevelCard from '../components/team/TeamLevelCard';
-import SocialShare from '../components/team/SocialShare';
 import Loader from '../components/common/Loader';
-import TeamLevelDetailsModal from '../components/team/TeamLevelDetailsModal'; // Importamos el modal
+import TeamLevelDetailsModal from '../components/team/TeamLevelDetailsModal';
 
-import { HiOutlineClipboardDocument, HiUsers, HiArrowDownTray, HiArrowUpTray, HiBanknotes } from 'react-icons/hi2';
+import { HiUsers, HiArrowDownTray, HiArrowUpTray, HiBanknotes } from 'react-icons/hi2';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const containerVariants = {
@@ -28,26 +27,17 @@ const TeamPage = () => {
   const { user } = useUserStore();
   const { stats, loading, error, fetchTeamStats } = useTeamStore();
   
-  // --- ESTADO PARA EL MODAL ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [levelUsers, setLevelUsers] = useState([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
-  const [copySuccess, setCopySuccess] = useState('');
-  const referralLink = `https://t.me/ntx_miner_bot?start=${user?.telegramId}`; // Usamos telegramId que es el correcto
+  const referralLink = `https://t.me/ntx_miner_bot?start=${user?.telegramId}`;
 
   useEffect(() => {
     fetchTeamStats();
   }, [fetchTeamStats]);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopySuccess('¡Copiado!');
-    setTimeout(() => setCopySuccess(''), 2000);
-  };
-  
-  // --- FUNCIÓN PARA MOSTRAR LOS DETALLES ---
   const handleShowDetails = async (level) => {
     setSelectedLevel(level);
     setIsModalOpen(true);
@@ -57,7 +47,7 @@ const TeamPage = () => {
       setLevelUsers(response.data);
     } catch (err) {
       toast.error('No se pudieron cargar los detalles del equipo.');
-      setLevelUsers([]); // Limpiamos en caso de error
+      setLevelUsers([]);
     } finally {
       setIsLoadingDetails(false);
     }
@@ -65,21 +55,36 @@ const TeamPage = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    // Pequeño delay para que la animación de cierre termine antes de limpiar los datos
     setTimeout(() => {
       setSelectedLevel(null);
       setLevelUsers([]);
     }, 300);
   };
 
+  // --- NUEVA FUNCIÓN PARA COMPARTIR ---
+  const handleShare = () => {
+    const shareText = "¡Únete a NEURO LINK y empieza a ganar NTX! Usa mi enlace para obtener un bono de bienvenida.";
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`;
+    
+    // Usamos la API de Telegram para una experiencia nativa
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.openTelegramLink(shareUrl);
+    } else {
+      // Fallback para desarrollo en navegador
+      navigator.clipboard.writeText(referralLink);
+      toast.success('¡Enlace de referido copiado al portapapeles!');
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full p-4">
       <AnimatePresence mode="wait">
         {loading ? (
           <motion.div key="loader"><Loader text="Cargando equipo..." /></motion.div>
         ) : error ? (
           <motion.div key="error" className="text-center text-red-400 py-8">{error}</motion.div>
         ) : (
+          // --- CONTENEDOR PRINCIPAL CON FLEX-COL ---
           <motion.div
             key="team-content"
             variants={containerVariants}
@@ -87,6 +92,7 @@ const TeamPage = () => {
             animate="visible"
             className="flex flex-col h-full space-y-6"
           >
+            {/* Tarjetas de estadísticas (sin cambios) */}
             <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
                <TeamStatCard label="Miembros del Equipo" value={stats.totalTeamMembers} icon={<HiUsers size={20} />} />
                <TeamStatCard label="Comisión Total" value={stats.totalCommission} isCurrency icon={<HiBanknotes size={20} />} />
@@ -94,35 +100,35 @@ const TeamPage = () => {
                <TeamStatCard label="Retiros del Equipo" value={stats.totalWithdrawals} isCurrency icon={<HiArrowUpTray size={20} />} />
             </motion.div>
 
-            <motion.div variants={itemVariants} className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/10 space-y-3">
-              <div className="flex w-full max-w-md mx-auto">
-                <input type="text" value={referralLink} readOnly className="w-full bg-black/20 border border-r-0 border-white/20 rounded-l-lg px-4 text-sm outline-none text-gray-300" />
-                <button onClick={handleCopy} className="bg-purple-600 px-4 py-2 rounded-r-lg font-semibold text-sm flex-shrink-0 text-white">
-                  {copySuccess || <HiOutlineClipboardDocument size={20} />}
-                </button>
-              </div>
-              <SocialShare referralLink={referralLink} />
-            </motion.div>
-
-            <motion.h2 variants={itemVariants} className="text-lg font-bold text-white text-center pt-2">
-              Mis Referidos
-            </motion.h2>
-
-            {stats.levels.map(levelInfo => (
-              <motion.div key={levelInfo.level} variants={itemVariants}>
+            {/* --- NUEVO LAYOUT HORIZONTAL PARA NIVELES --- */}
+            <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3">
+              {stats.levels.map(levelInfo => (
                 <TeamLevelCard
+                  key={levelInfo.level}
                   level={levelInfo.level}
                   members={levelInfo.members}
-                  commission={levelInfo.commission}
-                  onShowDetails={handleShowDetails} // Pasamos la función al componente hijo
+                  onShowDetails={handleShowDetails}
                 />
-              </motion.div>
-            ))}
+              ))}
+            </motion.div>
+            
+            {/* Contenedor que empuja el botón hacia abajo */}
+            <div className="flex-grow"></div>
+
+            {/* --- NUEVO BOTÓN DE COMPARTIR --- */}
+            <motion.div variants={itemVariants}>
+              <button
+                onClick={handleShare}
+                className="w-full py-4 bg-gradient-to-r from-accent-start to-accent-end text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all"
+              >
+                COMPARTIR CON AMIGOS
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* --- RENDERIZADO CONDICIONAL DEL MODAL --- */}
+      {/* Modal (sin cambios) */}
       <AnimatePresence>
         {isModalOpen && (
           <TeamLevelDetailsModal 

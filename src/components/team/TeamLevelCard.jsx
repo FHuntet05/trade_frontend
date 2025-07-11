@@ -1,33 +1,22 @@
-// frontend/src/components/team/TeamLevelCard.jsx (MODIFICADO)
+// frontend/src/components/team/TeamLevelCard.jsx (REDiseñado para layout horizontal)
 import React from 'react';
+import { motion } from 'framer-motion';
 
-// --- INICIO DEL CAMBIO ---
-// Añadimos la prop 'onShowDetails'
-const TeamLevelCard = ({ level, members, commission, onShowDetails }) => (
-// --- FIN DEL CAMBIO ---
-  <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-white/10 text-white">
-    <h3 className="font-bold text-lg">NIVEL {level}</h3>
-    <div className="space-y-2 mt-3 text-sm">
-      <div className="flex justify-between items-center">
-        <span className="text-gray-400">Personas</span>
-        <span className="font-semibold">{members}</span>
-      </div>
-      <div className="flex justify-between items-center">
-        <span className="text-gray-400">Comisión</span>
-        <span className="font-semibold text-green-400">
-          ${commission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </span>
-      </div>
-    </div>
-    {/* --- INICIO DEL CAMBIO --- */}
-    {/* El botón ahora llama a la función onShowDetails, pasándole el nivel actual */}
-    <button 
+const TeamLevelCard = ({ level, members, onShowDetails }) => (
+  <div className="bg-dark-secondary p-4 rounded-xl border border-white/10 text-white flex flex-col items-center text-center">
+    <h3 className="font-bold text-lg text-text-secondary">NIVEL {level}</h3>
+    
+    <p className="text-3xl font-bold text-white my-2">{members}</p>
+    <p className="text-sm text-text-secondary mb-3">Personas</p>
+    
+    <motion.button 
       onClick={() => onShowDetails(level)} 
-      className="w-full mt-4 py-2 text-sm font-semibold bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className="w-full py-2 text-xs font-semibold bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
     >
       Detalles
-    </button>
-    {/* --- FIN DEL CAMBIO --- */}
+    </motion.button>
   </div>
 );
 
