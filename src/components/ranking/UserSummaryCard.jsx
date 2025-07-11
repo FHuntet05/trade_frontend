@@ -1,20 +1,26 @@
-// frontend/src/components/ranking/UserSummaryCard.jsx
+// frontend/src/components/ranking/UserSummaryCard.jsx (SIMPLIFICADO)
 import React from 'react';
 
-const UserSummaryCard = ({ summary, type }) => {
+const UserSummaryCard = ({ summary }) => {
+  // Si no hay datos de resumen, no renderizamos nada para evitar errores.
+  if (!summary) return null;
+
   return (
-    <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-white/10 flex justify-around text-white text-center">
+    <div className="bg-dark-secondary rounded-xl p-4 border border-white/10 flex justify-around text-white text-center">
       <div>
-        <p className="text-sm text-gray-400">Mi ranking</p>
-        <p className="text-2xl font-bold">{summary.rank || '--'}</p>
+        <p className="text-sm text-text-secondary">Mi ranking</p>
+        <p className="text-3xl font-bold mt-1">{summary.rank || '--'}</p>
       </div>
       <div>
-        <p className="text-sm text-gray-400">
-          {type === 'individual' ? 'Mi cantidad' : 'Usuarios del equipo'}
+        {/* --- CAMBIO: El label ahora viene directamente del backend --- */}
+        <p className="text-sm text-text-secondary">{summary.label || 'Mi Puntuación'}</p>
+        <p className="text-3xl font-bold mt-1">
+          {/* Se formatea el score para que se vea bien */}
+          {summary.score?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}
         </p>
-        <p className="text-2xl font-bold">{summary.score?.toLocaleString() || '0'}</p>
       </div>
     </div>
   );
 };
+
 export default UserSummaryCard;

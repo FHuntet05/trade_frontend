@@ -3,7 +3,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+@layer utilities {
+  .shadow-glow {
+    box-shadow: 0 0 25px 0 rgba(168, 85, 247, 0.3); /* Sombra/brillo color púrpura (accent-start) */
+  }
+}
 /*
   Esta regla es la más importante. Le decimos al navegador que el
   cuerpo de la página NO TENGA NINGÚN COLOR DE FONDO, para que

@@ -1,15 +1,13 @@
-// src/components/layout/BottomNavBar.jsx (VERSIÓN CON PRE-FETCHING)
+// src/components/layout/BottomNavBar.jsx (REDiseñado para ser más grueso y flotante)
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { HiHome, HiChartBar, HiWrenchScrewdriver, HiUsers, HiUser } from 'react-icons/hi2';
 import { motion } from 'framer-motion';
 
-// --- 1. IMPORTAMOS LOS STORES ---
 import useTeamStore from '../../store/teamStore';
 import useToolsStore from '../../store/toolsStore';
 
-// Definimos los ítems de navegación fuera para mayor claridad
 const navItems = [
   { to: '/', labelKey: 'nav.home', Icon: HiHome },
   { to: '/ranking', labelKey: 'nav.ranking', Icon: HiChartBar },
@@ -21,9 +19,7 @@ const navItems = [
 const NavItem = ({ to, labelKey, Icon, isRoot, prefetch }) => {
   const { t } = useTranslation();
 
-  // --- 2. FUNCIÓN PARA MANEJAR EL PRE-FETCH ---
   const handleMouseEnter = () => {
-    // Si el item de navegación tiene una función prefetch, la ejecutamos
     if (prefetch) {
       prefetch();
     }
@@ -33,7 +29,6 @@ const NavItem = ({ to, labelKey, Icon, isRoot, prefetch }) => {
     <NavLink
       to={to}
       end={isRoot}
-      // --- 3. AÑADIMOS EL EVENTO onMouseEnter ---
       onMouseEnter={handleMouseEnter}
       className="flex-1 flex flex-col items-center justify-center text-xs h-full relative group"
     >
@@ -41,13 +36,16 @@ const NavItem = ({ to, labelKey, Icon, isRoot, prefetch }) => {
         const IconComponent = Icon;
         
         return (
-          <div className="flex flex-col items-center justify-center w-full h-full">
+          // Contenedor del ícono y texto
+          <div className="flex flex-col items-center justify-center w-full h-full pt-1">
+             {/* --- CAMBIO: Se ajusta el tamaño del icono y el texto --- */}
             <div className="relative mb-1">
+              {/* Glow effect (sin cambios) */}
               <motion.div
-                className="absolute -inset-2 blur-lg bg-gradient-to-r from-accent-start to-accent-end rounded-full"
+                className="absolute -inset-2.5 blur-lg bg-gradient-to-r from-accent-start to-accent-end rounded-full"
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ 
-                  opacity: isActive ? 0.6 : 0, 
+                  opacity: isActive ? 0.7 : 0, 
                   scale: isActive ? 1 : 0.5 
                 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
@@ -58,12 +56,12 @@ const NavItem = ({ to, labelKey, Icon, isRoot, prefetch }) => {
                 transition={{ type: 'spring', stiffness: 300, damping: 15 }}
               >
                 <IconComponent
-                  className={`w-6 h-6 transition-colors duration-300 ${isActive ? 'text-white' : 'text-text-secondary group-hover:text-white'}`}
+                  className={`w-7 h-7 transition-colors duration-300 ${isActive ? 'text-white' : 'text-text-secondary group-hover:text-white'}`}
                 />
               </motion.div>
             </div>
             <span
-              className={`transition-colors duration-300 ${isActive ? 'font-bold text-white' : 'text-text-secondary group-hover:text-white'}`}
+              className={`text-xs transition-colors duration-300 ${isActive ? 'font-bold text-white' : 'text-text-secondary group-hover:text-white'}`}
             >
               {t(labelKey)}
             </span>
@@ -76,9 +74,10 @@ const NavItem = ({ to, labelKey, Icon, isRoot, prefetch }) => {
 
 const BottomNavBar = () => {
   return (
-  <nav className="w-full h-16 bg-white/10 backdrop-blur-xl flex justify-around items-center border-t border-white/10 rounded-t-2xl">
+    // --- CAMBIO CRÍTICO: Se eliminan los estilos de fondo y borde ---
+    // El nav ahora es transparente y más alto para que el Layout.jsx controle el estilo.
+    <nav className="w-full h-20 flex justify-around items-center">
       {navItems.map((item, index) => (
-        // --- 4. PASAMOS LA FUNCIÓN PREFETCH AL COMPONENTE NavItem ---
         <NavItem 
             key={index} 
             to={item.to} 
