@@ -64,7 +64,7 @@ const ProfilePage = () => {
   };
 
   const handleSwapClick = () => {
-    const MINIMUM_NTX_SWAP = 15000;
+    const MINIMUM_NTX_SWAP = 10000;
     if (user.balance.ntx < MINIMUM_NTX_SWAP) {
       toast.error(`Saldo NTX insuficiente. El mínimo para intercambiar es ${MINIMUM_NTX_SWAP.toLocaleString()} NTX.`);
     } else {
