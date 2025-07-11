@@ -73,19 +73,19 @@ const HomePage = () => {
         <video src="/assets/mining-animation.webm" autoPlay loop muted playsInline className="w-48 h-48 sm:w-52 sm:h-52 mx-auto" />
         <AnimatedCounter value={parseFloat(accumulatedNtx.toFixed(2))} />
         
-        {/* --- INICIO DE LA MODIFICACIÓN DE LA BARRA DE PROGRESO --- */}
-        <div className="w-full max-w-xs mx-auto mt-4 space-y-2">
-          {/* Contenedor más grande y más redondeado */}
-          <div className="w-full bg-dark-secondary rounded-xl h-4 shadow-inner">
-            {/* Barra de progreso interna también más redondeada */}
+        {/* --- INICIO DE LA MODIFICACIÓN FINAL DE LA BARRA DE PROGRESO --- */}
+        <div className="w-full max-w-xs mx-auto mt-4 space-y-3">
+          {/* Contenedor más grueso */}
+          <div className="w-full bg-dark-secondary rounded-full h-6 shadow-inner overflow-hidden">
+            {/* Barra interna ahora llena completamente la altura */}
             <div 
-              className="bg-gradient-to-r from-accent-start to-accent-end h-4 rounded-xl transition-all duration-1000" 
+              className="bg-gradient-to-r from-accent-start to-accent-end h-6 rounded-full transition-all duration-1000" 
               style={{width: `${progress}%`}}
             />
           </div>
           <p className="text-text-secondary text-base font-mono">{countdown}</p>
         </div>
-        {/* --- FIN DE LA MODIFICACIÓN DE LA BARRA DE PROGRESO --- */}
+        {/* --- FIN DE LA MODIFICACIÓN FINAL DE LA BARRA DE PROGRESO --- */}
 
       </div>
       
