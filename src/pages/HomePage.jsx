@@ -1,4 +1,4 @@
-// src/pages/HomePage.jsx (VERSIÓN FINAL COMPLETA Y CORREGIDA)
+// src/pages/HomePage.jsx
 import React from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
@@ -8,7 +8,7 @@ import UserInfoHeader from '../components/home/UserInfoHeader';
 import RealTimeClock from '../components/home/RealTimeClock';
 import AnimatedCounter from '../components/home/AnimatedCounter';
 import TaskCenter from '../components/home/TaskCenter';
-import NotificationFeed from '../components/home/NotificationFeed'; // <<< RE-IMPORTADO
+import NotificationFeed from '../components/home/NotificationFeed';
 import { useMiningLogic } from '../hooks/useMiningLogic';
 
 const HomePage = () => {
@@ -73,30 +73,33 @@ const HomePage = () => {
         <video src="/assets/mining-animation.webm" autoPlay loop muted playsInline className="w-48 h-48 sm:w-52 sm:h-52 mx-auto" />
         <AnimatedCounter value={parseFloat(accumulatedNtx.toFixed(2))} />
         
+        {/* --- INICIO DE LA MODIFICACIÓN DE LA BARRA DE PROGRESO --- */}
         <div className="w-full max-w-xs mx-auto mt-4 space-y-2">
-          <div className="w-full bg-dark-secondary rounded-full h-3">
-            <div className="bg-gradient-to-r from-accent-start to-accent-end h-3 rounded-full transition-all duration-1000" style={{width: `${progress}%`}}/>
+          {/* Contenedor más grande y más redondeado */}
+          <div className="w-full bg-dark-secondary rounded-xl h-4 shadow-inner">
+            {/* Barra de progreso interna también más redondeada */}
+            <div 
+              className="bg-gradient-to-r from-accent-start to-accent-end h-4 rounded-xl transition-all duration-1000" 
+              style={{width: `${progress}%`}}
+            />
           </div>
           <p className="text-text-secondary text-base font-mono">{countdown}</p>
         </div>
+        {/* --- FIN DE LA MODIFICACIÓN DE LA BARRA DE PROGRESO --- */}
+
       </div>
       
-      {/* <<< INICIO DE LA CORRECCIÓN DEL LAYOUT INFERIOR >>> */}
       <div className="flex-grow flex flex-col px-4 space-y-4">
-        {/* El contenedor del botón siempre existe para mantener la estructura */}
         <div className="w-full h-16 flex items-center justify-center">
           {renderControlButton()}
         </div>
       
-        {/* TaskCenter ahora tiene 'flex-grow' si el botón está oculto */}
         <div className={!shouldShowButton ? 'flex-grow' : ''}>
           <TaskCenter />
         </div>
         
-        {/* El NotificationFeed se re-introduce al final */}
         <NotificationFeed />
       </div>
-      {/* <<< FIN DE LA CORRECCIÓN DEL LAYOUT INFERIOR >>> */}
     </div>
   );
 };
