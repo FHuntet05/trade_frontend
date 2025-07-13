@@ -1,4 +1,4 @@
-// --- START OF FILE src/pages/ToolsPage.jsx (RECONSTRUCCIÓN COMPLETA) ---
+// --- START OF FILE src/pages/ToolsPage.jsx (AJUSTE FINAL) ---
 
 import React, { useState, useEffect, useMemo } from 'react';
 import useToolsStore from '../store/toolsStore';
@@ -7,13 +7,10 @@ import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import UserInfoHeader from '../components/home/UserInfoHeader'; // Asumiendo nueva ruta
+import UserInfoHeader from '../components/home/UserInfoHeader';
 import ToolCard from '../components/tools/ToolCard';
 import Loader from '../components/common/Loader';
 import PurchaseFlowModal from '../components/tools/PurchaseModal';
-// Importamos los demás modales si los necesitas
-// import CryptoCurrencySelectionModal from '../components/modals/CryptoCurrencySelectionModal';
-// import DirectDepositModal from '../components/modals/DirectDepositModal';
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 const SINGLE_PURCHASE_TOOL_NAMES = ["VIP 1", "VIP 2", "VIP 3"];
@@ -29,10 +26,7 @@ const ToolsPage = () => {
   const { tools, loading, error, fetchTools } = useToolsStore();
   const { user } = useUserStore();
   
-  // --- NUEVO ESTADO PARA LAS PESTAÑAS ---
-  const [activeTab, setActiveTab] = useState('all_tools'); // 'all_tools' o 'my_tools'
-
-  // --- LÓGICA DE MODALES (SE MANTIENE PERO SIMPLIFICADA POR AHORA) ---
+  const [activeTab, setActiveTab] = useState('all_tools');
   const [selectedTool, setSelectedTool] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -40,16 +34,13 @@ const ToolsPage = () => {
 
   const { ownedTools, toolCounts } = useMemo(() => {
     if (!user || !user.activeTools) return { ownedTools: [], toolCounts: {} };
-    
     const counts = {};
     const owned = user.activeTools.map(purchase => {
         if (purchase.tool?._id) {
-            const toolId = purchase.tool._id;
-            counts[toolId] = (counts[toolId] || 0) + 1;
+            counts[purchase.tool._id] = (counts[purchase.tool._id] || 0) + 1;
         }
         return purchase.tool;
-    }).filter(Boolean); // Filtramos nulos o undefined
-
+    }).filter(Boolean);
     return { ownedTools: owned, toolCounts: counts };
   }, [user]);
 
@@ -76,17 +67,19 @@ const ToolsPage = () => {
     </button>
   );
 
+  // --- Dato corregido para la tasa de minería ---
+  const dailyMiningRate = user?.effectiveMiningRate || 0;
+
   return (
-    // Contenedor principal con scroll
     <div className="flex flex-col h-full overflow-y-auto pb-24 p-4 space-y-5">
       <UserInfoHeader />
 
       <div className="grid grid-cols-2 gap-4">
         <StatCard label="Horas de trabajo" value="24H" />
-        <StatCard label="Velocidad de minería" value={`${user?.effectiveMiningRate || 0} OSN/H`} />
+        {/* --- CORRECCIÓN CLAVE: Se usa la tasa diaria y la unidad NTX/Día --- */}
+        <StatCard label="Velocidad de minería" value={`${dailyMiningRate.toFixed(2)} NTX/Día`} />
       </div>
 
-      {/* --- SISTEMA DE PESTAÑAS --- */}
       <div className="bg-dark-secondary rounded-lg border border-white/10 flex">
         <TabButton tabName="all_tools" label="Herramientas de minería" badgeCount={tools.length} />
         <TabButton tabName="my_tools" label="Mejora" />
@@ -94,60 +87,38 @@ const ToolsPage = () => {
 
       <div className="flex justify-end">
           <button className="text-xs text-text-secondary hover:text-white">
-              Historial de compras 
+              Historial de compras
           </button>
       </div>
 
       <AnimatePresence mode="wait">
-        {loading ? (
-          <motion.div key="loader"><Loader /></motion.div>
-        ) : error ? (
-          <motion.div key="error" className="text-center text-red-400">{error}</motion.div>
-        ) : (
+        {loading ? ( <motion.div key="loader"><Loader /></motion.div> ) 
+        : error ? ( <motion.div key="error" className="text-center text-red-400">{error}</motion.div> ) 
+        : (
           <div className="space-y-5">
-            {/* Contenido condicional basado en la pestaña activa */}
             {activeTab === 'all_tools' && tools.map(tool => {
                 const ownedCount = toolCounts[tool._id] || 0;
                 const isLocked = SINGLE_PURCHASE_TOOL_NAMES.includes(tool.name) && ownedCount > 0;
                 return (
                   <motion.div key={tool._id} variants={itemVariants} initial="hidden" animate="visible">
-                    <ToolCard 
-                      tool={tool} 
-                      onBuyClick={handleBuyClick}
-                      ownedCount={ownedCount}
-                      isLocked={isLocked}
-                    />
+                    <ToolCard tool={tool} onBuyClick={handleBuyClick} ownedCount={ownedCount} isLocked={isLocked}/>
                   </motion.div>
                 );
             })}
-            
             {activeTab === 'my_tools' && (
               ownedTools.length > 0 ? ownedTools.map((tool, index) => (
                 <motion.div key={`${tool._id}-${index}`} variants={itemVariants} initial="hidden" animate="visible">
-                   {/* Reutilizamos ToolCard para mantener la consistencia visual */}
-                  <ToolCard 
-                    tool={tool} 
-                    onBuyClick={() => {}} // No hay acción de compra aquí
-                    ownedCount={1} // Mostramos 1 por cada instancia
-                    isLocked={true} // Siempre se muestran como "adquiridas"
-                  />
+                  <ToolCard tool={tool} onBuyClick={() => {}} ownedCount={1} isLocked={true}/>
                 </motion.div>
-              )) : (
-                <p className="text-center text-text-secondary pt-8">No tienes herramientas activas.</p>
-              )
+              )) : ( <p className="text-center text-text-secondary pt-8">No tienes herramientas activas.</p> )
             )}
           </div>
         )}
       </AnimatePresence>
 
-      {/* --- MODAL DE COMPRA (simplificado para claridad) --- */}
       <AnimatePresence>
         {isModalOpen && selectedTool && (
-          <PurchaseFlowModal 
-            tool={selectedTool}
-            onClose={handleCloseModal}
-            onSelectCrypto={() => { /* Lógica de compra aquí */ }} 
-          />
+          <PurchaseFlowModal tool={selectedTool} onClose={handleCloseModal} onSelectCrypto={() => {}} />
         )}
       </AnimatePresence>
     </div>
