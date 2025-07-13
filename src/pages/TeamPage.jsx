@@ -1,5 +1,3 @@
-// --- START OF FILE frontend/src/pages/TeamPage.jsx (NUEVO DISEÑO COMPLETO) ---
-
 import React, { useState, useEffect } from 'react';
 import useUserStore from '../store/userStore';
 import useTeamStore from '../store/teamStore';
@@ -11,10 +9,13 @@ import Loader from '../components/common/Loader';
 import TeamLevelDetailsModal from '../components/team/TeamLevelDetailsModal';
 import { triggerImpactHaptic, triggerNotificationHaptic } from '../utils/haptics';
 
-import { FaXTwitter, FaFacebookF, FaTelegramPlane, FaLinkedinIn, FaWhatsapp, FaInstagram, FaTiktok } from "react-icons/fa6";
+// --- CAMBIO CLAVE: Se han separado las importaciones de iconos ---
+// FaTelegramPlane pertenece a 'react-icons/fa' (Font Awesome 5)
+import { FaTelegramPlane } from "react-icons/fa"; 
+// El resto de iconos sí pertenecen a 'react-icons/fa6' (Font Awesome 6)
+import { FaXTwitter, FaFacebookF, FaLinkedinIn, FaWhatsapp, FaInstagram, FaTiktok } from "react-icons/fa6";
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
-
   const TeamPage = () => {
   const { user } = useUserStore();
   const { stats, loading, error, fetchTeamStats } = useTeamStore(state => ({
@@ -59,7 +60,7 @@ const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 
     }, 300);
   };
 
-  const copyLink = () => {
+   const copyLink = () => {
     navigator.clipboard.writeText(referralLink);
     toast.success('¡Enlace copiado!');
     triggerNotificationHaptic('success');
@@ -83,7 +84,6 @@ const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 
           ) : (
             <motion.div key="content" initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }}>
               
-              {/* --- NUEVA SECCIÓN DE COMPARTIR ENLACE --- */}
               <motion.div variants={itemVariants} className="bg-dark-secondary p-4 rounded-xl border border-white/10 space-y-4">
                 <h2 className="text-lg font-bold text-white">Comparte tu enlace y empieza a ganar dinero</h2>
                 <div className="flex items-center space-x-2">
@@ -92,7 +92,6 @@ const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 
                 </div>
               </motion.div>
 
-              {/* --- NUEVA SECCIÓN DE ICONOS SOCIALES --- */}
               <motion.div variants={itemVariants} className="bg-dark-secondary p-4 rounded-xl border border-white/10 space-y-3">
                 <h3 className="text-base font-semibold text-white">Compartir en</h3>
                 <div className="grid grid-cols-7 gap-2">
@@ -104,7 +103,6 @@ const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 
                 </div>
               </motion.div>
 
-              {/* --- NUEVO LAYOUT HORIZONTAL PARA NIVELES --- */}
               <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3">
                 {(stats.levels || []).map(levelInfo => (
                   <TeamLevelCard
@@ -117,7 +115,6 @@ const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 
                 ))}
               </motion.div>
 
-              {/* --- NUEVO BOTÓN PRINCIPAL DE COMPARTIR --- */}
               <motion.div variants={itemVariants}>
                  <button onClick={() => triggerImpactHaptic('heavy')} className="w-full py-4 bg-pink-500 text-white text-lg font-bold rounded-xl shadow-lg shadow-pink-500/30 transform active:scale-95 transition-all">
                     COMPARTIR CON AMIGOS
@@ -136,4 +133,4 @@ const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 
 };
 
 export default TeamPage;
-// --- END OF FILE frontend/src/pages/TeamPage.jsx ---
+// --- END OF FILE src/pages/TeamPage.jsx ---
