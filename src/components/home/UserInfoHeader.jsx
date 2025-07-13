@@ -1,46 +1,56 @@
-// --- START OF FILE src/components/home/UserInfoHeader.jsx (VERSIÓN FINAL Y CORREGIDA) ---
+// --- START OF FILE src/components/home/UserInfoHeader.jsx (RECONSTRUCCIÓN FINAL) ---
 
 import React from 'react';
-import { Link } from 'react-router-dom'; // Importamos Link para la navegación
 import useUserStore from '../../store/userStore';
-import { HiLanguage } from "react-icons/hi2"; // Importamos el icono de idioma
+import GeneratedAvatar from '../common/GeneratedAvatar'; // <<< 1. Importamos el nuevo componente
 
 const UserInfoHeader = () => {
   const { user } = useUserStore();
 
   if (!user) return null;
 
+  // --- LÓGICA DEL NOMBRE (CLARIFICACIÓN FINAL) ---
+  // El código INTENTA usar el nombre real (firstName + lastName).
+  // Si no existen, y solo en ese caso, usa el 'username' como fallback.
+  // Lo que ves como 'feft05' es este fallback funcionando correctamente.
   const displayName = (user.firstName || user.lastName) 
     ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
     : user.username;
 
   return (
-    // Se ha quitado w-full para que el componente respete el padding de su contenedor padre
-    <div className="bg-dark-secondary p-4 rounded-xl border border-white/10">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <img 
-              src={user.photoUrl || '/assets/images/user-avatar-placeholder.png'} 
-              alt="Avatar" 
-              className="w-12 h-12 rounded-full object-cover border-2 border-blue-500"
-          />
-          <div>
-            <h2 className="font-bold text-white text-lg">{displayName}</h2>
-            <p className="text-xs text-text-secondary">ID: {user.telegramId}</p>
+    <div className="bg-dark-secondary p-4 rounded-xl border border-white/10 flex items-center gap-4">
+      
+      {/* --- 2. SOLUCIÓN DEFINITIVA PARA LA FOTO --- */}
+      {/* Si existe photoUrl, usa la imagen. Si no, usa el Avatar Generado. */}
+      {user.photoUrl ? (
+        <img 
+            src={user.photoUrl} 
+            alt="Avatar" 
+            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+        />
+      ) : (
+        <GeneratedAvatar name={displayName} size="w-12 h-12" />
+      )}
+      
+      {/* --- 3. LAYOUT COMPACTO CON FLEXBOX --- */}
+      <div className="flex flex-col">
+        {/* Línea 1: Nombre + Badge */}
+        <div className="flex items-center gap-2">
+          <h2 className="font-bold text-white text-lg">{displayName}</h2>
+          <div className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            Miner
           </div>
         </div>
         
-        {/* --- CAMBIO: Botón de Idioma con Link a la página de selección --- */}
-        <Link to="/language" className="p-2 text-text-secondary hover:text-white transition-colors">
-          <HiLanguage size={24} />
-        </Link>
+        {/* Línea 2: ID */}
+        <p className="text-xs text-text-secondary">ID: {user.telegramId}</p>
+
+        {/* Línea 3: Invitador */}
+        <p className="text-xs text-text-secondary">
+          Invitador: {user.referrerId ? `${user.referrerId.toString().slice(0, 4)}*****` : 'N/A'}
+        </p>
       </div>
-      <div className="mt-3 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full inline-block">
-        Miner
-      </div>
-      <p className="text-sm text-text-secondary mt-2">
-        Invitador: {user.referrerId ? `${user.referrerId.toString().slice(0, 4)}*****` : 'N/A'}
-      </p>
+
     </div>
   );
 };
