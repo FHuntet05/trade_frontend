@@ -26,8 +26,6 @@ const itemVariants = {
   visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 120 } },
 };
 
-const TeamPage = () => {
-  const { user } = useUserStore();
   const TeamPage = () => {
   const { user } = useUserStore();
   // --- CAMBIO: Aseguramos un estado inicial seguro para 'stats' ---
