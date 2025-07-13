@@ -57,7 +57,7 @@ const ToolCard = ({ tool, onBuyClick, ownedCount, isLocked }) => {
           }
         `}
       >
-        {isLocked ? 'ADQUIRIDO' : 'COMPRAR AHORA'}
+        {isLocked ? 'ADQUIRIDO' : 'COMPRAR YA'}
       </button>
       {/* --- FIN DE LA NUEVA LÓGICA --- */}
 

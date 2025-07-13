@@ -1,4 +1,6 @@
-// src/components/layout/BottomNavBar.jsx (REDiseñado para ser más grueso y flotante)
+// --- START OF FILE src/components/layout/BottomNavBar.jsx ---
+
+// src/components/layout/BottomNavBar.jsx (MODIFICADO: Se elimina el efecto de brillo del ícono)
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -36,20 +38,9 @@ const NavItem = ({ to, labelKey, Icon, isRoot, prefetch }) => {
         const IconComponent = Icon;
         
         return (
-          // Contenedor del ícono y texto
           <div className="flex flex-col items-center justify-center w-full h-full pt-1">
-             {/* --- CAMBIO: Se ajusta el tamaño del icono y el texto --- */}
             <div className="relative mb-1">
-              {/* Glow effect (sin cambios) */}
-              <motion.div
-                className="absolute -inset-2.5 blur-lg bg-gradient-to-r from-accent-start to-accent-end rounded-full"
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ 
-                  opacity: isActive ? 0.7 : 0, 
-                  scale: isActive ? 1 : 0.5 
-                }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              />
+              {/* --- CAMBIO: SE HA ELIMINADO EL motion.div DEL EFECTO GLOW --- */}
               <motion.div 
                 className="relative"
                 animate={{ y: isActive ? -4 : 0 }}
@@ -74,8 +65,7 @@ const NavItem = ({ to, labelKey, Icon, isRoot, prefetch }) => {
 
 const BottomNavBar = () => {
   return (
-    // --- CAMBIO CRÍTICO: Se eliminan los estilos de fondo y borde ---
-    // El nav ahora es transparente y más alto para que el Layout.jsx controle el estilo.
+    // El nav sigue siendo transparente. El estilo del contenedor se gestiona en Layout.jsx.
     <nav className="w-full h-20 flex justify-around items-center">
       {navItems.map((item, index) => (
         <NavItem 
@@ -92,3 +82,4 @@ const BottomNavBar = () => {
 };
 
 export default BottomNavBar;
+// --- END OF FILE src/components/layout/BottomNavBar.jsx ---
