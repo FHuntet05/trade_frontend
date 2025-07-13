@@ -58,7 +58,10 @@ const TeamPage = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    // ... (resto de la función sin cambios)
+    setTimeout(() => {
+      setSelectedLevel(null);
+      setLevelUsers([]);
+    }, 300);
   };
 
   const copyToClipboard = () => {
