@@ -1,4 +1,4 @@
-// src/pages/ToolsPage.jsx
+// src/pages/ToolsPage.jsx (COMPLETO, SIN TOAST Y CON LÓGICA DE PRECIOS CORRECTA)
 import React, { useState, useEffect, useMemo } from 'react';
 import useToolsStore from '../store/toolsStore';
 import useUserStore from '../store/userStore';
@@ -71,16 +71,15 @@ const ToolsPage = () => {
     setPurchaseContext({ quantity, totalCost });
     
     setIsLoadingPayment(true);
-    toast.loading('Obteniendo precios...', { id: 'prices' });
+    // El toast ha sido eliminado. El estado `isLoadingPayment` se pasa al modal.
     try {
       const response = await api.get('/payment/prices');
       setCryptoPrices(response.data);
-      toast.dismiss('prices');
       setIsPurchaseModalOpen(false);
       setIsCryptoSelectionModalOpen(true);
     } catch (error) {
       const errorMessage = error.response?.data?.message || "No se pudieron obtener los precios.";
-      toast.error(errorMessage, { id: 'prices' });
+      toast.error(errorMessage);
     } finally {
       setIsLoadingPayment(false);
     }
