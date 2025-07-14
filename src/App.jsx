@@ -1,11 +1,10 @@
-// frontend/src/App.jsx (VERSIÓN CORREGIDA Y SIMPLIFICADA)
+// frontend/src/App.jsx (VERSIÓN FINAL CON GUARDIA DE AUTENTICACIÓN ROBUSTO)
 
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 
-import AuthGuard from './components/AuthGuard';
 import Layout from './components/layout/Layout';
 import Loader from './components/common/Loader';
 import AuthErrorScreen from './components/AuthErrorScreen';
@@ -24,98 +23,74 @@ import AboutPage from './pages/AboutPage';
 import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 
-function App() {
-  const user = useUserStore((state) => state.user);
-  const authError = useUserStore((state) => state.error);
-  const [isInitializing, setIsInitializing] = useState(true);
+// Este componente hijo se encargará de la lógica de inicialización.
+const AuthInitializer = () => {
+  // useEffect se ejecuta una sola vez al montar el componente.
+  useEffect(() => {
+    const initialize = async () => {
+      const { checkAuthStatus, login } = useUserStore.getState();
 
-  useLayoutEffect(() => {
-    const initializeAuth = async () => {
-      const { checkAuthStatus, login, logout } = useUserStore.getState();
+      // Intenta validar el token del localStorage primero.
+      const status = await checkAuthStatus();
       
-      try {
-        // --- PASO 1: ESPERAR A QUE TELEGRAM ESTÉ LISTO ---
-        // Este es el único punto de espera. Obtenemos los datos de Telegram o fallamos si no están disponibles.
-        const tgData = await new Promise((resolve, reject) => {
-          let attempts = 0;
-          const maxAttempts = 30; // 30 intentos * 100ms = 3 segundos de timeout
-          
-          const interval = setInterval(() => {
-            const tg = window.Telegram?.WebApp;
-            attempts++;
-            
-            if (tg && tg.initData) {
-              clearInterval(interval);
-              resolve({
-                initData: tg.initData,
-                startParam: tg.initDataUnsafe?.start_param,
-              });
-            } else if (attempts >= maxAttempts) {
-              clearInterval(interval);
-              reject(new Error("Timeout: Telegram initData no encontrado."));
-            }
-          }, 100);
-        });
-
-        // --- PASO 2: DECIDIR LA ESTRATEGIA DE AUTENTICACIÓN ---
-        
-        // Estrategia 1: Es un referido (o un enlace con start_param).
-        // La presencia de start_param tiene máxima prioridad. Siempre forzamos un nuevo login para
-        // asegurar que el referido se registre correctamente, ignorando cualquier sesión local.
-        if (tgData.startParam) {
-          console.log(`Parámetro de inicio '${tgData.startParam}' detectado. Forzando login de referido.`);
-          await login(tgData);
-        } else {
-          // Estrategia 2: No es un referido. Flujo de usuario normal.
-          // Primero, verificamos si ya existe una sesión local válida.
-          const status = await checkAuthStatus();
-
-          if (status === 'authenticated') {
-            // El usuario ya tiene una sesión válida. No hacemos nada.
-            // El store ya cargó al usuario desde el token.
-            console.log("Sesión local válida encontrada. Saltando login.");
+      // Si no hay token o es inválido, procede con el login usando initData.
+      if (status === 'no-token' || status === 'invalid-token') {
+        try {
+          const tg = window.Telegram?.WebApp;
+          if (tg && tg.initData) {
+            console.log("Realizando login inicial con datos de Telegram...");
+            await login({
+              initData: tg.initData,
+              startParam: tg.initDataUnsafe?.start_param,
+            });
           } else {
-            // No hay sesión válida ('no-token', 'invalid-token').
-            // Procedemos con un login estándar. Esto cubre tanto a usuarios nuevos
-            // sin referido como a usuarios existentes que abren la app de nuevo.
-            console.log("Sin sesión válida. Realizando login estándar.");
-            await login(tgData);
+            // Si no hay initData, es un error fatal de la app de Telegram.
+            throw new Error("Telegram initData no está disponible.");
           }
+        } catch (e) {
+          console.error("Error fatal durante el login inicial:", e);
+          useUserStore.getState().logout();
         }
-
-      } catch (e) {
-        console.error("Error fatal en la inicialización de la app:", e.message);
-        // Si algo falla, limpiamos el estado para evitar bucles.
-        logout();
-      } finally {
-        // Este bloque SIEMPRE se ejecutará, ya sea que la autenticación tuvo éxito o falló,
-        // garantizando que salgamos de la pantalla de carga.
-        setIsInitializing(false);
+      } else {
+        console.log("Sesión restaurada desde el token local.");
       }
     };
+    
+    initialize();
+  }, []);
 
-    // --- CORRECCIÓN CRÍTICA: Se llama a la función UNA SOLA VEZ ---
-    initializeAuth();
+  return null; // Este componente no renderiza nada, solo ejecuta la lógica.
+};
 
-  }, []); // El array vacío asegura que este efecto se ejecute solo una vez.
-  
-  if (isInitializing) {
+function App() {
+  // Obtenemos los estados clave directamente del store.
+  const { isAuthenticated, isLoadingAuth, error } = useUserStore((state) => ({
+    isAuthenticated: state.isAuthenticated,
+    isLoadingAuth: state.isLoadingAuth,
+    error: state.error,
+  }));
+
+  // --- El Guardia de Autenticación ---
+  // 1. Mientras `isLoadingAuth` sea true, mostramos una pantalla de carga global.
+  // Esto bloquea cualquier interacción hasta que sepamos si el usuario está o no autenticado.
+  if (isLoadingAuth) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-space-background">
-        <Loader text="Inicializando..." />
+      <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
+        <Loader text="Autenticando..." />
       </div>
     );
   }
 
-  // Si después de inicializar no hay usuario, mostramos un error claro.
-  if (user === null) {
-    return <AuthErrorScreen message={authError || "No se pudo autenticar. Por favor, reinicia la Mini App."} />;
+  // 2. Si la carga terminó y el usuario NO está autenticado, mostramos un error.
+  if (!isAuthenticated) {
+    return <AuthErrorScreen message={error || "Autenticación fallida. Por favor, reinicia la Mini App."} />;
   }
   
+  // 3. Si la carga terminó y el usuario SÍ está autenticado, renderizamos la app.
   return (
     <Router>
+      <AuthInitializer /> {/* El componente que maneja la lógica de inicio */}
       <Toaster position="top-center" reverseOrder={false} />
-      <AuthGuard>
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<HomePage />} />
@@ -133,7 +108,6 @@ function App() {
           <Route path="/history" element={<FinancialHistoryPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-      </AuthGuard>
     </Router>
   );
 }
