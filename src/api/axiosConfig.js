@@ -1,35 +1,26 @@
-// frontend/src/api/axiosConfig.js (VERSIÓN FINAL CON INTERCEPTOR DE AUTENTICACIÓN)
+// frontend/src/api/axiosConfig.js (ÚNICA FUENTE DE VERDAD PARA LA CONFIGURACIÓN)
 
 import axios from 'axios';
-// <<< 1. Importamos el store de Zustand para poder acceder al token.
-import useUserStore from '../store/userStore';
+import useUserStore from '../store/userStore'; // Importa el store para leer el token.
 
-// Creamos la instancia de Axios con la URL base de nuestro backend.
-// Asegúrate de que VITE_API_BASE_URL esté definida en tus variables de entorno del frontend en Render.
-// Por ejemplo: VITE_API_BASE_URL=https://linker-backend-tqgy.onrender.com/api
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
 });
 
-// --- INTERCEPTOR DE PETICIONES (LA SOLUCIÓN CLAVE) ---
-// Esta función se ejecutará ANTES de que cada petición sea enviada al backend.
+// <<< ESTE ES EL ÚNICO INTERCEPTOR QUE DEBE EXISTIR EN TODO EL PROYECTO >>>
 api.interceptors.request.use(
   (config) => {
-    // <<< 2. Obtenemos el token directamente del estado de Zustand.
-    // Usamos .getState() porque estamos fuera de un componente de React y no podemos usar el hook.
+    // Coge el token del store de Zustand.
     const token = useUserStore.getState().token;
 
-    // <<< 3. Si el token existe, lo añadimos a la cabecera 'Authorization'.
-    // El formato 'Bearer TOKEN' es el estándar que el backend espera.
+    // Si el token existe, lo adjunta a la cabecera.
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
     
-    // Devolvemos la configuración modificada para que la petición continúe su viaje.
     return config;
   },
   (error) => {
-    // Si ocurre un error al configurar la petición, lo devolvemos como una promesa rechazada.
     return Promise.reject(error);
   }
 );
