@@ -1,4 +1,4 @@
-// frontend/src/store/userStore.js (VERSIÓN FINAL SIMPLIFICADA Y ROBUSTA)
+// frontend/src/store/userStore.js (VERSIÓN FINAL CON ARRANQUE SIMPLIFICADO)
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -6,46 +6,39 @@ import api from '../api/axiosConfig';
 
 const useUserStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       isAuthenticated: false,
-      isLoadingAuth: true, // Siempre empieza en true al cargar la app
+      isLoadingAuth: true, // Siempre empieza en true.
 
-      // Nueva acción para garantizar que siempre salimos del estado de carga
-      finishInitialLoading: () => {
-        set({ isLoadingAuth: false });
-      },
-
-      checkAuthStatus: async () => {
-        const token = get().token;
-        if (!token) {
-          set({ isAuthenticated: false });
-          return 'no-token';
-        }
-        try {
-          const response = await api.get('/auth/profile');
-          set({ user: response.data, isAuthenticated: true });
-          return 'authenticated';
-        } catch (error) {
-          console.error("Fallo en checkAuthStatus (token inválido):", error);
-          set({ token: null, isAuthenticated: false }); // Limpiamos el token inválido
-          return 'invalid-token';
-        }
-      },
-
+      // La función de LOGIN es ahora la ÚNICA responsable del ciclo de vida del arranque.
       login: async ({ initData, startParam }) => {
-        if (!initData) {
-          console.error("Intento de login sin initData.");
-          return; // No hacemos nada si no hay datos
-        }
+        // 1. Inicia el estado de carga.
+        set({ isLoadingAuth: true });
+
         try {
+          if (!initData) {
+            throw new Error("No se encontraron los datos de Telegram (initData).");
+          }
+
           const response = await api.post('/auth/login', { initData, startParam });
           const { token, user } = response.data;
+          
+          // 2. Si tiene éxito, guarda el estado de autenticado.
           set({ user, token, isAuthenticated: true });
+          console.log("Login exitoso.");
+
         } catch (error) {
-          console.error("Fallo en la función login:", error.response?.data?.message || error.message);
-          set({ user: null, token: null, isAuthenticated: false }); // Limpiamos en caso de error
+          const errorMessage = error.response?.data?.message || error.message || "Error desconocido en la autenticación.";
+          console.error("Fallo fatal en el login:", errorMessage);
+          // 2. Si falla, limpia todo.
+          set({ user: null, token: null, isAuthenticated: false });
+        } finally {
+          // 3. (EL PASO MÁS IMPORTANTE)
+          // Se ejecuta SIEMPRE, garantizando que la app nunca se quede "pegada".
+          console.log("Finalizando estado de carga de autenticación.");
+          set({ isLoadingAuth: false });
         }
       },
 
@@ -62,6 +55,8 @@ const useUserStore = create(
     {
       name: 'neuro-link-storage',
       storage: createJSONStorage(() => localStorage),
+      // Solo persistimos el token. Esto es importante para que el interceptor de Axios
+      // funcione en las llamadas a la API *después* del login inicial.
       partialize: (state) => ({ token: state.token }),
     }
   )

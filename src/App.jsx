@@ -1,4 +1,4 @@
-// frontend/src/App.jsx (VERSIÓN FINAL CON LÓGICA DE ARRANQUE A PRUEBA DE FALLOS)
+// frontend/src/App.jsx (VERSIÓN FINAL CON ARRANQUE DIRECTO Y COMPLETO)
 
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -9,7 +9,7 @@ import Layout from './components/layout/Layout';
 import Loader from './components/common/Loader';
 import AuthErrorScreen from './components/AuthErrorScreen';
 
-// Importación de páginas
+// Importación COMPLETA de páginas
 import HomePage from './pages/HomePage';
 import ToolsPage from './pages/ToolsPage';
 import RankingPage from './pages/RankingPage';
@@ -29,58 +29,41 @@ function App() {
     isLoadingAuth: state.isLoadingAuth,
   }));
 
-  // Este useEffect se ejecuta una sola vez y maneja toda la lógica de arranque.
+  // El useEffect ahora tiene una única y simple responsabilidad: iniciar el login.
   useEffect(() => {
-    const initializeApp = async () => {
-      const { token, checkAuthStatus, login, finishInitialLoading } = useUserStore.getState();
-      
-      try {
-        if (token) {
-          // Si encontramos un token en el localStorage, intentamos validarlo.
-          console.log("Token encontrado. Verificando estado...");
-          await checkAuthStatus();
-        } else {
-          // Si no hay token, procedemos a un login nuevo.
-          console.log("No hay token. Realizando login inicial...");
-          const tg = window.Telegram?.WebApp;
-          if (tg && tg.initData) {
-            await login({
+    // Usamos un pequeño timeout para asegurarnos de que el objeto de Telegram esté disponible.
+    const timeoutId = setTimeout(() => {
+        const tg = window.Telegram?.WebApp;
+        const { login, logout } = useUserStore.getState();
+
+        if (tg && tg.initData) {
+            login({
               initData: tg.initData,
               startParam: tg.initDataUnsafe?.start_param,
             });
-          } else {
-            // Si no hay token Y no hay datos de Telegram, no podemos hacer nada.
-            console.error("No hay token ni datos de Telegram para autenticar.");
-          }
+        } else {
+            console.error("Timeout: Telegram.WebApp.initData no se encontró después de 500ms.");
+            logout(); // Si no hay datos, limpiamos y salimos del loading.
         }
-      } catch (e) {
-        console.error("Error inesperado durante la inicialización:", e);
-      } finally {
-        // <<< LA SOLUCIÓN INFALIBLE >>>
-        // Este bloque se ejecuta SIEMPRE, sin importar si el 'try' tuvo éxito o falló.
-        // Garantiza que salgamos de la pantalla de carga.
-        console.log("Finalizando estado de carga de autenticación.");
-        finishInitialLoading();
-      }
-    };
+    }, 500); // 500ms de espera
 
-    initializeApp();
-  }, []); // El array vacío asegura que solo se ejecute al montar.
-  
+    return () => clearTimeout(timeoutId); // Limpieza del timeout
+  }, []); 
+
   // --- GUARDIA DE AUTENTICACIÓN ---
   if (isLoadingAuth) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
-        <Loader text="Inicializando..." />
+        <Loader text="Conectando..." />
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return <AuthErrorScreen message={"No se pudo autenticar. Por favor, reinicia la Mini App desde Telegram."} />;
+    return <AuthErrorScreen message={"No se pudo conectar con el servidor. Por favor, reinicia la Mini App desde Telegram."} />;
   }
   
-  // Si la carga terminó y estamos autenticados, mostramos la app.
+  // Si todo está bien, renderizamos la aplicación COMPLETA.
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
