@@ -10,11 +10,10 @@ import Loader from '../common/Loader';
 // Usamos logos de un CDN confiable (CryptoCompare).
 // --- LISTA DE MONEDAS ACTUALIZADA ---
 const SUPPORTED_CURRENCIES = [
-  // Nota: CryptoCloud maneja las redes. Al especificar 'USDT', ellos suelen dar opción de TRC20/ERC20.
-  // Para BEP20, es mejor usar 'BNB' y que el usuario pague con BNB en la red BEP20.
-  { name: 'USDT (TRC20/ERC20)', ticker: 'USDT', logo: 'https://www.cryptocompare.com/media/37746338/usdt.png' },
-  { name: 'BNB (BEP20)', ticker: 'BNB', logo: 'https://www.cryptocompare.com/media/37746242/bnb.png' },
-  { name: 'Tron', ticker: 'TRX', logo: 'https://www.cryptocompare.com/media/37746888/trx.png' },
+  { name: 'USDT (Red BSC - BEP20)', ticker: 'USDT_BSC', logo: 'https://seeklogo.com/images/T/tether-usdt-logo-FA5531D648-seeklogo.com.png', chain: 'BSC', currency: 'USDT' },
+  { name: 'USDT (Red Tron - TRC20)', ticker: 'USDT_TRON', logo: 'https://seeklogo.com/images/T/tether-usdt-logo-FA5531D648-seeklogo.com.png', chain: 'TRON', currency: 'USDT' },
+  { name: 'BNB (Red BSC - BEP20)', ticker: 'BNB', logo: 'https://www.cryptocompare.com/media/37746242/bnb.png', chain: 'BSC', currency: 'BNB' },
+  { name: 'Tron (Red Tron - TRC20)', ticker: 'TRX', logo: 'https://www.cryptocompare.com/media/37746888/trx.png', chain: 'TRON', currency: 'TRX' },
 ];
 
 const backdropVariants = {

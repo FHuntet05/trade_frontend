@@ -1,5 +1,4 @@
-// --- START OF FILE src/pages/ToolsPage.jsx (AJUSTE FINAL) ---
-
+// src/pages/ToolsPage.jsx (COMPLETO Y FINAL)
 import React, { useState, useEffect, useMemo } from 'react';
 import useToolsStore from '../store/toolsStore';
 import useUserStore from '../store/userStore';
@@ -11,6 +10,8 @@ import UserInfoHeader from '../components/home/UserInfoHeader';
 import ToolCard from '../components/tools/ToolCard';
 import Loader from '../components/common/Loader';
 import PurchaseFlowModal from '../components/tools/PurchaseModal';
+import CryptoCurrencySelectionModal from '../components/modals/CryptoCurrencySelectionModal';
+import DirectDepositModal from '../components/modals/DirectDepositModal';
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 const SINGLE_PURCHASE_TOOL_NAMES = ["VIP 1", "VIP 2", "VIP 3"];
@@ -28,7 +29,12 @@ const ToolsPage = () => {
   
   const [activeTab, setActiveTab] = useState('all_tools');
   const [selectedTool, setSelectedTool] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [isCryptoSelectionModalOpen, setIsCryptoSelectionModalOpen] = useState(false);
+  const [isDirectDepositModalOpen, setIsDirectDepositModalOpen] = useState(false);
+  const [isLoadingPayment, setIsLoadingPayment] = useState(false);
+  const [purchaseContext, setPurchaseContext] = useState({ quantity: 1, totalCost: 0 });
+  const [paymentDetails, setPaymentDetails] = useState(null);
 
   useEffect(() => { fetchTools(); }, [fetchTools]);
 
@@ -46,12 +52,48 @@ const ToolsPage = () => {
 
   const handleBuyClick = (tool) => {
     setSelectedTool(tool);
-    setIsModalOpen(true);
+    setIsPurchaseModalOpen(true);
   };
   
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleCloseAllModals = () => {
+    setIsPurchaseModalOpen(false);
+    setIsCryptoSelectionModalOpen(false);
+    setIsDirectDepositModalOpen(false);
     setSelectedTool(null);
+    setPaymentDetails(null);
+  };
+
+  const handleStartCryptoPayment = (quantity) => {
+    const totalCost = selectedTool.price * quantity;
+    setPurchaseContext({ quantity, totalCost });
+    setIsPurchaseModalOpen(false);
+    setIsCryptoSelectionModalOpen(true);
+  };
+  
+  const handleCurrencySelected = async (selectedCurrency) => {
+    setIsLoadingPayment(true);
+    try {
+        const response = await api.post('/payment/generate-address', { 
+            chain: selectedCurrency.chain, 
+        });
+        const { address } = response.data;
+
+        setPaymentDetails({
+            paymentAddress: address,
+            paymentAmount: purchaseContext.totalCost.toFixed(8),
+            currency: `${selectedCurrency.currency} (${selectedCurrency.chain})`
+        });
+        
+        setIsCryptoSelectionModalOpen(false);
+        setIsDirectDepositModalOpen(true);
+
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Error al generar la dirección de pago.';
+        toast.error(errorMessage);
+        console.error("Error en handleCurrencySelected:", error);
+    } finally {
+        setIsLoadingPayment(false);
+    }
   };
 
   const TabButton = ({ tabName, label, badgeCount }) => (
@@ -67,30 +109,22 @@ const ToolsPage = () => {
     </button>
   );
 
-  // --- Dato corregido para la tasa de minería ---
   const dailyMiningRate = user?.effectiveMiningRate || 0;
 
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-24 p-4 space-y-5">
       <UserInfoHeader />
-
       <div className="grid grid-cols-2 gap-4">
         <StatCard label="Horas de trabajo" value="24H" />
-        {/* --- CORRECCIÓN CLAVE: Se usa la tasa diaria y la unidad NTX/Día --- */}
         <StatCard label="Velocidad de minería" value={`${dailyMiningRate.toFixed(2)} NTX/Día`} />
       </div>
-
       <div className="bg-dark-secondary rounded-lg border border-white/10 flex">
         <TabButton tabName="all_tools" label="Herramientas de minería" badgeCount={tools.length} />
         <TabButton tabName="my_tools" label="Mejora" />
       </div>
-
       <div className="flex justify-end">
-          <button className="text-xs text-text-secondary hover:text-white">
-              Historial de compras
-          </button>
+        <button className="text-xs text-text-secondary hover:text-white">Historial de compras</button>
       </div>
-
       <AnimatePresence mode="wait">
         {loading ? ( <motion.div key="loader"><Loader /></motion.div> ) 
         : error ? ( <motion.div key="error" className="text-center text-red-400">{error}</motion.div> ) 
@@ -117,8 +151,25 @@ const ToolsPage = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {isModalOpen && selectedTool && (
-          <PurchaseFlowModal tool={selectedTool} onClose={handleCloseModal} onSelectCrypto={() => {}} />
+        {isPurchaseModalOpen && selectedTool && (
+          <PurchaseFlowModal 
+            tool={selectedTool} 
+            onClose={handleCloseAllModals} 
+            onSelectCrypto={handleStartCryptoPayment}
+          />
+        )}
+        {isCryptoSelectionModalOpen && (
+            <CryptoCurrencySelectionModal
+                isLoading={isLoadingPayment}
+                onSelect={handleCurrencySelected}
+                onClose={handleCloseAllModals}
+            />
+        )}
+        {isDirectDepositModalOpen && paymentDetails && (
+            <DirectDepositModal
+                paymentInfo={paymentDetails}
+                onClose={handleCloseAllModals}
+            />
         )}
       </AnimatePresence>
     </div>
@@ -126,4 +177,3 @@ const ToolsPage = () => {
 };
 
 export default ToolsPage;
-// --- END OF FILE src/pages/ToolsPage.jsx ---
