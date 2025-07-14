@@ -58,7 +58,7 @@ const TaskItem = ({ task, isCompleted, isClaimed, referralCount, onTaskUpdate })
 
   const getTaskDescription = () => {
     if (task.id === 'invitedTenFriends') {
-      return `Tu equipo debe tener 10 miembros (${referralCount || 0}/10).`;
+      return `Tu equipo debe tener 3 miembros (${referralCount || 0}/3).`;
     }
     return task.description;
   };
