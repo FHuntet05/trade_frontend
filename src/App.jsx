@@ -1,4 +1,4 @@
-// frontend/src/App.jsx (VERSIÓN FINAL CON GUARDIA DE AUTENTICACIÓN ROBUSTO)
+// frontend/src/App.jsx (VERSIÓN FINAL Y ROBUSTA DE ARRANQUE)
 
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -23,56 +23,43 @@ import AboutPage from './pages/AboutPage';
 import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 
-// Este componente hijo se encargará de la lógica de inicialización.
-const AuthInitializer = () => {
-  // useEffect se ejecuta una sola vez al montar el componente.
-  useEffect(() => {
-    const initialize = async () => {
-      const { checkAuthStatus, login } = useUserStore.getState();
-
-      // Intenta validar el token del localStorage primero.
-      const status = await checkAuthStatus();
-      
-      // Si no hay token o es inválido, procede con el login usando initData.
-      if (status === 'no-token' || status === 'invalid-token') {
-        try {
-          const tg = window.Telegram?.WebApp;
-          if (tg && tg.initData) {
-            console.log("Realizando login inicial con datos de Telegram...");
-            await login({
-              initData: tg.initData,
-              startParam: tg.initDataUnsafe?.start_param,
-            });
-          } else {
-            // Si no hay initData, es un error fatal de la app de Telegram.
-            throw new Error("Telegram initData no está disponible.");
-          }
-        } catch (e) {
-          console.error("Error fatal durante el login inicial:", e);
-          useUserStore.getState().logout();
-        }
-      } else {
-        console.log("Sesión restaurada desde el token local.");
-      }
-    };
-    
-    initialize();
-  }, []);
-
-  return null; // Este componente no renderiza nada, solo ejecuta la lógica.
-};
-
 function App() {
-  // Obtenemos los estados clave directamente del store.
+  // <<< 1. Obtenemos los estados clave directamente del store.
   const { isAuthenticated, isLoadingAuth, error } = useUserStore((state) => ({
     isAuthenticated: state.isAuthenticated,
     isLoadingAuth: state.isLoadingAuth,
     error: state.error,
   }));
 
-  // --- El Guardia de Autenticación ---
-  // 1. Mientras `isLoadingAuth` sea true, mostramos una pantalla de carga global.
-  // Esto bloquea cualquier interacción hasta que sepamos si el usuario está o no autenticado.
+  // <<< 2. useEffect se ejecuta UNA SOLA VEZ para manejar la autenticación inicial.
+  useEffect(() => {
+    const initializeApp = async () => {
+      // Obtenemos la función de login directamente del store.
+      const { login } = useUserStore.getState();
+      
+      const tg = window.Telegram?.WebApp;
+
+      if (tg && tg.initData) {
+        // Si tenemos los datos de Telegram, simplemente intentamos hacer login.
+        // La función 'login' en el store se encargará de poner isLoadingAuth en 'false' al terminar.
+        await login({
+          initData: tg.initData,
+          startParam: tg.initDataUnsafe?.start_param,
+        });
+      } else {
+        // Si no hay datos de Telegram, es un error fatal.
+        // Forzamos el fin del estado de carga con un error.
+        console.error("No se encontró Telegram.initData. La app no puede autenticar.");
+        // Llamamos a logout para limpiar el estado y poner isLoadingAuth en false.
+        useUserStore.getState().logout(); 
+      }
+    };
+
+    initializeApp();
+  }, []); // El array vacío asegura que esto se ejecute solo una vez.
+  
+  // <<< 3. EL GUARDIA DE AUTENTICACIÓN
+  // Mientras isLoadingAuth sea true, el usuario solo verá esto.
   if (isLoadingAuth) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
@@ -81,33 +68,32 @@ function App() {
     );
   }
 
-  // 2. Si la carga terminó y el usuario NO está autenticado, mostramos un error.
+  // Si la carga terminó y el usuario NO está autenticado, mostramos un error.
   if (!isAuthenticated) {
     return <AuthErrorScreen message={error || "Autenticación fallida. Por favor, reinicia la Mini App."} />;
   }
   
-  // 3. Si la carga terminó y el usuario SÍ está autenticado, renderizamos la app.
+  // Si la carga terminó y el usuario SÍ está autenticado, renderizamos la aplicación.
   return (
     <Router>
-      <AuthInitializer /> {/* El componente que maneja la lógica de inicio */}
       <Toaster position="top-center" reverseOrder={false} />
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<HomePage />} />
-            <Route path="tools" element={<ToolsPage />} />
-            <Route path="ranking" element={<RankingPage />} />
-            <Route path="team" element={<TeamPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-          </Route>
-          
-          <Route path="/language" element={<LanguagePage />} />
-          <Route path="/recharge" element={<RechargePage />} />
-          <Route path="/faq" element={<FaqPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/support" element={<SupportPage />} />
-          <Route path="/history" element={<FinancialHistoryPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<HomePage />} />
+          <Route path="tools" element={<ToolsPage />} />
+          <Route path="ranking" element={<RankingPage />} />
+          <Route path="team" element={<TeamPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+        </Route>
+        
+        <Route path="/language" element={<LanguagePage />} />
+        <Route path="/recharge" element={<RechargePage />} />
+        <Route path="/faq" element={<FaqPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/support" element={<SupportPage />} />
+        <Route path="/history" element={<FinancialHistoryPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
     </Router>
   );
 }
