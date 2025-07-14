@@ -1,15 +1,17 @@
-// frontend/src/components/modals/CryptoCurrencySelectionModal.jsx (VERSIÓN FINAL)
+// frontend/src/components/modals/CryptoCurrencySelectionModal.jsx (CÓDIGO COMPLETO)
 
 import React from 'react';
 import { motion } from 'framer-motion';
 import { HiXMark } from 'react-icons/hi2';
 import Loader from '../common/Loader';
 
+// --- LISTA DE MONEDAS CON IMÁGENES LOCALES ---
 const SUPPORTED_CURRENCIES = [
-  { name: 'USDT (Red BSC - BEP20)', ticker: 'USDT_BSC', logo: 'https://seeklogo.com/images/T/tether-usdt-logo-FA5531D648-seeklogo.com.png', chain: 'BSC', currency: 'USDT' },
-  { name: 'USDT (Red Tron - TRC20)', ticker: 'USDT_TRON', logo: 'https://seeklogo.com/images/T/tether-usdt-logo-FA5531D648-seeklogo.com.png', chain: 'TRON', currency: 'USDT' },
-  { name: 'BNB (Red BSC - BEP20)', ticker: 'BNB', logo: 'https://www.cryptocompare.com/media/37746242/bnb.png', chain: 'BSC', currency: 'BNB' },
-  { name: 'Tron (Red Tron - TRC20)', ticker: 'TRX', logo: 'https://www.cryptocompare.com/media/37746888/trx.png', chain: 'TRON', currency: 'TRX' },
+  // Usamos rutas locales que apuntan a la carpeta `public`
+  { name: 'USDT (Red BSC - BEP20)', ticker: 'USDT_BSC', logo: '/assets/images/crypto/usdt.png', chain: 'BSC', currency: 'USDT' },
+  { name: 'USDT (Red Tron - TRC20)', ticker: 'USDT_TRON', logo: '/assets/images/crypto/usdt.png', chain: 'TRON', currency: 'USDT' },
+  { name: 'BNB (Red BSC - BEP20)', ticker: 'BNB', logo: '/assets/images/crypto/bnb.png', chain: 'BSC', currency: 'BNB' },
+  { name: 'Tron (Red Tron - TRC20)', ticker: 'TRX', logo: '/assets/images/crypto/trx.png', chain: 'TRON', currency: 'TRX' },
 ];
 
 const backdropVariants = {
@@ -25,7 +27,6 @@ const modalVariants = {
 
 const CurrencyItem = ({ currency, onSelect }) => (
   <button
-    // --- LA CLAVE ESTÁ AQUÍ: Asegurarse de que pasamos el objeto 'currency' completo ---
     onClick={() => onSelect(currency)}
     className="w-full flex items-center p-3 bg-black/20 rounded-lg hover:bg-white/10 transition-colors"
   >
@@ -57,14 +58,12 @@ const CryptoCurrencySelectionModal = ({ isLoading, onSelect, onClose }) => {
             <Loader text="Generando dirección..." />
           </div>
         )}
-
         <header className="flex items-center justify-between p-4 border-b border-white/10">
           <h2 className="text-xl font-bold text-white">Selecciona una Moneda</h2>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-white/20 transition-colors">
             <HiXMark className="w-6 h-6 text-white" />
           </button>
         </header>
-
         <main className="flex-grow p-4 overflow-y-auto">
           <div className="space-y-3">
             {SUPPORTED_CURRENCIES.map((currency) => (

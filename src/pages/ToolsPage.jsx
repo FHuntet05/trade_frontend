@@ -1,4 +1,4 @@
-// src/pages/ToolsPage.jsx (VERSIÓN FINAL)
+// src/pages/ToolsPage.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import useToolsStore from '../store/toolsStore';
 import useUserStore from '../store/userStore';
@@ -35,6 +35,7 @@ const ToolsPage = () => {
   const [isLoadingPayment, setIsLoadingPayment] = useState(false);
   const [purchaseContext, setPurchaseContext] = useState({ quantity: 1, totalCost: 0 });
   const [paymentDetails, setPaymentDetails] = useState(null);
+  const [cryptoPrices, setCryptoPrices] = useState(null);
 
   useEffect(() => { fetchTools(); }, [fetchTools]);
 
@@ -61,29 +62,48 @@ const ToolsPage = () => {
     setIsDirectDepositModalOpen(false);
     setSelectedTool(null);
     setPaymentDetails(null);
+    setCryptoPrices(null);
   };
 
-  const handleStartCryptoPayment = (quantity) => {
+  const handleStartCryptoPayment = async (quantity) => {
     if (!selectedTool) return;
     const totalCost = selectedTool.price * quantity;
     setPurchaseContext({ quantity, totalCost });
-    setIsPurchaseModalOpen(false);
-    setIsCryptoSelectionModalOpen(true);
+    
+    setIsLoadingPayment(true);
+    toast.loading('Obteniendo precios...', { id: 'prices' });
+    try {
+      const response = await api.get('/payment/prices');
+      setCryptoPrices(response.data);
+      toast.dismiss('prices');
+      setIsPurchaseModalOpen(false);
+      setIsCryptoSelectionModalOpen(true);
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "No se pudieron obtener los precios.";
+      toast.error(errorMessage, { id: 'prices' });
+    } finally {
+      setIsLoadingPayment(false);
+    }
   };
   
-  // --- LA CLAVE ESTÁ AQUÍ: Esta función debe recibir el objeto y usarlo ---
   const handleCurrencySelected = async (selectedCurrency) => {
     setIsLoadingPayment(true);
     try {
-      // Usamos la propiedad 'chain' del objeto recibido para construir el cuerpo de la petición.
       const response = await api.post('/payment/generate-address', { 
           chain: selectedCurrency.chain, 
       });
       const { address } = response.data;
 
+      let amountToSend = purchaseContext.totalCost;
+      const price = cryptoPrices[selectedCurrency.currency];
+
+      if (selectedCurrency.currency !== 'USDT' && price) {
+        amountToSend = purchaseContext.totalCost / price;
+      }
+      
       setPaymentDetails({
           paymentAddress: address,
-          paymentAmount: purchaseContext.totalCost.toFixed(8),
+          paymentAmount: amountToSend.toFixed(8),
           currency: `${selectedCurrency.currency} (${selectedCurrency.chain})`
       });
       
