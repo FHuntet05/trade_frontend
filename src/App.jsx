@@ -1,4 +1,4 @@
-// frontend/src/App.jsx (VERSIÓN FINAL Y ROBUSTA DE ARRANQUE)
+// frontend/src/App.jsx (VERSIÓN FINAL CON LÓGICA DE ARRANQUE A PRUEBA DE FALLOS)
 
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -24,56 +24,63 @@ import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 
 function App() {
-  // <<< 1. Obtenemos los estados clave directamente del store.
-  const { isAuthenticated, isLoadingAuth, error } = useUserStore((state) => ({
+  const { isAuthenticated, isLoadingAuth } = useUserStore((state) => ({
     isAuthenticated: state.isAuthenticated,
     isLoadingAuth: state.isLoadingAuth,
-    error: state.error,
   }));
 
-  // <<< 2. useEffect se ejecuta UNA SOLA VEZ para manejar la autenticación inicial.
+  // Este useEffect se ejecuta una sola vez y maneja toda la lógica de arranque.
   useEffect(() => {
     const initializeApp = async () => {
-      // Obtenemos la función de login directamente del store.
-      const { login } = useUserStore.getState();
+      const { token, checkAuthStatus, login, finishInitialLoading } = useUserStore.getState();
       
-      const tg = window.Telegram?.WebApp;
-
-      if (tg && tg.initData) {
-        // Si tenemos los datos de Telegram, simplemente intentamos hacer login.
-        // La función 'login' en el store se encargará de poner isLoadingAuth en 'false' al terminar.
-        await login({
-          initData: tg.initData,
-          startParam: tg.initDataUnsafe?.start_param,
-        });
-      } else {
-        // Si no hay datos de Telegram, es un error fatal.
-        // Forzamos el fin del estado de carga con un error.
-        console.error("No se encontró Telegram.initData. La app no puede autenticar.");
-        // Llamamos a logout para limpiar el estado y poner isLoadingAuth en false.
-        useUserStore.getState().logout(); 
+      try {
+        if (token) {
+          // Si encontramos un token en el localStorage, intentamos validarlo.
+          console.log("Token encontrado. Verificando estado...");
+          await checkAuthStatus();
+        } else {
+          // Si no hay token, procedemos a un login nuevo.
+          console.log("No hay token. Realizando login inicial...");
+          const tg = window.Telegram?.WebApp;
+          if (tg && tg.initData) {
+            await login({
+              initData: tg.initData,
+              startParam: tg.initDataUnsafe?.start_param,
+            });
+          } else {
+            // Si no hay token Y no hay datos de Telegram, no podemos hacer nada.
+            console.error("No hay token ni datos de Telegram para autenticar.");
+          }
+        }
+      } catch (e) {
+        console.error("Error inesperado durante la inicialización:", e);
+      } finally {
+        // <<< LA SOLUCIÓN INFALIBLE >>>
+        // Este bloque se ejecuta SIEMPRE, sin importar si el 'try' tuvo éxito o falló.
+        // Garantiza que salgamos de la pantalla de carga.
+        console.log("Finalizando estado de carga de autenticación.");
+        finishInitialLoading();
       }
     };
 
     initializeApp();
-  }, []); // El array vacío asegura que esto se ejecute solo una vez.
+  }, []); // El array vacío asegura que solo se ejecute al montar.
   
-  // <<< 3. EL GUARDIA DE AUTENTICACIÓN
-  // Mientras isLoadingAuth sea true, el usuario solo verá esto.
+  // --- GUARDIA DE AUTENTICACIÓN ---
   if (isLoadingAuth) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
-        <Loader text="Autenticando..." />
+        <Loader text="Inicializando..." />
       </div>
     );
   }
 
-  // Si la carga terminó y el usuario NO está autenticado, mostramos un error.
   if (!isAuthenticated) {
-    return <AuthErrorScreen message={error || "Autenticación fallida. Por favor, reinicia la Mini App."} />;
+    return <AuthErrorScreen message={"No se pudo autenticar. Por favor, reinicia la Mini App desde Telegram."} />;
   }
   
-  // Si la carga terminó y el usuario SÍ está autenticado, renderizamos la aplicación.
+  // Si la carga terminó y estamos autenticados, mostramos la app.
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
