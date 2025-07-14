@@ -1,4 +1,4 @@
-// src/pages/ToolsPage.jsx (COMPLETO Y FINAL)
+// src/pages/ToolsPage.jsx (VERSIÓN FINAL)
 import React, { useState, useEffect, useMemo } from 'react';
 import useToolsStore from '../store/toolsStore';
 import useUserStore from '../store/userStore';
@@ -41,12 +41,12 @@ const ToolsPage = () => {
   const { ownedTools, toolCounts } = useMemo(() => {
     if (!user || !user.activeTools) return { ownedTools: [], toolCounts: {} };
     const counts = {};
-    const owned = user.activeTools.map(purchase => {
+    user.activeTools.forEach(purchase => {
         if (purchase.tool?._id) {
             counts[purchase.tool._id] = (counts[purchase.tool._id] || 0) + 1;
         }
-        return purchase.tool;
-    }).filter(Boolean);
+    });
+    const owned = user.activeTools.map(purchase => purchase.tool).filter(Boolean);
     return { ownedTools: owned, toolCounts: counts };
   }, [user]);
 
@@ -64,28 +64,31 @@ const ToolsPage = () => {
   };
 
   const handleStartCryptoPayment = (quantity) => {
+    if (!selectedTool) return;
     const totalCost = selectedTool.price * quantity;
     setPurchaseContext({ quantity, totalCost });
     setIsPurchaseModalOpen(false);
     setIsCryptoSelectionModalOpen(true);
   };
   
+  // --- LA CLAVE ESTÁ AQUÍ: Esta función debe recibir el objeto y usarlo ---
   const handleCurrencySelected = async (selectedCurrency) => {
     setIsLoadingPayment(true);
     try {
-        const response = await api.post('/payment/generate-address', { 
-            chain: selectedCurrency.chain, 
-        });
-        const { address } = response.data;
+      // Usamos la propiedad 'chain' del objeto recibido para construir el cuerpo de la petición.
+      const response = await api.post('/payment/generate-address', { 
+          chain: selectedCurrency.chain, 
+      });
+      const { address } = response.data;
 
-        setPaymentDetails({
-            paymentAddress: address,
-            paymentAmount: purchaseContext.totalCost.toFixed(8),
-            currency: `${selectedCurrency.currency} (${selectedCurrency.chain})`
-        });
-        
-        setIsCryptoSelectionModalOpen(false);
-        setIsDirectDepositModalOpen(true);
+      setPaymentDetails({
+          paymentAddress: address,
+          paymentAmount: purchaseContext.totalCost.toFixed(8),
+          currency: `${selectedCurrency.currency} (${selectedCurrency.chain})`
+      });
+      
+      setIsCryptoSelectionModalOpen(false);
+      setIsDirectDepositModalOpen(true);
 
     } catch (error) {
         const errorMessage = error.response?.data?.message || 'Error al generar la dirección de pago.';

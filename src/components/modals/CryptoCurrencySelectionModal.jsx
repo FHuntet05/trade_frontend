@@ -1,14 +1,10 @@
-// frontend/src/components/modals/CryptoCurrencySelectionModal.jsx
+// frontend/src/components/modals/CryptoCurrencySelectionModal.jsx (VERSIÓN FINAL)
 
 import React from 'react';
 import { motion } from 'framer-motion';
 import { HiXMark } from 'react-icons/hi2';
 import Loader from '../common/Loader';
 
-// --- DEFINIMOS LAS MONEDAS QUE VAMOS A ACEPTAR ---
-// Puedes expandir esta lista fácilmente en el futuro.
-// Usamos logos de un CDN confiable (CryptoCompare).
-// --- LISTA DE MONEDAS ACTUALIZADA ---
 const SUPPORTED_CURRENCIES = [
   { name: 'USDT (Red BSC - BEP20)', ticker: 'USDT_BSC', logo: 'https://seeklogo.com/images/T/tether-usdt-logo-FA5531D648-seeklogo.com.png', chain: 'BSC', currency: 'USDT' },
   { name: 'USDT (Red Tron - TRC20)', ticker: 'USDT_TRON', logo: 'https://seeklogo.com/images/T/tether-usdt-logo-FA5531D648-seeklogo.com.png', chain: 'TRON', currency: 'USDT' },
@@ -27,10 +23,10 @@ const modalVariants = {
   exit: { y: "100%", opacity: 0, transition: { duration: 0.3 } },
 };
 
-// Componente para un solo item de la lista de monedas
 const CurrencyItem = ({ currency, onSelect }) => (
   <button
-    onClick={() => onSelect(currency.ticker)}
+    // --- LA CLAVE ESTÁ AQUÍ: Asegurarse de que pasamos el objeto 'currency' completo ---
+    onClick={() => onSelect(currency)}
     className="w-full flex items-center p-3 bg-black/20 rounded-lg hover:bg-white/10 transition-colors"
   >
     <img src={currency.logo} alt={currency.name} className="w-8 h-8 rounded-full mr-4" />
@@ -40,7 +36,6 @@ const CurrencyItem = ({ currency, onSelect }) => (
     </div>
   </button>
 );
-
 
 const CryptoCurrencySelectionModal = ({ isLoading, onSelect, onClose }) => {
   return (
