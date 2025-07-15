@@ -1,4 +1,4 @@
-// frontend/src/App.jsx (CORREGIDO - Añadida ruta de Comunicaciones)
+// frontend/src/App.jsx (CORREGIDO - Eliminada la importación fantasma)
 
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -38,9 +38,6 @@ import AdminToolsPage from './pages/admin/AdminToolsPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminSecurityPage from './pages/admin/AdminSecurityPage';
 import AdminTreasuryPage from './pages/admin/AdminTreasuryPage';
-// --- NUEVA PÁGINA IMPORTADA ---
-import AdminCommunicationsPage from './pages/admin/AdminCommunicationsPage';
-
 
 function UserAppShell() {
   const { isAuthenticated, isLoadingAuth, settings } = useUserStore((state) => ({
@@ -112,10 +109,6 @@ function App() {
             <Route path="/admin/security" element={<AdminSecurityPage />} />
             <Route path="/admin/settings" element={<AdminSettingsPage />} />
             <Route path="/admin/treasury" element={<AdminTreasuryPage />} />
-            
-            {/* --- CORRECCIÓN CLAVE: Nueva ruta añadida para comunicaciones --- */}
-            <Route path="/admin/communications" element={<AdminCommunicationsPage />} />
-
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
         </Route>
