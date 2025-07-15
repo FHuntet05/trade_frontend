@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminWithdrawalsPage.jsx (FINAL CON PAGINACIÓN)
+// frontend/src/pages/admin/AdminWithdrawalsPage.jsx (COMPLETO Y REFORZADO)
 import React, { useState, useEffect, useCallback } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
@@ -62,7 +62,6 @@ const WithdrawalsTable = ({ withdrawals, onProcess }) => {
   );
 };
 
-
 const AdminWithdrawalsPage = () => {
   const [withdrawals, setWithdrawals] = useState([]);
   const [page, setPage] = useState(1);
@@ -71,60 +70,52 @@ const AdminWithdrawalsPage = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { adminInfo } = useAdminStore();
 
-  const fetchWithdrawals = useCallback(async (currentPage) => {
-    if (!adminInfo?.token) return;
-    
-    // Diferenciar entre carga inicial y "cargar más"
+  const fetchWithdrawals = useCallback(async (currentPage, token) => {
     currentPage === 1 ? setIsLoading(true) : setIsLoadingMore(true);
-    
     try {
-      // Llamada a la API paginada
       const { data } = await api.get(`/api/admin/withdrawals?page=${currentPage}`, {
-        headers: { Authorization: `Bearer ${adminInfo.token}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
-      // Si es la página 1, reemplazamos los datos; si no, los añadimos
       setWithdrawals(prev => currentPage === 1 ? data.withdrawals : [...prev, ...data.withdrawals]);
       setHasMore(data.page < data.pages);
       setPage(data.page);
-
     } catch (error) {
       toast.error(error.response?.data?.message || 'No se pudieron cargar los retiros.');
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [adminInfo]);
+  }, []);
 
   useEffect(() => {
-    // Carga la primera página al montar el componente
-    fetchWithdrawals(1);
-  }, [fetchWithdrawals]);
-  
+    if (adminInfo?.token) {
+      fetchWithdrawals(1, adminInfo.token);
+    }
+  }, [adminInfo, fetchWithdrawals]);
+
   const loadMore = () => {
-    // Carga la siguiente página
-    fetchWithdrawals(page + 1);
+    if (adminInfo?.token) {
+      fetchWithdrawals(page + 1, adminInfo.token);
+    }
   };
 
   const handleProcessWithdrawal = async (txId, newStatus) => {
     let notes = '';
     if (newStatus === 'rejected') {
       notes = window.prompt("Por favor, introduce el motivo del rechazo:");
-      if (notes === null) return; // El usuario canceló
+      if (notes === null) return;
     } else {
         if (!window.confirm("¿Estás seguro de que quieres aprobar este retiro? Esta acción es irreversible.")) {
             return;
         }
     }
-
     try {
       await api.put(`/api/admin/withdrawals/${txId}`, 
         { newStatus, adminNotes: notes },
         { headers: { Authorization: `Bearer ${adminInfo.token}` } }
       );
       toast.success(`Retiro procesado como "${newStatus}".`);
-      // Refresca la lista desde el principio para mostrar el estado más actualizado
-      fetchWithdrawals(1);
+      fetchWithdrawals(1, adminInfo.token);
     } catch (error) {
       toast.error(error.response?.data?.message || 'No se pudo procesar el retiro.');
     }
@@ -140,11 +131,7 @@ const AdminWithdrawalsPage = () => {
           <WithdrawalsTable withdrawals={withdrawals} onProcess={handleProcessWithdrawal} />
           {hasMore && (
             <div className="mt-6 text-center">
-              <button 
-                onClick={loadMore} 
-                disabled={isLoadingMore} 
-                className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-              >
+              <button onClick={loadMore} disabled={isLoadingMore} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50">
                 {isLoadingMore ? 'Cargando...' : 'Cargar Más'}
               </button>
             </div>

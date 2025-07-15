@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminUserDetailPage.jsx (COMPLETO CON SECCIÓN DE REFERIDOS)
+// frontend/src/pages/admin/AdminUserDetailPage.jsx (COMPLETO Y REFORZADO)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import useAdminStore from '../../store/adminStore';
@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import Loader from '../../components/common/Loader';
 import { HiArrowLeft } from 'react-icons/hi2';
 
-// Componente para la tarjeta de información del usuario
 const UserInfoCard = ({ user }) => (
     <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
         <div className="flex items-center gap-4">
@@ -21,7 +20,6 @@ const UserInfoCard = ({ user }) => (
     </div>
 );
 
-// Nuevo componente para mostrar la lista de referidos
 const ReferralsList = ({ referrals, total }) => (
     <div className="bg-dark-secondary p-6 rounded-lg border border-white/10 mt-6">
         <h3 className="text-xl font-semibold mb-4">Referidos ({total})</h3>
@@ -30,8 +28,8 @@ const ReferralsList = ({ referrals, total }) => (
         ) : (
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
-                    <thead>
-                        <tr className="border-b border-white/10 text-sm text-text-secondary">
+                    <thead className="border-b border-white/10 text-sm text-text-secondary">
+                        <tr>
                             <th className="py-2">Usuario</th>
                             <th className="py-2">Nivel</th>
                             <th className="py-2">Fecha de Ingreso</th>
@@ -58,7 +56,6 @@ const ReferralsList = ({ referrals, total }) => (
     </div>
 );
 
-
 const AdminUserDetailPage = () => {
     const { id } = useParams();
     const { adminInfo } = useAdminStore();
@@ -68,12 +65,11 @@ const AdminUserDetailPage = () => {
     const [loadingUser, setLoadingUser] = useState(true);
     const [loadingReferrals, setLoadingReferrals] = useState(true);
 
-    const fetchUserDetails = useCallback(async () => {
-        if (!adminInfo?.token) return;
+    const fetchUserDetails = useCallback(async (token) => {
         setLoadingUser(true);
         try {
             const { data } = await api.get(`/api/admin/users/${id}/details`, {
-                headers: { Authorization: `Bearer ${adminInfo.token}` },
+                headers: { Authorization: `Bearer ${token}` },
             });
             setUser(data.user);
         } catch (error) {
@@ -81,14 +77,13 @@ const AdminUserDetailPage = () => {
         } finally {
             setLoadingUser(false);
         }
-    }, [id, adminInfo]);
+    }, [id]);
 
-    const fetchReferrals = useCallback(async () => {
-        if (!adminInfo?.token) return;
+    const fetchReferrals = useCallback(async (token) => {
         setLoadingReferrals(true);
         try {
             const { data } = await api.get(`/api/admin/users/${id}/referrals`, {
-                headers: { Authorization: `Bearer ${adminInfo.token}` },
+                headers: { Authorization: `Bearer ${token}` },
             });
             setReferrals(data.referrals);
             setTotalReferrals(data.totalReferrals);
@@ -97,12 +92,14 @@ const AdminUserDetailPage = () => {
         } finally {
             setLoadingReferrals(false);
         }
-    }, [id, adminInfo]);
+    }, [id]);
 
     useEffect(() => {
-        fetchUserDetails();
-        fetchReferrals();
-    }, [fetchUserDetails, fetchReferrals]);
+        if (adminInfo?.token) {
+            fetchUserDetails(adminInfo.token);
+            fetchReferrals(adminInfo.token);
+        }
+    }, [id, adminInfo, fetchUserDetails, fetchReferrals]);
 
     if (loadingUser) {
         return <div className="p-6"><Loader text="Cargando detalles del usuario..." /></div>;
@@ -126,8 +123,6 @@ const AdminUserDetailPage = () => {
             ) : (
                 <ReferralsList referrals={referrals} total={totalReferrals} />
             )}
-            
-            {/* Aquí puedes añadir otras secciones, como la tabla de transacciones del usuario */}
         </div>
     );
 };

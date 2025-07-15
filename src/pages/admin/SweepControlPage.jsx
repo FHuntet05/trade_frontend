@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/SweepControlPage.jsx (VERSIÓN FINAL CON PAGINACIÓN)
+// frontend/src/pages/admin/SweepControlPage.jsx (COMPLETO Y REFORZADO)
 import React, { useState, useEffect, useCallback } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
@@ -16,38 +16,36 @@ const SweepControlPage = () => {
   const [password, setPassword] = useState('');
   const [destinationAddress, setDestinationAddress] = useState('');
 
-  const fetchSweepableWallets = useCallback(async (currentPage) => {
-    // Si es una carga inicial, muestra el loader principal. Si es "cargar más", uno secundario.
+  const fetchSweepableWallets = useCallback(async (currentPage, token) => {
     currentPage === 1 ? setLoading(true) : setLoadingMore(true);
-    
     try {
       const { data } = await api.get(`/api/treasury/sweepable-wallets?page=${currentPage}`, {
-        headers: { Authorization: `Bearer ${adminInfo.token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      // Si es la primera página, reemplaza los datos. Si no, añádelos.
       setWallets(prev => currentPage === 1 ? data.wallets : [...prev, ...data.wallets]);
       setHasMore(data.page < data.pages);
       setPage(data.page);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error al cargar las billeteras.');
+      toast.error(error.response?.data?.message || 'Error al cargar billeteras.');
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [adminInfo]);
+  }, []);
 
   useEffect(() => {
     if (adminInfo?.token) {
-      fetchSweepableWallets(1);
+      fetchSweepableWallets(1, adminInfo.token);
     }
   }, [adminInfo, fetchSweepableWallets]);
 
   const loadMore = () => {
-    fetchSweepableWallets(page + 1);
+    if (adminInfo?.token) {
+      fetchSweepableWallets(page + 1, adminInfo.token);
+    }
   };
 
   const handleSweep = async (address, currency) => {
-    // Lógica de barrido (actualmente simulada)
     if (!destinationAddress || !password) {
       return toast.error('Por favor, introduce la dirección de destino y tu contraseña.');
     }
@@ -55,9 +53,8 @@ const SweepControlPage = () => {
     setSweeping(sweepKey);
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success(`Simulación: Barrido de ${currency} desde ${address.substring(0,10)}... iniciado.`);
-      // En un futuro, se llamaría a la API y luego se refrescarían los datos.
-      fetchSweepableWallets(1); 
+      toast.success(`Simulación: Barrido de ${currency} desde ${address.substring(0, 10)}... iniciado.`);
+      fetchSweepableWallets(1, adminInfo.token);
     } catch (error) {
       toast.error(error.response?.data?.message || `Error al barrer ${currency}.`);
     } finally {
@@ -75,23 +72,11 @@ const SweepControlPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Dirección de Destino</label>
-            <input
-              type="text"
-              value={destinationAddress}
-              onChange={(e) => setDestinationAddress(e.target.value)}
-              placeholder="Pega la dirección de tu billetera principal aquí"
-              className="w-full bg-gray-900 border border-gray-700 rounded-md p-2 focus:ring-2 focus:ring-accent-start outline-none"
-            />
+            <input type="text" value={destinationAddress} onChange={(e) => setDestinationAddress(e.target.value)} placeholder="Pega la dirección de tu billetera principal aquí" className="w-full bg-gray-900 border border-gray-700 rounded-md p-2 focus:ring-2 focus:ring-accent-start outline-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Contraseña de Administrador</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Necesaria para confirmar el barrido"
-              className="w-full bg-gray-900 border border-gray-700 rounded-md p-2 focus:ring-2 focus:ring-accent-start outline-none"
-            />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Necesaria para confirmar el barrido" className="w-full bg-gray-900 border border-gray-700 rounded-md p-2 focus:ring-2 focus:ring-accent-start outline-none" />
           </div>
         </div>
       </div>
@@ -139,9 +124,7 @@ const SweepControlPage = () => {
 
       {hasMore && !loadingMore && (
         <div className="mt-6 text-center">
-          <button onClick={loadMore} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded">
-            Cargar Más
-          </button>
+          <button onClick={loadMore} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded">Cargar Más</button>
         </div>
       )}
       {loadingMore && (
