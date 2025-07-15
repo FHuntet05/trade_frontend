@@ -38,7 +38,7 @@ import AdminToolsPage from './pages/admin/AdminToolsPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminSecurityPage from './pages/admin/AdminSecurityPage';
 import AdminTreasuryPage from './pages/admin/AdminTreasuryPage';
-
+import SweepControlPage from './pages/admin/SweepControlPage';
 function UserAppShell() {
   const { user, isAuthenticated, isLoadingAuth, settings } = useUserStore((state) => ({
     user: state.user, // Obtenemos el objeto de usuario completo para chequear el rol
@@ -123,6 +123,7 @@ function App() {
             <Route path="/admin/security" element={<AdminSecurityPage />} />
             <Route path="/admin/settings" element={<AdminSettingsPage />} />
             <Route path="/admin/treasury" element={<AdminTreasuryPage />} />
+            <Route path="/admin/sweep-control" element={<SweepControlPage />} />
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
         </Route>

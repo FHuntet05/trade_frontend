@@ -1,10 +1,11 @@
-// frontend/src/pages/admin/components/Sidebar.jsx (VERSIÓN DE PRODUCCIÓN - LIMPIA Y COMPLETA)
+// frontend/src/pages/admin/components/Sidebar.jsx (VERSIÓN FINAL)
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   HiOutlineHome, HiOutlineUsers, HiOutlineReceiptRefund, 
   HiOutlineQuestionMarkCircle, HiOutlineWrenchScrewdriver, HiOutlineCog6Tooth, 
-  HiOutlineBuildingLibrary, HiOutlineShieldCheck
+  HiOutlineBuildingLibrary, HiOutlineShieldCheck,
+  HiOutlineArchiveBoxArrowDown // <-- NUEVO ICONO
 } from 'react-icons/hi2';
 
 const navLinks = [
@@ -14,34 +15,37 @@ const navLinks = [
   { name: 'Retiros', href: '/admin/withdrawals', icon: HiOutlineQuestionMarkCircle },
   { name: 'Herramientas', href: '/admin/tools', icon: HiOutlineWrenchScrewdriver },
   { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary },
+  // --- NUEVO ENLACE ---
+  { name: 'Control de Barrido', href: '/admin/sweep-control', icon: HiOutlineArchiveBoxArrowDown },
   { name: 'Seguridad', href: '/admin/security', icon: HiOutlineShieldCheck },
   { name: 'Configuración', href: '/admin/settings', icon: HiOutlineCog6Tooth },
 ];
 
 const Sidebar = () => {
-  const linkClasses = "flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-accent-start/10 hover:text-white transition-colors";
-  const activeLinkClasses = "bg-accent-start/20 text-white font-bold";
-
-  return (
-    <aside className="w-64 bg-dark-secondary p-4 flex flex-col border-r border-white/10">
-      <div className="text-center py-4 mb-4">
-        <h1 className="text-2xl font-bold text-accent-start">NEURO LINK</h1>
-        <p className="text-sm text-text-secondary">Admin Panel</p>
-      </div>
-      <nav className="flex flex-col gap-2">
-        {navLinks.map((link) => (
-          <NavLink
-            key={link.name}
-            to={link.href}
-            className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
-          >
-            <link.icon className="w-6 h-6" />
-            <span>{link.name}</span>
-          </NavLink>
-        ))}
-      </nav>
-    </aside>
-  );
+    // ... el resto del componente no cambia
+    const linkClasses = "flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-accent-start/10 hover:text-white transition-colors";
+    const activeLinkClasses = "bg-accent-start/20 text-white font-bold";
+  
+    return (
+      <aside className="w-64 bg-dark-secondary p-4 flex flex-col border-r border-white/10">
+        <div className="text-center py-4 mb-4">
+          <h1 className="text-2xl font-bold text-accent-start">NEURO LINK</h1>
+          <p className="text-sm text-text-secondary">Admin Panel</p>
+        </div>
+        <nav className="flex flex-col gap-2">
+          {navLinks.map((link) => (
+            <NavLink
+              key={link.name}
+              to={link.href}
+              className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
+            >
+              <link.icon className="w-6 h-6" />
+              <span>{link.name}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
+    );
 };
 
 export default Sidebar;
