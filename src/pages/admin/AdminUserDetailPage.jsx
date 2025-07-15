@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminUserDetailPage.jsx (COMPLETO Y REFORZADO)
+// frontend/src/pages/admin/AdminUserDetailPage.jsx (COMPLETO Y FINALIZADO v14.0)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import useAdminStore from '../../store/adminStore';
@@ -30,23 +30,26 @@ const ReferralsList = ({ referrals, total }) => (
                 <table className="w-full text-left">
                     <thead className="border-b border-white/10 text-sm text-text-secondary">
                         <tr>
-                            <th className="py-2">Usuario</th>
-                            <th className="py-2">Nivel</th>
-                            <th className="py-2">Fecha de Ingreso</th>
+                            <th className="py-2 px-3">Usuario</th>
+                            <th className="py-2 px-3">Nivel</th>
+                            <th className="py-2 px-3">Fecha de Ingreso</th>
                         </tr>
                     </thead>
                     <tbody>
                         {referrals.map(ref => (
-                            <tr key={ref._id} className="border-b border-white/10 text-sm">
-                                <td className="py-3 flex items-center gap-3">
-                                    <img src={ref.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="ref avatar" className="w-8 h-8 rounded-full object-cover" />
-                                    <div>
-                                        <p className="font-semibold">{ref.fullName || ref.username}</p>
-                                        <p className="text-xs text-text-secondary">@{ref.username}</p>
-                                    </div>
+                            <tr key={ref._id} className="border-b border-white/10 text-sm hover:bg-white/5">
+                                <td className="py-3 px-3">
+                                    {/* --- MEJORA CLAVE: Enlace al detalle del referido --- */}
+                                    <Link to={`/admin/users/${ref._id}`} className="flex items-center gap-3 group">
+                                        <img src={ref.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="ref avatar" className="w-8 h-8 rounded-full object-cover" />
+                                        <div>
+                                            <p className="font-semibold group-hover:text-primary transition-colors">{ref.fullName || ref.username}</p>
+                                            <p className="text-xs text-text-secondary">@{ref.username}</p>
+                                        </div>
+                                    </Link>
                                 </td>
-                                <td className="py-3">{ref.level}</td>
-                                <td className="py-3">{new Date(ref.joinDate).toLocaleDateString()}</td>
+                                <td className="py-3 px-3">{ref.level}</td>
+                                <td className="py-3 px-3">{new Date(ref.joinDate).toLocaleDateString()}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -73,6 +76,7 @@ const AdminUserDetailPage = () => {
             });
             setUser(data.user);
         } catch (error) {
+            console.error("Error fetching user details:", error);
             toast.error("No se pudieron cargar los detalles del usuario.");
         } finally {
             setLoadingUser(false);
@@ -88,6 +92,7 @@ const AdminUserDetailPage = () => {
             setReferrals(data.referrals);
             setTotalReferrals(data.totalReferrals);
         } catch (error) {
+            console.error("Error fetching referrals:", error);
             toast.error("No se pudieron cargar los referidos del usuario.");
         } finally {
             setLoadingReferrals(false);
@@ -96,6 +101,13 @@ const AdminUserDetailPage = () => {
 
     useEffect(() => {
         if (adminInfo?.token) {
+            // Resetear estado para evitar mostrar datos viejos al navegar entre usuarios
+            setUser(null);
+            setReferrals([]);
+            setTotalReferrals(0);
+            setLoadingUser(true);
+            setLoadingReferrals(true);
+            
             fetchUserDetails(adminInfo.token);
             fetchReferrals(adminInfo.token);
         }
@@ -119,7 +131,9 @@ const AdminUserDetailPage = () => {
             </div>
 
             {loadingReferrals ? (
-                <Loader text="Cargando referidos..." />
+                <div className="bg-dark-secondary p-6 rounded-lg border border-white/10 mt-6">
+                    <Loader text="Cargando referidos..." />
+                </div>
             ) : (
                 <ReferralsList referrals={referrals} total={totalReferrals} />
             )}
