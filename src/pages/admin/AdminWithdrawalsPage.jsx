@@ -1,18 +1,16 @@
-// frontend/src/pages/admin/AdminWithdrawalsPage.jsx (COMPLETO Y CORREGIDO)
-
+// frontend/src/pages/admin/AdminWithdrawalsPage.jsx (FINAL CON PAGINACIÓN)
 import React, { useState, useEffect, useCallback } from 'react';
-import useAdminStore from '../../store/adminStore'; // Importamos el store de admin para el token
+import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
-
 import Loader from '../../components/common/Loader';
 import { HiOutlineClipboardDocument, HiOutlineClipboardDocumentCheck } from 'react-icons/hi2';
 
-// El componente de la tabla no necesita cambios, pero lo incluimos para que el archivo esté completo.
 const WithdrawalsTable = ({ withdrawals, onProcess }) => {
   const [copiedAddress, setCopiedAddress] = useState('');
 
   const handleCopy = (text) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     setCopiedAddress(text);
     toast.success('Dirección copiada!');
@@ -36,8 +34,8 @@ const WithdrawalsTable = ({ withdrawals, onProcess }) => {
             <tr key={tx._id} className="border-b border-dark-primary hover:bg-white/5">
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
-                  <img className="w-8 h-8 rounded-full" src={tx.user.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="avatar" />
-                  <span>{tx.user.username}</span>
+                  <img className="w-8 h-8 rounded-full" src={tx.user?.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="avatar" />
+                  <span>{tx.user?.username || 'Usuario no encontrado'}</span>
                 </div>
               </td>
               <td className="px-6 py-4 font-mono">{tx.amount.toFixed(2)}</td>
@@ -67,39 +65,52 @@ const WithdrawalsTable = ({ withdrawals, onProcess }) => {
 
 const AdminWithdrawalsPage = () => {
   const [withdrawals, setWithdrawals] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const { adminInfo } = useAdminStore(); // Obtenemos la info del admin desde el store
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const { adminInfo } = useAdminStore();
 
-  const fetchWithdrawals = useCallback(async () => {
-    if (!adminInfo?.token) {
-        // No intentes cargar si no hay token, evita errores innecesarios
-        return;
-    }
-    setIsLoading(true);
+  const fetchWithdrawals = useCallback(async (currentPage) => {
+    if (!adminInfo?.token) return;
+    
+    // Diferenciar entre carga inicial y "cargar más"
+    currentPage === 1 ? setIsLoading(true) : setIsLoadingMore(true);
+    
     try {
-      // --- CORRECCIÓN CLAVE ---
-      // 1. La ruta correcta es /api/admin/withdrawals como está definida en adminRoutes.js
-      // 2. Pasamos el token de autorización en los headers para que el middleware `protect` y `isAdmin` nos den acceso.
-      const { data } = await api.get('/api/admin/withdrawals', { // <-- La ruta correcta
-    headers: { Authorization: `Bearer ${adminInfo.token}` },
-});
-      setWithdrawals(data);
+      // Llamada a la API paginada
+      const { data } = await api.get(`/api/admin/withdrawals?page=${currentPage}`, {
+        headers: { Authorization: `Bearer ${adminInfo.token}` },
+      });
+      
+      // Si es la página 1, reemplazamos los datos; si no, los añadimos
+      setWithdrawals(prev => currentPage === 1 ? data.withdrawals : [...prev, ...data.withdrawals]);
+      setHasMore(data.page < data.pages);
+      setPage(data.page);
+
     } catch (error) {
       toast.error(error.response?.data?.message || 'No se pudieron cargar los retiros.');
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [adminInfo]); // Se ejecuta cuando adminInfo (y su token) esté disponible
+  }, [adminInfo]);
 
   useEffect(() => {
-    fetchWithdrawals();
+    // Carga la primera página al montar el componente
+    fetchWithdrawals(1);
   }, [fetchWithdrawals]);
+  
+  const loadMore = () => {
+    // Carga la siguiente página
+    fetchWithdrawals(page + 1);
+  };
 
   const handleProcessWithdrawal = async (txId, newStatus) => {
     let notes = '';
     if (newStatus === 'rejected') {
       notes = window.prompt("Por favor, introduce el motivo del rechazo:");
-      if (notes === null) return; 
+      if (notes === null) return; // El usuario canceló
     } else {
         if (!window.confirm("¿Estás seguro de que quieres aprobar este retiro? Esta acción es irreversible.")) {
             return;
@@ -107,13 +118,13 @@ const AdminWithdrawalsPage = () => {
     }
 
     try {
-      // --- CORRECCIÓN CLAVE ---
-      // También necesitamos enviar el token aquí para la autorización
-      await api.put(`/api/admin/withdrawals/${txId}`, { newStatus, adminNotes: notes }, {
-        headers: { Authorization: `Bearer ${adminInfo.token}` },
-      });
+      await api.put(`/api/admin/withdrawals/${txId}`, 
+        { newStatus, adminNotes: notes },
+        { headers: { Authorization: `Bearer ${adminInfo.token}` } }
+      );
       toast.success(`Retiro procesado como "${newStatus}".`);
-      setWithdrawals(prev => prev.filter(tx => tx._id !== txId));
+      // Refresca la lista desde el principio para mostrar el estado más actualizado
+      fetchWithdrawals(1);
     } catch (error) {
       toast.error(error.response?.data?.message || 'No se pudo procesar el retiro.');
     }
@@ -125,7 +136,20 @@ const AdminWithdrawalsPage = () => {
       {isLoading ? (
         <div className="flex justify-center items-center h-96"><Loader text="Cargando solicitudes..." /></div>
       ) : withdrawals.length > 0 ? (
-        <WithdrawalsTable withdrawals={withdrawals} onProcess={handleProcessWithdrawal} />
+        <>
+          <WithdrawalsTable withdrawals={withdrawals} onProcess={handleProcessWithdrawal} />
+          {hasMore && (
+            <div className="mt-6 text-center">
+              <button 
+                onClick={loadMore} 
+                disabled={isLoadingMore} 
+                className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+              >
+                {isLoadingMore ? 'Cargando...' : 'Cargar Más'}
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="text-center py-16 text-text-secondary">
           <p>¡Buen trabajo! No hay solicitudes de retiro pendientes.</p>
