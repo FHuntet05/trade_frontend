@@ -80,9 +80,9 @@ const AdminWithdrawalsPage = () => {
       // --- CORRECCIÓN CLAVE ---
       // 1. La ruta correcta es /api/admin/withdrawals como está definida en adminRoutes.js
       // 2. Pasamos el token de autorización en los headers para que el middleware `protect` y `isAdmin` nos den acceso.
-      const { data } = await api.get('/api/admin/withdrawals', {
-        headers: { Authorization: `Bearer ${adminInfo.token}` },
-      });
+      const { data } = await api.get('/api/admin/withdrawals', { // <-- La ruta correcta
+    headers: { Authorization: `Bearer ${adminInfo.token}` },
+});
       setWithdrawals(data);
     } catch (error) {
       toast.error(error.response?.data?.message || 'No se pudieron cargar los retiros.');

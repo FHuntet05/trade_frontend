@@ -1,6 +1,7 @@
-// frontend/src/pages/admin/AdminTreasuryPage.jsx (COMPLETO)
+// frontend/src/pages/admin/AdminTreasuryPage.jsx (CORREGIDO Y COMPLETO)
 import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import useAdminStore from '../../store/adminStore'; // <-- IMPORTANTE: Necesitamos el token
 import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
 import Loader from '../../components/common/Loader';
@@ -24,15 +25,22 @@ const AdminTreasuryPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sweepContext, setSweepContext] = useState(null);
+  const { adminInfo } = useAdminStore(); // Obtenemos el token del store
 
   const fetchBalances = useCallback(async () => {
+    if (!adminInfo?.token) return;
     setIsLoading(true);
     try {
-      const { data } = await api.get('/admin/treasury/balances');
+      // --- CORRECCIÓN CLAVE ---
+      // La ruta correcta es /api/treasury/hot-balances
+      // Y necesita el token de autorización
+      const { data } = await api.get('/api/treasury/hot-balances', {
+        headers: { Authorization: `Bearer ${adminInfo.token}` },
+      });
       setBalances(data);
     } catch (error) { toast.error('No se pudieron cargar los saldos de tesorería.'); }
     finally { setIsLoading(false); }
-  }, []);
+  }, [adminInfo]);
 
   useEffect(() => { fetchBalances(); }, [fetchBalances]);
 
@@ -40,11 +48,14 @@ const AdminTreasuryPage = () => {
   const handleCloseModal = () => { setSweepContext(null); setIsModalOpen(false); };
 
   const handleSweep = async (sweepData) => {
-    const sweepPromise = api.post('/admin/treasury/sweep', sweepData);
+    // Añadimos el token a la petición de barrido
+    const sweepPromise = api.post('/api/treasury/sweep', sweepData, {
+      headers: { Authorization: `Bearer ${adminInfo.token}` },
+    });
     toast.promise(sweepPromise, {
       loading: 'Enviando transacción de barrido...',
       success: (res) => {
-        fetchBalances(); // Refrescar saldos después del barrido
+        fetchBalances();
         handleCloseModal();
         return `¡Barrido iniciado! Hash: ${res.data.transactionHash.substring(0, 20)}...`;
       },
