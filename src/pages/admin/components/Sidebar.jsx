@@ -1,13 +1,21 @@
-// frontend/src/pages/admin/components/Sidebar.jsx (COMPLETO)
-
+// frontend/src/pages/admin/components/Sidebar.jsx (VERSIÓN DE PRODUCCIÓN - LIMPIA Y COMPLETA)
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { HiOutlineHome, HiOutlineUsers, HiOutlineReceiptRefund } from 'react-icons/hi2'; // <-- Importamos nuevo icono
+import { 
+  HiOutlineHome, HiOutlineUsers, HiOutlineReceiptRefund, 
+  HiOutlineQuestionMarkCircle, HiOutlineWrenchScrewdriver, HiOutlineCog6Tooth, 
+  HiOutlineBuildingLibrary, HiOutlineShieldCheck
+} from 'react-icons/hi2';
 
 const navLinks = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: HiOutlineHome },
   { name: 'Usuarios', href: '/admin/users', icon: HiOutlineUsers },
-  { name: 'Transacciones', href: '/admin/transactions', icon: HiOutlineReceiptRefund }, // <-- NUEVO ENLACE
+  { name: 'Transacciones', href: '/admin/transactions', icon: HiOutlineReceiptRefund },
+  { name: 'Retiros', href: '/admin/withdrawals', icon: HiOutlineQuestionMarkCircle },
+  { name: 'Herramientas', href: '/admin/tools', icon: HiOutlineWrenchScrewdriver },
+  { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary },
+  { name: 'Seguridad', href: '/admin/security', icon: HiOutlineShieldCheck },
+  { name: 'Configuración', href: '/admin/settings', icon: HiOutlineCog6Tooth },
 ];
 
 const Sidebar = () => {

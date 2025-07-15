@@ -1,53 +1,21 @@
-// frontend/src/components/home/TaskCenter.jsx (VERSIÓN CON LLAMADA A API CORREGIDA)
-import React, { useState, useEffect } from 'react';
+// frontend/src/components/home/TaskCenter.jsx (COMPLETO Y FINAL)
+import React from 'react';
 import { motion } from 'framer-motion';
-import api from '../../api/axiosConfig';
+import { useTaskLogic } from '../../hooks/useTaskLogic';
 import useUserStore from '../../store/userStore';
 import TaskItem from '../tasks/TaskItem';
 
 const TaskCenter = () => {
-  const { user, updateUser } = useUserStore();
-  const [taskStatus, setTaskStatus] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user } = useUserStore();
+  const { taskStatus, isLoading, handleClaimTask, handleGoToTask } = useTaskLogic();
 
   const allTasks = [
     { id: 'boughtUpgrade', title: 'Primera Mejora', description: 'Compra cualquier herramienta VIP.', reward: 1500 },
-    { id: 'invitedTenFriends', title: 'Invitar 10 Amigos', description: 'Tu equipo debe tener 10 miembros.', reward: 1000 },
-    { id: 'joinedTelegram', title: 'Unirse al Canal', description: 'Únete a nuestra comunidad oficial.', reward: 500, link: process.env.REACT_APP_TELEGRAM_CHANNEL_URL || 'https://t.me/telegram' },
+    { id: 'invitedTenFriends', title: 'Invitar 3 Amigos', description: 'Tu equipo debe tener 3 miembros.', reward: 1000 },
+    { id: 'joinedTelegram', title: 'Unirse al Canal', description: 'Únete a nuestra comunidad oficial.', reward: 500, link: process.env.REACT_APP_TELEGRAM_CHANNEL_URL || 'https://t.me/NeuroLinkAnn' },
   ];
 
-  useEffect(() => {
-    const fetchTaskStatus = async () => {
-      setLoading(true);
-      try {
-        // <<< INICIO DE LA CORRECCIÓN CRÍTICA: Se quita '/api' de la llamada >>>
-        // ANTES: const response = await api.get('/api/tasks/status');
-        const response = await api.get('/tasks/status');
-        // <<< FIN DE LA CORRECCIÓN CRÍTICA >>>
-        setTaskStatus(response.data);
-      } catch (err) {
-        console.error("Error al cargar el estado de las tareas:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    // Solo fetcheamos si tenemos un usuario, para evitar llamadas innecesarias
-    if (user) {
-        fetchTaskStatus();
-    } else {
-        setLoading(false);
-    }
-  }, [user]);
-
-  const handleClaimSuccess = (updatedUser) => {
-    updateUser(updatedUser);
-    // Para reflejar el cambio en 'claimedTasks', volvemos a fetchear el estado.
-    // <<< CORRECCIÓN APLICADA TAMBIÉN AQUÍ >>>
-    api.get('/tasks/status').then(res => setTaskStatus(res.data));
-  };
-  
-  if (loading) {
+  if (isLoading) {
     return (
         <div className="w-full space-y-4 bg-dark-secondary p-4 rounded-2xl border border-white/10">
             <h2 className="text-xl font-bold text-white text-center mb-2">Centro de Tareas</h2>
@@ -58,36 +26,40 @@ const TaskCenter = () => {
     );
   }
 
-  // Si no hay estado de tareas (por un error o porque no hay usuario), no mostramos nada.
-  if (!taskStatus) {
+  if (!taskStatus || !user) {
       return null;
   }
+  
+  const isTaskCompletable = (task) => {
+    if (taskStatus.claimedTasks[task.id]) return false;
+    
+    switch (task.id) {
+        case 'boughtUpgrade':
+            return user.activeTools && user.activeTools.length > 0;
+        case 'invitedTenFriends':
+            return taskStatus.referralCount >= 3;
+        case 'joinedTelegram':
+            return taskStatus.claimedTasks.joinedTelegramAttempt === true;
+        default:
+            return false;
+    }
+  };
 
   return (
     <div className="w-full space-y-4 bg-dark-secondary p-4 rounded-2xl border border-white/10">
       <h2 className="text-xl font-bold text-white text-center mb-2">Centro de Tareas</h2>
-      <motion.div 
-        className="space-y-3"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        {allTasks.map(task => {
-          const isClaimed = taskStatus.claimedTasks?.[task.id] || false;
-          // Usamos optional chaining para evitar errores si 'canClaim' no existe
-          const isCompleted = taskStatus.canClaim?.[task.id] || false;
-          
-          return (
-            <TaskItem
-              key={task.id}
-              task={task}
-              isClaimed={isClaimed}
-              isCompleted={isCompleted && !isClaimed}
-              referralCount={taskStatus.referralCount || 0}
-              onClaimSuccess={handleClaimSuccess}
-            />
-          );
-        })}
+      <motion.div className="space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        {allTasks.map(task => (
+          <TaskItem
+            key={task.id}
+            task={task}
+            isClaimed={taskStatus.claimedTasks[task.id] || false}
+            isCompleted={isTaskCompletable(task)}
+            referralCount={taskStatus.referralCount || 0}
+            onGoToTask={handleGoToTask}
+            onClaim={handleClaimTask} // <-- Pasamos la función de reclamar
+          />
+        ))}
       </motion.div>
     </div>
   );

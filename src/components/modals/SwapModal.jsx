@@ -1,4 +1,4 @@
-// frontend/src/components/modals/SwapModal.jsx
+// frontend/src/components/modals/SwapModal.jsx (VERSIÓN DE PRODUCCIÓN - LIMPIA Y DINÁMICA)
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -8,72 +8,70 @@ import useUserStore from '../../store/userStore';
 import api from '../../api/axiosConfig';
 import Loader from '../common/Loader';
 
-const backdropVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-};
-
-const modalVariants = {
-  hidden: { y: "100vh", opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 150, damping: 25 } },
-  exit: { y: "100vh", opacity: 0, transition: { duration: 0.3 } },
-};
-
 const SwapModal = ({ onClose }) => {
-  const { user, updateUser } = useUserStore();
+  const { user, settings, updateUser } = useUserStore();
   const [ntxAmount, setNtxAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const SWAP_RATE = 10000; // 10,000 NTX = 1 USDT
-  const MINIMUM_NTX_SWAP = 1.5 * SWAP_RATE; // 15,000 NTX
-
-  // <<< CORRECCIÓN: Usamos optional chaining y nullish coalescing para seguridad
+  // Valores de negocio
+  const SWAP_RATE = 10000;
   const userNtxBalance = user?.balance?.ntx ?? 0;
+  
+  // Valores desde la configuración global, con valores por defecto seguros
+  const minSwap = settings?.minimumSwap || 10000;
+  const swapFee = settings?.swapFeePercent || 0;
 
-  const usdtToReceive = ntxAmount ? parseFloat(ntxAmount) / SWAP_RATE : 0;
   const numericNtxAmount = parseFloat(ntxAmount) || 0;
 
-  const { isValid, errorMessage } = useMemo(() => {
-    if (numericNtxAmount <= 0) return { isValid: false, errorMessage: null };
-    // <<< CORRECCIÓN: Comparamos contra la variable segura
-    if (numericNtxAmount > userNtxBalance) return { isValid: false, errorMessage: 'Saldo NTX insuficiente.' };
-    if (numericNtxAmount < MINIMUM_NTX_SWAP) return { isValid: false, errorMessage: `El mínimo para intercambiar es ${MINIMUM_NTX_SWAP.toLocaleString()} NTX.` };
-    return { isValid: true, errorMessage: null };
-    // <<< CORRECCIÓN: La dependencia ahora es segura
-  }, [numericNtxAmount, userNtxBalance]);
+  const { usdtToReceive, feeAmount, isValid, errorMessage } = useMemo(() => {
+    if (numericNtxAmount <= 0) return { usdtToReceive: 0, feeAmount: 0, isValid: false, errorMessage: null };
+    
+    const fee = numericNtxAmount * (swapFee / 100);
+    const amountAfterFee = numericNtxAmount - fee;
+    const usdt = amountAfterFee / SWAP_RATE;
+
+    if (numericNtxAmount > userNtxBalance) {
+      return { usdtToReceive: usdt, feeAmount: fee, isValid: false, errorMessage: 'Saldo NTX insuficiente.' };
+    }
+    if (numericNtxAmount < minSwap) {
+      return { usdtToReceive: usdt, feeAmount: fee, isValid: false, errorMessage: `El mínimo para intercambiar es ${minSwap.toLocaleString()} NTX.` };
+    }
+    
+    return { usdtToReceive: usdt, feeAmount: fee, isValid: true, errorMessage: null };
+  }, [numericNtxAmount, userNtxBalance, minSwap, swapFee, SWAP_RATE]);
 
   const handleSwap = async () => {
     if (!isValid) {
-      toast.error(errorMessage || 'Cantidad inválida.');
+      toast.error(errorMessage || 'Por favor, introduce una cantidad válida.');
       return;
     }
     setIsLoading(true);
-    toast.loading('Procesando intercambio...', { id: 'swap' });
-    try {
-      const response = await api.post('/wallet/swap', { ntxAmount: numericNtxAmount });
-      updateUser(response.data.user);
-      toast.success(response.data.message, { id: 'swap' });
-      onClose();
-    } catch (error) {
-      const serverError = error.response?.data?.message || 'Error al procesar el intercambio.';
-      toast.error(serverError, { id: 'swap' });
-    } finally {
+    const swapPromise = api.post('/wallet/swap', { ntxAmount: numericNtxAmount });
+
+    toast.promise(swapPromise, {
+      loading: 'Procesando intercambio...',
+      success: (res) => {
+        updateUser(res.data.user);
+        onClose();
+        return res.data.message || '¡Intercambio exitoso!';
+      },
+      error: (err) => err.response?.data?.message || 'Error al procesar el intercambio.',
+    }).finally(() => {
       setIsLoading(false);
-    }
+    });
   };
 
   return (
     <motion.div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
-      variants={backdropVariants}
-      initial="hidden"
-      animate="visible"
-      exit="hidden"
-      onClick={onClose}
+      initial="hidden" animate="visible" exit="hidden" onClick={onClose}
     >
       <motion.div
         className="relative bg-gradient-to-br from-dark-primary to-dark-secondary rounded-2xl border border-white/10 w-full max-w-md p-6 text-white"
-        variants={modalVariants}
+        initial={{ y: "50px", opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: "50px", opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 25 }}
         onClick={(e) => e.stopPropagation()}
       >
         {isLoading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl z-10"><Loader text="Procesando..." /></div>}
@@ -86,16 +84,13 @@ const SwapModal = ({ onClose }) => {
         </div>
 
         <div className="space-y-4">
-          {/* Input de NTX */}
           <div className="bg-black/20 p-3 rounded-lg">
             <div className="flex justify-between items-baseline mb-1">
-              <label htmlFor="ntxAmount" className="text-sm text-text-secondary">Pagar con NTX</label>
-              {/* <<< CORRECCIÓN: Renderizado seguro del saldo */}
+              <label className="text-sm text-text-secondary">Pagar con NTX</label>
               <span className="text-xs text-text-secondary">Saldo: {userNtxBalance.toLocaleString('en-US', {maximumFractionDigits: 2})}</span>
             </div>
             <div className="flex items-center">
               <input
-                id="ntxAmount"
                 type="number"
                 placeholder="0.00"
                 value={ntxAmount}
@@ -111,7 +106,6 @@ const SwapModal = ({ onClose }) => {
             <HiOutlineArrowsRightLeft className="w-6 h-6 text-text-secondary rotate-90" />
           </div>
 
-          {/* Output de USDT */}
           <div className="bg-black/20 p-3 rounded-lg">
             <label className="text-sm text-text-secondary">Recibir USDT</label>
             <p className="text-2xl font-bold text-green-400">{usdtToReceive.toFixed(4)} USDT</p>
@@ -119,8 +113,9 @@ const SwapModal = ({ onClose }) => {
 
           {errorMessage && <p className="text-red-400 text-sm text-center">{errorMessage}</p>}
           
-          <div className="text-center text-xs text-text-secondary">
-            Tasa: {SWAP_RATE.toLocaleString()} NTX = 1 USDT
+          <div className="text-xs space-y-1 bg-black/10 p-2 rounded-lg text-center text-text-secondary">
+             <p>Tasa de cambio: {SWAP_RATE.toLocaleString()} NTX = 1 USDT</p>
+             {swapFee > 0 && <p>Comisión de Intercambio: {swapFee}% ({feeAmount.toLocaleString()} NTX)</p>}
           </div>
 
           <button

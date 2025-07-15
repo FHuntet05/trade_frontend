@@ -1,9 +1,8 @@
-// frontend/src/App.jsx (VERSIÓN 100% COMPLETA Y FUNCIONAL)
+// frontend/src/App.jsx (VERSIÓN DE PRODUCCIÓN - LIMPIA Y COMPLETA)
 
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-
 import useUserStore from './store/userStore';
 
 // Layouts y Componentes
@@ -12,8 +11,9 @@ import AdminLayout from './components/layout/AdminLayout';
 import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
 import Loader from './components/common/Loader';
 import AuthErrorScreen from './components/AuthErrorScreen';
+import MaintenanceScreen from './components/MaintenanceScreen';
 
-// Páginas App de Usuario (Importaciones completas)
+// Páginas App de Usuario
 import HomePage from './pages/HomePage';
 import ToolsPage from './pages/ToolsPage';
 import RankingPage from './pages/RankingPage';
@@ -27,35 +27,41 @@ import AboutPage from './pages/AboutPage';
 import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 
-// Páginas Panel de Administración (Importaciones completas)
+// Páginas Panel de Administración
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminUserDetailPage from './pages/admin/AdminUserDetailPage';
 import AdminTransactionsPage from './pages/admin/AdminTransactionsPage';
+import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage';
+import AdminToolsPage from './pages/admin/AdminToolsPage';
+import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+import AdminSecurityPage from './pages/admin/AdminSecurityPage';
+import AdminTreasuryPage from './pages/admin/AdminTreasuryPage';
 
-/**
- * Componente que encapsula TODA la lógica y rutas de la Mini App de Telegram.
- * Se renderiza solo si la URL no empieza con /admin.
- */
 function UserAppShell() {
-  const { isAuthenticated, isLoadingAuth } = useUserStore((state) => ({
+  const { isAuthenticated, isLoadingAuth, settings } = useUserStore((state) => ({
     isAuthenticated: state.isAuthenticated,
     isLoadingAuth: state.isLoadingAuth,
+    settings: state.settings,
   }));
 
-  if (isLoadingAuth) {
+  if (isLoadingAuth || (!settings && isAuthenticated)) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
         <Loader text="Conectando..." />
       </div>
     );
   }
+  
+  if (settings?.maintenanceMode) {
+    return <MaintenanceScreen message={settings.maintenanceMessage} />;
+  }
 
   if (!isAuthenticated) {
     return <AuthErrorScreen message={"No se pudo conectar. Por favor, reinicia la Mini App desde Telegram."} />;
   }
 
-  // Rutas completas de la aplicación de usuario
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
@@ -65,25 +71,19 @@ function UserAppShell() {
         <Route path="team" element={<TeamPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
-      
       <Route path="/language" element={<LanguagePage />} />
       <Route path="/recharge" element={<RechargePage />} />
       <Route path="/faq" element={<FaqPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/support" element={<SupportPage />} />
       <Route path="/history" element={<FinancialHistoryPage />} />
-
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
 
-/**
- * El componente principal de la aplicación. Actúa como un enrutador maestro.
- */
 function App() {
   const initializeAuth = useUserStore((state) => state.login);
-
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (tg && tg.initData) {
@@ -97,19 +97,21 @@ function App() {
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
       <Routes>
-        {/* --- RUTAS DEL PANEL DE ADMINISTRACIÓN --- */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
-        
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/users/:id/details" element={<AdminUserDetailPage />} />
             <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
+            <Route path="/admin/withdrawals" element={<AdminWithdrawalsPage />} />
+            <Route path="/admin/tools" element={<AdminToolsPage />} />
+            <Route path="/admin/security" element={<AdminSecurityPage />} />
+            <Route path="/admin/settings" element={<AdminSettingsPage />} />
+            <Route path="/admin/treasury" element={<AdminTreasuryPage />} />
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
         </Route>
-
-        {/* --- RUTAS DE LA MINI APP DE TELEGRAM --- */}
         <Route path="/*" element={<UserAppShell />} />
       </Routes>
     </Router>
