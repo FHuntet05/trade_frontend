@@ -1,80 +1,133 @@
-// frontend/src/pages/admin/AdminUserDetailPage.jsx (COMPLETO)
-
+// frontend/src/pages/admin/AdminUserDetailPage.jsx (COMPLETO CON SECCIÓN DE REFERIDOS)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
-
 import Loader from '../../components/common/Loader';
-import TransactionsTable from './components/TransactionsTable'; // Reutilizamos el componente
 import { HiArrowLeft } from 'react-icons/hi2';
 
-const UserDetailCard = ({ user }) => (
-    <div className="bg-dark-secondary p-6 rounded-lg border border-white/10 flex items-center gap-6">
-        <img className={`w-24 h-24 rounded-full object-cover ${user.status === 'banned' ? 'grayscale' : ''}`} src={user.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="avatar" />
-        <div className="space-y-1">
-            <h2 className="text-2xl font-bold">{user.username}</h2>
-            <p className="text-sm text-text-secondary">ID de Telegram: {user.telegramId}</p>
-            <p className="text-sm">Rol: <span className="font-semibold">{user.role}</span> | Estado: <span className={`font-semibold ${user.status === 'active' ? 'text-green-400' : 'text-red-400'}`}>{user.status}</span></p>
-            <div className="flex gap-4 pt-2">
-                <div><span className="font-bold text-lg">{Number(user.balance.usdt).toFixed(2)}</span> <span className="text-sm text-text-secondary">USDT</span></div>
-                <div><span className="font-bold text-lg">{Number(user.balance.ntx).toLocaleString('en-US')}</span> <span className="text-sm text-text-secondary">NTX</span></div>
+// Componente para la tarjeta de información del usuario
+const UserInfoCard = ({ user }) => (
+    <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
+        <div className="flex items-center gap-4">
+            <img src={user.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="Avatar" className="w-20 h-20 rounded-full object-cover" />
+            <div>
+                <h2 className="text-2xl font-bold">{user.fullName || user.username}</h2>
+                <p className="text-sm text-text-secondary">@{user.username} (ID: {user.telegramId})</p>
+                <span className={`px-2 py-0.5 text-xs rounded-full ${user.role === 'admin' ? 'bg-red-500/20 text-red-300' : 'bg-blue-500/20 text-blue-300'}`}>{user.role}</span>
             </div>
         </div>
     </div>
 );
 
+// Nuevo componente para mostrar la lista de referidos
+const ReferralsList = ({ referrals, total }) => (
+    <div className="bg-dark-secondary p-6 rounded-lg border border-white/10 mt-6">
+        <h3 className="text-xl font-semibold mb-4">Referidos ({total})</h3>
+        {total === 0 ? (
+            <p className="text-text-secondary">Este usuario no tiene referidos.</p>
+        ) : (
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead>
+                        <tr className="border-b border-white/10 text-sm text-text-secondary">
+                            <th className="py-2">Usuario</th>
+                            <th className="py-2">Nivel</th>
+                            <th className="py-2">Fecha de Ingreso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {referrals.map(ref => (
+                            <tr key={ref._id} className="border-b border-white/10 text-sm">
+                                <td className="py-3 flex items-center gap-3">
+                                    <img src={ref.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="ref avatar" className="w-8 h-8 rounded-full object-cover" />
+                                    <div>
+                                        <p className="font-semibold">{ref.fullName || ref.username}</p>
+                                        <p className="text-xs text-text-secondary">@{ref.username}</p>
+                                    </div>
+                                </td>
+                                <td className="py-3">{ref.level}</td>
+                                <td className="py-3">{new Date(ref.joinDate).toLocaleDateString()}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        )}
+    </div>
+);
+
 
 const AdminUserDetailPage = () => {
-    const { id } = useParams(); // Obtenemos el ID del usuario de la URL
-    const [userData, setUserData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [page, setPage] = useState(1);
+    const { id } = useParams();
+    const { adminInfo } = useAdminStore();
+    const [user, setUser] = useState(null);
+    const [referrals, setReferrals] = useState([]);
+    const [totalReferrals, setTotalReferrals] = useState(0);
+    const [loadingUser, setLoadingUser] = useState(true);
+    const [loadingReferrals, setLoadingReferrals] = useState(true);
 
     const fetchUserDetails = useCallback(async () => {
-        setIsLoading(true);
+        if (!adminInfo?.token) return;
+        setLoadingUser(true);
         try {
-            const { data } = await api.get(`/admin/users/${id}/details`, { params: { page } });
-            setUserData(data);
+            const { data } = await api.get(`/api/admin/users/${id}/details`, {
+                headers: { Authorization: `Bearer ${adminInfo.token}` },
+            });
+            setUser(data.user);
         } catch (error) {
-            toast.error(error.response?.data?.message || 'No se pudieron cargar los detalles del usuario.');
+            toast.error("No se pudieron cargar los detalles del usuario.");
         } finally {
-            setIsLoading(false);
+            setLoadingUser(false);
         }
-    }, [id, page]);
+    }, [id, adminInfo]);
+
+    const fetchReferrals = useCallback(async () => {
+        if (!adminInfo?.token) return;
+        setLoadingReferrals(true);
+        try {
+            const { data } = await api.get(`/api/admin/users/${id}/referrals`, {
+                headers: { Authorization: `Bearer ${adminInfo.token}` },
+            });
+            setReferrals(data.referrals);
+            setTotalReferrals(data.totalReferrals);
+        } catch (error) {
+            toast.error("No se pudieron cargar los referidos del usuario.");
+        } finally {
+            setLoadingReferrals(false);
+        }
+    }, [id, adminInfo]);
 
     useEffect(() => {
         fetchUserDetails();
-    }, [fetchUserDetails]);
+        fetchReferrals();
+    }, [fetchUserDetails, fetchReferrals]);
 
-    if (isLoading && !userData) {
-        return <div className="flex justify-center items-center h-full"><Loader text="Cargando detalles..." /></div>;
+    if (loadingUser) {
+        return <div className="p-6"><Loader text="Cargando detalles del usuario..." /></div>;
     }
 
-    if (!userData) {
-        return <div className="text-center text-text-secondary">No se encontró al usuario.</div>;
+    if (!user) {
+        return <div className="p-6 text-center text-red-400">Usuario no encontrado.</div>;
     }
 
     return (
-        <div className="space-y-6">
-            <Link to="/admin/users" className="flex items-center gap-2 text-sm text-accent-start hover:underline">
-                <HiArrowLeft />
-                Volver a la lista de usuarios
-            </Link>
-            <UserDetailCard user={userData.user} />
-            <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
-                <h3 className="text-xl font-semibold mb-4">Historial de Transacciones</h3>
-                {isLoading && <div className="text-center py-4"><Loader /></div>}
-                <TransactionsTable transactions={userData.transactions.items} />
-                {/* Paginación */}
-                <div className="flex justify-between items-center mt-4">
-                    <span className="text-sm text-text-secondary">Página {userData.transactions.page} de {userData.transactions.pages}</span>
-                    <div className="flex gap-2">
-                        <button onClick={() => setPage(p => p - 1)} disabled={userData.transactions.page <= 1} className="px-4 py-2 text-sm bg-black/20 rounded-md disabled:opacity-50">Anterior</button>
-                        <button onClick={() => setPage(p => p + 1)} disabled={userData.transactions.page >= userData.transactions.pages} className="px-4 py-2 text-sm bg-black/20 rounded-md disabled:opacity-50">Siguiente</button>
-                    </div>
-                </div>
+        <div className="p-6 text-white space-y-6">
+            <div>
+                <Link to="/admin/users" className="flex items-center gap-2 text-text-secondary hover:text-white mb-4">
+                    <HiArrowLeft /> Volver a la lista de usuarios
+                </Link>
+                <UserInfoCard user={user} />
             </div>
+
+            {loadingReferrals ? (
+                <Loader text="Cargando referidos..." />
+            ) : (
+                <ReferralsList referrals={referrals} total={totalReferrals} />
+            )}
+            
+            {/* Aquí puedes añadir otras secciones, como la tabla de transacciones del usuario */}
         </div>
     );
 };
