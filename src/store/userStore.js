@@ -1,4 +1,4 @@
-// frontend/src/store/userStore.js (COMPLETO CON CONFIGURACIÓN GLOBAL)
+// frontend/src/store/userStore.js (CORREGIDO - Lógica de settings simplificada)
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -6,29 +6,14 @@ import api from '../api/axiosConfig';
 
 const useUserStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       isAuthenticated: false,
       isLoadingAuth: true,
-      settings: null, // <-- NUEVO: Estado para la configuración global
+      settings: null,
       
-      // Nueva acción para obtener la configuración
-      fetchSettings: async () => {
-        try {
-          // Usamos el endpoint público que creamos (aunque esté protegido, Axios adjuntará el token)
-          // Asumimos que la configuración puede ser obtenida desde un endpoint público o uno protegido
-          // Para este caso, usaremos el endpoint de admin, ya que requiere token.
-          // NOTA: Si la configuración debe ser pública, se necesitaría un endpoint separado.
-          // Por ahora, asumimos que solo los usuarios autenticados pueden verla.
-          const { data } = await api.get('/admin/settings');
-          set({ settings: data });
-          console.log("Configuración global cargada.");
-        } catch (error) {
-          console.error("Error al cargar la configuración global:", error);
-          // No hacemos nada drástico, la app puede funcionar con valores por defecto
-        }
-      },
+      // La función fetchSettings ya no es necesaria aquí, la eliminamos.
 
       login: async ({ initData, startParam }) => {
         set({ isLoadingAuth: true });
@@ -37,20 +22,19 @@ const useUserStore = create(
             throw new Error("No se encontraron los datos de Telegram (initData).");
           }
 
+          // --- CAMBIO CLAVE ---
+          // Ahora la respuesta del login incluye 'token', 'user' y 'settings'.
           const response = await api.post('/auth/login', { initData, startParam });
-          const { token, user } = response.data;
+          const { token, user, settings } = response.data;
           
-          set({ user, token, isAuthenticated: true });
-          console.log("Login exitoso.");
-          
-          // --- ACCIÓN CLAVE ---
-          // Después de un login exitoso, obtenemos la configuración de la app.
-          await get().fetchSettings();
+          // Guardamos todo en el estado de una sola vez.
+          set({ user, token, isAuthenticated: true, settings });
+          console.log("Login exitoso y configuración global cargada.");
 
         } catch (error) {
           const errorMessage = error.response?.data?.message || error.message || "Error desconocido en la autenticación.";
           console.error("Fallo fatal en el login:", errorMessage);
-          set({ user: null, token: null, isAuthenticated: false });
+          set({ user: null, token: null, isAuthenticated: false, settings: null });
         } finally {
           console.log("Finalizando estado de carga de autenticación.");
           set({ isLoadingAuth: false });
@@ -74,5 +58,12 @@ const useUserStore = create(
     }
   )
 );
+
+// También debemos ajustar la lógica para cuando un usuario ya tiene una sesión (token).
+// El interceptor de Axios necesita obtener el perfil y los settings.
+// Por ahora, asumiremos que la lógica de refresco de sesión podría estar en otro lado
+// o que se maneja con el login cada vez. Si existe una lógica de "re-autenticación"
+// al cargar la app, también debería ser actualizada para manejar la respuesta del perfil.
+// Por ahora, la corrección principal es en el flujo de login.
 
 export default useUserStore;
