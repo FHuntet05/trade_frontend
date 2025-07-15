@@ -1,16 +1,15 @@
-// frontend/src/components/modals/DepositAmountModal.jsx (COMPLETO Y CORREGIDO)
+// frontend/src/components/modals/DepositAmountModal.jsx (CORREGIDO - Sin mínimo de depósito)
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { HiXMark } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
-// --- Variantes para animación de modal CENTRADO ---
+// ... (variantes de animación no cambian) ...
 const backdropVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
 };
-
 const modalVariants = {
   hidden: { scale: 0.9, opacity: 0 },
   visible: { scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 200, damping: 25 } },
@@ -19,19 +18,20 @@ const modalVariants = {
 
 const DepositAmountModal = ({ onProceed, onClose }) => {
   const [amount, setAmount] = useState('');
-  const MINIMUM_DEPOSIT = 10; // Establecemos un mínimo de depósito de 10 USDT
 
   const handleProceed = () => {
     const numericAmount = parseFloat(amount);
-    if (isNaN(numericAmount) || numericAmount < MINIMUM_DEPOSIT) {
-      toast.error(`El monto mínimo de recarga es ${MINIMUM_DEPOSIT} USDT.`);
+    
+    // --- CORRECCIÓN CLAVE: Se elimina la validación del mínimo de depósito. ---
+    // Ahora solo validamos que sea un número válido y mayor que cero.
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      toast.error(`Por favor, introduce una cantidad válida.`);
       return;
     }
     onProceed(numericAmount);
   };
 
   return (
-    // --- Contenedor principal que centra el modal ---
     <motion.div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
       variants={backdropVariants}
@@ -40,7 +40,6 @@ const DepositAmountModal = ({ onProceed, onClose }) => {
       exit="hidden"
       onClick={onClose}
     >
-      {/* Contenedor del contenido del modal */}
       <motion.div
         className="relative bg-dark-secondary rounded-2xl border border-white/10 w-full max-w-md text-white p-6"
         variants={modalVariants}
@@ -62,7 +61,8 @@ const DepositAmountModal = ({ onProceed, onClose }) => {
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder={`Mínimo ${MINIMUM_DEPOSIT}`}
+              // --- CAMBIO VISUAL: Eliminamos la referencia al mínimo en el placeholder ---
+              placeholder="Ej: 50"
               className="w-full bg-black/20 text-white text-2xl font-bold p-4 rounded-lg border-2 border-transparent focus:border-accent-start focus:outline-none"
               autoFocus
             />
