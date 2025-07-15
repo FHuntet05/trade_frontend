@@ -1,19 +1,20 @@
-// frontend/src/components/modals/DepositAmountModal.jsx
+// frontend/src/components/modals/DepositAmountModal.jsx (COMPLETO Y CORREGIDO)
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { HiXMark } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
+// --- Variantes para animación de modal CENTRADO ---
 const backdropVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
 };
 
 const modalVariants = {
-  hidden: { y: "100%", opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 150, damping: 25 } },
-  exit: { y: "100%", opacity: 0, transition: { duration: 0.3 } },
+  hidden: { scale: 0.9, opacity: 0 },
+  visible: { scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 200, damping: 25 } },
+  exit: { scale: 0.9, opacity: 0, transition: { duration: 0.2 } },
 };
 
 const DepositAmountModal = ({ onProceed, onClose }) => {
@@ -30,16 +31,18 @@ const DepositAmountModal = ({ onProceed, onClose }) => {
   };
 
   return (
+    // --- Contenedor principal que centra el modal ---
     <motion.div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-end items-end z-50"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
       variants={backdropVariants}
       initial="hidden"
       animate="visible"
       exit="hidden"
       onClick={onClose}
     >
+      {/* Contenedor del contenido del modal */}
       <motion.div
-        className="bg-dark-primary w-full max-w-lg rounded-t-2xl border-t border-white/10 flex flex-col p-6"
+        className="relative bg-dark-secondary rounded-2xl border border-white/10 w-full max-w-md text-white p-6"
         variants={modalVariants}
         onClick={(e) => e.stopPropagation()}
       >

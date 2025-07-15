@@ -1,19 +1,19 @@
-// frontend/src/App.jsx (VERSIÓN FINAL CON RUTAS DE ADMIN INTEGRADAS)
+// frontend/src/App.jsx (VERSIÓN 100% COMPLETA Y FUNCIONAL)
 
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
-// Stores
 import useUserStore from './store/userStore';
 
-// Layouts y Componentes Comunes
+// Layouts y Componentes
 import Layout from './components/layout/Layout';
+import AdminLayout from './components/layout/AdminLayout';
+import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
 import Loader from './components/common/Loader';
 import AuthErrorScreen from './components/AuthErrorScreen';
-import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
 
-// Páginas de la App de Usuario
+// Páginas App de Usuario (Importaciones completas)
 import HomePage from './pages/HomePage';
 import ToolsPage from './pages/ToolsPage';
 import RankingPage from './pages/RankingPage';
@@ -27,14 +27,15 @@ import AboutPage from './pages/AboutPage';
 import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 
-// Páginas del Panel de Administración
+// Páginas Panel de Administración (Importaciones completas)
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
-
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminTransactionsPage from './pages/admin/AdminTransactionsPage';
 
 /**
  * Componente que encapsula TODA la lógica y rutas de la Mini App de Telegram.
- * Solo se renderiza si la URL no empieza con /admin.
+ * Se renderiza solo si la URL no empieza con /admin.
  */
 function UserAppShell() {
   const { isAuthenticated, isLoadingAuth } = useUserStore((state) => ({
@@ -42,7 +43,6 @@ function UserAppShell() {
     isLoadingAuth: state.isLoadingAuth,
   }));
 
-  // Los guardias de autenticación ahora solo afectan a esta parte de la aplicación.
   if (isLoadingAuth) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
@@ -55,7 +55,7 @@ function UserAppShell() {
     return <AuthErrorScreen message={"No se pudo conectar. Por favor, reinicia la Mini App desde Telegram."} />;
   }
 
-  // Si el usuario está autenticado, renderizamos todas las rutas de la Mini App.
+  // Rutas completas de la aplicación de usuario
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
@@ -73,7 +73,6 @@ function UserAppShell() {
       <Route path="/support" element={<SupportPage />} />
       <Route path="/history" element={<FinancialHistoryPage />} />
 
-      {/* Un catch-all para las rutas no encontradas DENTRO de la app de usuario */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
@@ -85,19 +84,11 @@ function UserAppShell() {
 function App() {
   const initializeAuth = useUserStore((state) => state.login);
 
-  // Este useEffect se ejecuta al cargar la app.
-  // Intentará autenticar al usuario si existen datos de Telegram.
-  // No bloqueará el renderizado para las rutas de admin.
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (tg && tg.initData) {
-      initializeAuth({
-        initData: tg.initData,
-        startParam: tg.initDataUnsafe?.start_param,
-      });
+      initializeAuth({ initData: tg.initData, startParam: tg.initDataUnsafe?.start_param });
     } else {
-      // Si no hay datos de Telegram, simplemente no hacemos nada aquí.
-      // El guardia dentro de UserAppShell se encargará de mostrar el error si es necesario.
       useUserStore.getState().logout();
     }
   }, [initializeAuth]);
@@ -107,17 +98,18 @@ function App() {
       <Toaster position="top-center" reverseOrder={false} />
       <Routes>
         {/* --- RUTAS DEL PANEL DE ADMINISTRACIÓN --- */}
-        {/* La página de login es pública. */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
         
-        {/* Las rutas dentro de AdminProtectedRoute requieren autenticación de admin. */}
         <Route element={<AdminProtectedRoute />}>
-          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-          {/* Aquí irán futuras rutas de admin: /admin/users, /admin/transactions, etc. */}
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          </Route>
         </Route>
 
         {/* --- RUTAS DE LA MINI APP DE TELEGRAM --- */}
-        {/* Un "catch-all" que dirige todo el tráfico restante a la shell de la app de usuario. */}
         <Route path="/*" element={<UserAppShell />} />
       </Routes>
     </Router>
