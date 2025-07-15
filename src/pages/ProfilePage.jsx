@@ -1,4 +1,4 @@
-// frontend/src/pages/ProfilePage.jsx (VERSIÓN FINAL CON SWAP Y RETIRO INTEGRADOS)
+// frontend/src/pages/ProfilePage.jsx (VERSIÓN CON FLUJO DE RECARGA COMPLETO)
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -11,9 +11,15 @@ import {
     HiOutlineChatBubbleLeftRight, HiOutlineLanguage
 } from 'react-icons/hi2';
 
-// Importamos ambos modales
+// API para generar la dirección
+import api from '../api/axiosConfig';
+
+// Importamos TODOS los modales que usaremos
 import WithdrawalModal from '../components/modals/WithdrawalModal';
-import SwapModal from '../components/modals/SwapModal'; // <-- IMPORTANTE
+import SwapModal from '../components/modals/SwapModal';
+import DepositAmountModal from '../components/modals/DepositAmountModal';
+import CryptoCurrencySelectionModal from '../components/modals/CryptoCurrencySelectionModal';
+import DirectDepositModal from '../components/modals/DirectDepositModal';
 
 const pageVariants = {
   hidden: { opacity: 0, y: 10 },
@@ -46,14 +52,23 @@ const ProfilePage = () => {
   const { user, logout } = useUserStore();
   const navigate = useNavigate();
   const { t } = useTranslation();
-
-  // Estados para controlar la visibilidad de cada modal
+  
+  // --- ESTADOS PARA MODALES EXISTENTES ---
   const [isWithdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
-  const [isSwapModalOpen, setIsSwapModalOpen] = useState(false); // <-- NUEVO ESTADO
+  const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+
+  // --- ESTADOS PARA EL NUEVO FLUJO DE RECARGA ---
+  const [isLoadingPayment, setIsLoadingPayment] = useState(false);
+  const [depositAmount, setDepositAmount] = useState(0); // Cantidad USDT a depositar
+  const [paymentInfo, setPaymentInfo] = useState(null); // Info para el modal final
+  
+  const [isDepositAmountModalOpen, setDepositAmountModalOpen] = useState(false);
+  const [isCryptoSelectionModalOpen, setCryptoSelectionModalOpen] = useState(false);
+  const [isDirectDepositModalOpen, setDirectDepositModalOpen] = useState(false);
 
   if (!user) return null;
 
-  // --- LÓGICA PARA ABRIR MODALES ---
+  // --- MANEJADORES PARA MODALES EXISTENTES ---
   const handleWithdrawClick = () => {
     const MINIMUM_WITHDRAWAL = 1.0;
     if (user.balance.usdt < MINIMUM_WITHDRAWAL) {
@@ -71,14 +86,60 @@ const ProfilePage = () => {
       setIsSwapModalOpen(true);
     }
   };
-  // --- FIN LÓGICA PARA ABRIR MODALES ---
 
+  // --- MANEJADORES PARA EL NUEVO FLUJO DE RECARGA ---
+  // Paso 1: El usuario hace clic en "Recargar" y abre el primer modal.
+  const handleRechargeClick = () => {
+    setDepositAmountModalOpen(true);
+  };
+  
+  // Paso 2: El usuario introduce un monto y procede.
+  const handleAmountProceed = (amount) => {
+    setDepositAmount(amount);
+    setDepositAmountModalOpen(false);
+    setCryptoSelectionModalOpen(true);
+  };
+  
+  // Paso 3: El usuario selecciona una criptomoneda.
+  const handleCurrencySelect = async (currency) => {
+    setIsLoadingPayment(true);
+    try {
+      // Llamamos al backend para generar la dirección de depósito
+      const response = await api.post('/payment/generate-address', {
+        amountUSDT: depositAmount,
+        chain: currency.chain,
+        currency: currency.currency,
+      });
+
+      // Guardamos la información de pago que nos devuelve el backend
+      setPaymentInfo(response.data);
+      setCryptoSelectionModalOpen(false);
+      setDirectDepositModalOpen(true);
+
+    } catch (error) {
+      console.error('Error al generar la dirección de pago:', error);
+      toast.error(error.response?.data?.message || 'No se pudo generar la dirección de pago.');
+      setCryptoSelectionModalOpen(false); // Cerramos el modal de selección en caso de error
+    } finally {
+      setIsLoadingPayment(false);
+    }
+  };
+  
+  const closeAllPaymentModals = () => {
+      setDepositAmountModalOpen(false);
+      setCryptoSelectionModalOpen(false);
+      setDirectDepositModalOpen(false);
+      setPaymentInfo(null);
+      setDepositAmount(0);
+  };
+
+  // --- DEFINICIÓN DE ACCIONES ---
   const mainActions = [
-    { label: t('profile.recharge'), icon: HiOutlineArrowDownOnSquare, onClick: () => navigate('/recharge') },
+    // La acción de recargar ahora dispara nuestro flujo de modales
+    { label: t('profile.recharge'), icon: HiOutlineArrowDownOnSquare, onClick: handleRechargeClick },
     { label: t('profile.withdraw'), icon: HiOutlineArrowUpOnSquare, onClick: handleWithdrawClick },
     { label: t('profile.records'), icon: HiOutlineRectangleStack, onClick: () => navigate('/history') },
-    // El botón de intercambio ahora abre el modal
-    { label: t('profile.exchange'), icon: HiOutlineArrowsRightLeft, onClick: handleSwapClick }, // <-- ACCIÓN ACTUALIZADA
+    { label: t('profile.exchange'), icon: HiOutlineArrowsRightLeft, onClick: handleSwapClick },
   ];
 
   const secondaryActions = [
@@ -90,7 +151,7 @@ const ProfilePage = () => {
   ];
 
  return (
-    <> {/* Fragment para contener la página y los modales */}
+    <>
       <motion.div 
         className="flex flex-col h-full space-y-6"
         variants={pageVariants}
@@ -135,13 +196,31 @@ const ProfilePage = () => {
         </div>
       </motion.div>
 
-      {/* Renderizado condicional de AMBOS modales */}
+      {/* --- RENDERIZADO CONDICIONAL DE TODOS LOS MODALES --- */}
       <AnimatePresence>
-        {isWithdrawalModalOpen && (
-          <WithdrawalModal onClose={() => setWithdrawalModalOpen(false)} />
+        {/* Modales existentes */}
+        {isWithdrawalModalOpen && <WithdrawalModal onClose={() => setWithdrawalModalOpen(false)} />}
+        {isSwapModalOpen && <SwapModal onClose={() => setIsSwapModalOpen(false)} />}
+        
+        {/* NUEVO FLUJO DE RECARGA */}
+        {isDepositAmountModalOpen && (
+            <DepositAmountModal 
+                onClose={() => setDepositAmountModalOpen(false)} 
+                onProceed={handleAmountProceed}
+            />
         )}
-        {isSwapModalOpen && (
-          <SwapModal onClose={() => setIsSwapModalOpen(false)} />
+        {isCryptoSelectionModalOpen && (
+            <CryptoCurrencySelectionModal 
+                isLoading={isLoadingPayment}
+                onClose={() => setCryptoSelectionModalOpen(false)}
+                onSelect={handleCurrencySelect}
+            />
+        )}
+        {paymentInfo && isDirectDepositModalOpen && (
+            <DirectDepositModal
+                paymentInfo={paymentInfo}
+                onClose={closeAllPaymentModals}
+            />
         )}
       </AnimatePresence>
     </>

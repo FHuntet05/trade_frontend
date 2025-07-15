@@ -1,4 +1,4 @@
-// frontend/src/App.jsx (VERSIÓN FINAL CON ARRANQUE DIRECTO Y COMPLETO)
+// frontend/src/App.jsx (VERSIÓN REFACTORIZADA Y ESTABLE)
 
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -24,33 +24,34 @@ import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 
 function App() {
-  const { isAuthenticated, isLoadingAuth } = useUserStore((state) => ({
+  const { isAuthenticated, isLoadingAuth, initializeAuth } = useUserStore((state) => ({
     isAuthenticated: state.isAuthenticated,
     isLoadingAuth: state.isLoadingAuth,
+    // Optamos por llamar a una función del store en lugar de getState() para mayor claridad en React
+    initializeAuth: state.login, 
   }));
 
-  // El useEffect ahora tiene una única y simple responsabilidad: iniciar el login.
+  // useEffect es ahora simple, directo y se ejecuta una sola vez.
   useEffect(() => {
-    // Usamos un pequeño timeout para asegurarnos de que el objeto de Telegram esté disponible.
-    const timeoutId = setTimeout(() => {
-        const tg = window.Telegram?.WebApp;
-        const { login, logout } = useUserStore.getState();
+    // La responsabilidad de encontrar los datos de Telegram y actuar en consecuencia
+    // se delega directamente a la lógica de inicialización.
+    // No más timeouts frágiles.
+    const tg = window.Telegram?.WebApp;
+    
+    if (tg && tg.initData) {
+      initializeAuth({
+        initData: tg.initData,
+        startParam: tg.initDataUnsafe?.start_param,
+      });
+    } else {
+      // Si no hay datos de Telegram, es un fallo fatal de autenticación.
+      // Usamos un pequeño delay para evitar un flash de UI y asegurar que el mensaje sea legible.
+      console.error("Telegram.WebApp.initData no se encontró en el montaje inicial.");
+      useUserStore.getState().logout(); // Llamamos a logout para resolver el estado de carga.
+    }
+  }, [initializeAuth]); // Se añade 'initializeAuth' como dependencia, aunque no cambiará.
 
-        if (tg && tg.initData) {
-            login({
-              initData: tg.initData,
-              startParam: tg.initDataUnsafe?.start_param,
-            });
-        } else {
-            console.error("Timeout: Telegram.WebApp.initData no se encontró después de 500ms.");
-            logout(); // Si no hay datos, limpiamos y salimos del loading.
-        }
-    }, 500); // 500ms de espera
-
-    return () => clearTimeout(timeoutId); // Limpieza del timeout
-  }, []); 
-
-  // --- GUARDIA DE AUTENTICACIÓN ---
+  // --- GUARDIA DE AUTENTICACIÓN (sin cambios, ahora funcionará correctamente) ---
   if (isLoadingAuth) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
