@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminUserDetailPage.jsx (CÓDIGO CONFIRMADO Y VALIDADO v15.0)
+// frontend/src/pages/admin/AdminUserDetailPage.jsx (VERSIÓN v18.3 - CON TABLA DE TRANSACCIONES)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import useAdminStore from '../../store/adminStore';
@@ -10,29 +10,40 @@ import { HiArrowLeft } from 'react-icons/hi2';
 const UserInfoCard = ({ user }) => (
     <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
         <div className="flex items-center gap-4">
-            {/* NOTA: Este src será actualizado como parte de la corrección de imágenes */}
-            <img src={user.photoUrl || `/api/users/${user.telegramId}/photo` || '/assets/images/user-avatar-placeholder.png'} alt="Avatar" className="w-20 h-20 rounded-full object-cover" />
+            <img src={user.photoUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover bg-dark-primary" />
             <div>
                 <h2 className="text-2xl font-bold">{user.fullName || user.username}</h2>
                 <p className="text-sm text-text-secondary">@{user.username} (ID: {user.telegramId})</p>
-                <span className={`px-2 py-0.5 text-xs rounded-full ${user.role === 'admin' ? 'bg-red-500/20 text-red-300' : 'bg-blue-500/20 text-blue-300'}`}>{user.role}</span>
+                <div className='flex items-center gap-2 mt-2'>
+                    <span className={`px-2 py-0.5 text-xs rounded-full ${user.role === 'admin' ? 'bg-red-500/20 text-red-300' : 'bg-blue-500/20 text-blue-300'}`}>{user.role}</span>
+                    <span className={`px-2 py-0.5 text-xs rounded-full ${user.status === 'active' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'}`}>{user.status}</span>
+                </div>
+            </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
+             <div>
+                <p className="text-sm text-text-secondary">Saldo USDT</p>
+                <p className="text-lg font-mono font-bold">${(user.balance?.usdt || 0).toFixed(2)}</p>
+            </div>
+            <div>
+                <p className="text-sm text-text-secondary">Saldo NTX</p>
+                <p className="text-lg font-mono font-bold">{(user.balance?.ntx || 0).toLocaleString()}</p>
             </div>
         </div>
     </div>
 );
 
-const ReferralsList = ({ referrals, total }) => (
-    <div className="bg-dark-secondary p-6 rounded-lg border border-white/10 mt-6">
-        <h3 className="text-xl font-semibold mb-4">Referidos ({total})</h3>
-        {total === 0 ? (
+const ReferralsList = ({ referrals }) => (
+    <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
+        <h3 className="text-xl font-semibold mb-4">Referidos ({referrals.length})</h3>
+        {referrals.length === 0 ? (
             <p className="text-text-secondary">Este usuario no tiene referidos.</p>
         ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-96">
                 <table className="w-full text-left">
-                    <thead className="border-b border-white/10 text-sm text-text-secondary">
+                    <thead className="border-b border-white/10 text-sm text-text-secondary sticky top-0 bg-dark-secondary">
                         <tr>
                             <th className="py-2 px-3">Usuario</th>
-                            <th className="py-2 px-3">Nivel</th>
                             <th className="py-2 px-3">Fecha de Ingreso</th>
                         </tr>
                     </thead>
@@ -41,16 +52,57 @@ const ReferralsList = ({ referrals, total }) => (
                             <tr key={ref._id} className="border-b border-white/10 text-sm hover:bg-white/5">
                                 <td className="py-3 px-3">
                                     <Link to={`/admin/users/${ref._id}`} className="flex items-center gap-3 group">
-                                         {/* NOTA: Este src será actualizado como parte de la corrección de imágenes */}
-                                        <img src={ref.photoUrl || `/api/users/${ref.telegramId}/photo` || '/assets/images/user-avatar-placeholder.png'} alt="ref avatar" className="w-8 h-8 rounded-full object-cover" />
+                                        <img src={ref.photoUrl} alt="ref avatar" className="w-8 h-8 rounded-full object-cover bg-dark-primary" />
                                         <div>
                                             <p className="font-semibold group-hover:text-primary transition-colors">{ref.fullName || ref.username}</p>
                                             <p className="text-xs text-text-secondary">@{ref.username}</p>
                                         </div>
                                     </Link>
                                 </td>
-                                <td className="py-3 px-3">{ref.level}</td>
-                                <td className="py-3 px-3">{new Date(ref.joinDate).toLocaleDateString()}</td>
+                                <td className="py-3 px-3">{new Date(ref.createdAt).toLocaleDateString()}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        )}
+    </div>
+);
+
+// --- NUEVO COMPONENTE ---
+const TransactionsTable = ({ transactions }) => (
+    <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
+        <h3 className="text-xl font-semibold mb-4">Últimas 10 Transacciones</h3>
+        {transactions.length === 0 ? (
+            <p className="text-text-secondary">Este usuario no tiene transacciones recientes.</p>
+        ) : (
+            <div className="overflow-x-auto max-h-96">
+                <table className="w-full text-left">
+                    <thead className="border-b border-white/10 text-sm text-text-secondary sticky top-0 bg-dark-secondary">
+                        <tr>
+                            <th className="py-2 px-3">Tipo</th>
+                            <th className="py-2 px-3">Monto</th>
+                            <th className="py-2 px-3">Descripción</th>
+                            <th className="py-2 px-3">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {transactions.map(tx => (
+                            <tr key={tx._id} className="border-b border-white/10 text-sm hover:bg-white/5">
+                                <td className="py-3 px-3">
+                                    <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                        tx.type.includes('deposit') || tx.type.includes('credit') ? 'bg-green-500/20 text-green-300' :
+                                        tx.type.includes('withdrawal') || tx.type.includes('debit') ? 'bg-red-500/20 text-red-300' :
+                                        'bg-blue-500/20 text-blue-300'
+                                    }`}>
+                                        {tx.type}
+                                    </span>
+                                </td>
+                                <td className="py-3 px-3 font-mono">
+                                    {tx.amount.toFixed(2)} <span className="text-text-secondary">{tx.currency}</span>
+                                </td>
+                                <td className="py-3 px-3 text-text-secondary">{tx.description}</td>
+                                <td className="py-3 px-3">{new Date(tx.createdAt).toLocaleString()}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -64,86 +116,57 @@ const ReferralsList = ({ referrals, total }) => (
 const AdminUserDetailPage = () => {
     const { id } = useParams();
     const { adminInfo } = useAdminStore();
-    const [user, setUser] = useState(null);
-    const [referrals, setReferrals] = useState([]);
-    const [totalReferrals, setTotalReferrals] = useState(0);
-    const [loadingUser, setLoadingUser] = useState(true);
-    const [loadingReferrals, setLoadingReferrals] = useState(true);
+    const [userData, setUserData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const fetchUserDetails = useCallback(async (token) => {
-        setLoadingUser(true);
+    const fetchAllDetails = useCallback(async (token) => {
+        setIsLoading(true);
         try {
-            // Asumiendo que /details no existe, lo cambiamos por la ruta base de usuario
             const { data } = await api.get(`/api/admin/users/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            // La ruta /users/:id devuelve el usuario y transacciones, ajustamos
-            setUser(data.user); 
+            setUserData(data);
         } catch (error) {
             console.error("Error fetching user details:", error);
-            toast.error("No se pudieron cargar los detalles del usuario.");
+            toast.error("No se pudieron cargar los datos del usuario.");
         } finally {
-            setLoadingUser(false);
-        }
-    }, [id]);
-
-    const fetchReferrals = useCallback(async (token) => {
-        setLoadingReferrals(true);
-        try {
-            const { data } = await api.get(`/api/admin/users/${id}/referrals`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setReferrals(data.referrals);
-            setTotalReferrals(data.totalReferrals);
-        } catch (error) {
-            console.error("Error fetching referrals:", error);
-            toast.error("No se pudieron cargar los referidos del usuario.");
-        } finally {
-            setLoadingReferrals(false);
+            setIsLoading(false);
         }
     }, [id]);
 
     useEffect(() => {
         if (adminInfo?.token) {
-            setUser(null);
-            setReferrals([]);
-            setTotalReferrals(0);
-            setLoadingUser(true);
-            setLoadingReferrals(true);
-            
-            fetchUserDetails(adminInfo.token);
-            fetchReferrals(adminInfo.token);
+            setUserData(null);
+            fetchAllDetails(adminInfo.token);
         }
-    }, [id, adminInfo, fetchUserDetails, fetchReferrals]);
+    }, [id, adminInfo, fetchAllDetails]);
 
-    if (loadingUser) {
+    if (isLoading) {
         return <div className="p-6"><Loader text="Cargando detalles del usuario..." /></div>;
     }
 
-    if (!user) {
+    if (!userData || !userData.user) {
         return <div className="p-6 text-center text-red-400">Usuario no encontrado.</div>;
     }
 
-    // Pequeña corrección: Pasamos el `telegramId` al componente de tarjeta de usuario
-    const userWithTelegramId = { ...user, telegramId: user.telegramId };
-
     return (
-        <div className="p-6 text-white space-y-6">
-            <div>
-                <Link to="/admin/users" className="flex items-center gap-2 text-text-secondary hover:text-white mb-4">
-                    <HiArrowLeft /> Volver a la lista de usuarios
-                </Link>
-                <UserInfoCard user={userWithTelegramId} />
-            </div>
-
-            {loadingReferrals ? (
-                <div className="bg-dark-secondary p-6 rounded-lg border border-white/10 mt-6">
-                    <Loader text="Cargando referidos..." />
+        <div className="p-6 text-white">
+             <Link to="/admin/users" className="flex items-center gap-2 text-text-secondary hover:text-white mb-4">
+                <HiArrowLeft /> Volver a la lista de usuarios
+            </Link>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Columna Izquierda */}
+                <div className="space-y-6">
+                    <UserInfoCard user={userData.user} />
+                    <ReferralsList referrals={userData.referrals} />
                 </div>
-            ) : (
-                // Pasamos `telegramId` a la lista de referidos también
-                <ReferralsList referrals={referrals.map(r => ({...r, telegramId: r._id.toString()}))} total={totalReferrals} />
-            )}
+                {/* Columna Derecha */}
+                <div className="space-y-6">
+                    <TransactionsTable transactions={userData.transactions} />
+                    {/* Aquí podrías añadir más componentes, como un formulario para editar al usuario, etc. */}
+                </div>
+            </div>
         </div>
     );
 };
