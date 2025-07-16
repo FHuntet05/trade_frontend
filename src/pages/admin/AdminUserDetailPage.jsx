@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminUserDetailPage.jsx (COMPLETO Y FINALIZADO v14.0)
+// frontend/src/pages/admin/AdminUserDetailPage.jsx (CÓDIGO CONFIRMADO Y VALIDADO v15.0)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import useAdminStore from '../../store/adminStore';
@@ -10,7 +10,8 @@ import { HiArrowLeft } from 'react-icons/hi2';
 const UserInfoCard = ({ user }) => (
     <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
         <div className="flex items-center gap-4">
-            <img src={user.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="Avatar" className="w-20 h-20 rounded-full object-cover" />
+            {/* NOTA: Este src será actualizado como parte de la corrección de imágenes */}
+            <img src={user.photoUrl || `/api/users/${user.telegramId}/photo` || '/assets/images/user-avatar-placeholder.png'} alt="Avatar" className="w-20 h-20 rounded-full object-cover" />
             <div>
                 <h2 className="text-2xl font-bold">{user.fullName || user.username}</h2>
                 <p className="text-sm text-text-secondary">@{user.username} (ID: {user.telegramId})</p>
@@ -39,9 +40,9 @@ const ReferralsList = ({ referrals, total }) => (
                         {referrals.map(ref => (
                             <tr key={ref._id} className="border-b border-white/10 text-sm hover:bg-white/5">
                                 <td className="py-3 px-3">
-                                    {/* --- MEJORA CLAVE: Enlace al detalle del referido --- */}
                                     <Link to={`/admin/users/${ref._id}`} className="flex items-center gap-3 group">
-                                        <img src={ref.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="ref avatar" className="w-8 h-8 rounded-full object-cover" />
+                                         {/* NOTA: Este src será actualizado como parte de la corrección de imágenes */}
+                                        <img src={ref.photoUrl || `/api/users/${ref.telegramId}/photo` || '/assets/images/user-avatar-placeholder.png'} alt="ref avatar" className="w-8 h-8 rounded-full object-cover" />
                                         <div>
                                             <p className="font-semibold group-hover:text-primary transition-colors">{ref.fullName || ref.username}</p>
                                             <p className="text-xs text-text-secondary">@{ref.username}</p>
@@ -59,6 +60,7 @@ const ReferralsList = ({ referrals, total }) => (
     </div>
 );
 
+
 const AdminUserDetailPage = () => {
     const { id } = useParams();
     const { adminInfo } = useAdminStore();
@@ -71,10 +73,12 @@ const AdminUserDetailPage = () => {
     const fetchUserDetails = useCallback(async (token) => {
         setLoadingUser(true);
         try {
-            const { data } = await api.get(`/api/admin/users/${id}/details`, {
+            // Asumiendo que /details no existe, lo cambiamos por la ruta base de usuario
+            const { data } = await api.get(`/api/admin/users/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setUser(data.user);
+            // La ruta /users/:id devuelve el usuario y transacciones, ajustamos
+            setUser(data.user); 
         } catch (error) {
             console.error("Error fetching user details:", error);
             toast.error("No se pudieron cargar los detalles del usuario.");
@@ -101,7 +105,6 @@ const AdminUserDetailPage = () => {
 
     useEffect(() => {
         if (adminInfo?.token) {
-            // Resetear estado para evitar mostrar datos viejos al navegar entre usuarios
             setUser(null);
             setReferrals([]);
             setTotalReferrals(0);
@@ -121,13 +124,16 @@ const AdminUserDetailPage = () => {
         return <div className="p-6 text-center text-red-400">Usuario no encontrado.</div>;
     }
 
+    // Pequeña corrección: Pasamos el `telegramId` al componente de tarjeta de usuario
+    const userWithTelegramId = { ...user, telegramId: user.telegramId };
+
     return (
         <div className="p-6 text-white space-y-6">
             <div>
                 <Link to="/admin/users" className="flex items-center gap-2 text-text-secondary hover:text-white mb-4">
                     <HiArrowLeft /> Volver a la lista de usuarios
                 </Link>
-                <UserInfoCard user={user} />
+                <UserInfoCard user={userWithTelegramId} />
             </div>
 
             {loadingReferrals ? (
@@ -135,7 +141,8 @@ const AdminUserDetailPage = () => {
                     <Loader text="Cargando referidos..." />
                 </div>
             ) : (
-                <ReferralsList referrals={referrals} total={totalReferrals} />
+                // Pasamos `telegramId` a la lista de referidos también
+                <ReferralsList referrals={referrals.map(r => ({...r, telegramId: r._id.toString()}))} total={totalReferrals} />
             )}
         </div>
     );

@@ -1,13 +1,14 @@
-// frontend/src/pages/admin/components/Sidebar.jsx (VERSIÓN FINAL)
+// frontend/src/pages/admin/components/Sidebar.jsx (CÓDIGO CONFIRMADO Y VALIDADO v15.0)
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   HiOutlineHome, HiOutlineUsers, HiOutlineReceiptRefund, 
   HiOutlineQuestionMarkCircle, HiOutlineWrenchScrewdriver, HiOutlineCog6Tooth, 
   HiOutlineBuildingLibrary, HiOutlineShieldCheck,
-  HiOutlineArchiveBoxArrowDown // <-- NUEVO ICONO
+  HiOutlineArchiveBoxArrowDown 
 } from 'react-icons/hi2';
 
+// La ruta /admin/sweep-control es la que vamos a configurar.
 const navLinks = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: HiOutlineHome },
   { name: 'Usuarios', href: '/admin/users', icon: HiOutlineUsers },
@@ -15,14 +16,12 @@ const navLinks = [
   { name: 'Retiros', href: '/admin/withdrawals', icon: HiOutlineQuestionMarkCircle },
   { name: 'Herramientas', href: '/admin/tools', icon: HiOutlineWrenchScrewdriver },
   { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary },
-  // --- NUEVO ENLACE ---
-  { name: 'Control de Barrido', href: '/admin/sweep-control', icon: HiOutlineArchiveBoxArrowDown },
+  { name: 'Control de Barrido', href: '/admin/sweep-control', icon: HiOutlineArchiveBoxArrowDown }, // <-- ENLACE CONFIRMADO
   { name: 'Seguridad', href: '/admin/security', icon: HiOutlineShieldCheck },
   { name: 'Configuración', href: '/admin/settings', icon: HiOutlineCog6Tooth },
 ];
 
 const Sidebar = () => {
-    // ... el resto del componente no cambia
     const linkClasses = "flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-accent-start/10 hover:text-white transition-colors";
     const activeLinkClasses = "bg-accent-start/20 text-white font-bold";
   

@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/SweepControlPage.jsx (COMPLETO Y REFORZADO)
+// frontend/src/pages/admin/SweepControlPage.jsx (VERSIÓN v15.1 - CON BARRIDO REAL)
 import React, { useState, useEffect, useCallback } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
@@ -19,7 +19,7 @@ const SweepControlPage = () => {
   const fetchSweepableWallets = useCallback(async (currentPage, token) => {
     currentPage === 1 ? setLoading(true) : setLoadingMore(true);
     try {
-      const { data } = await api.get(`/api/treasury/sweepable-wallets?page=${currentPage}`, {
+      const { data } = await api.get(`/api/treasury/sweepable-wallets?page=${currentPage}&limit=20`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setWallets(prev => currentPage === 1 ? data.wallets : [...prev, ...data.wallets]);
@@ -40,26 +40,46 @@ const SweepControlPage = () => {
   }, [adminInfo, fetchSweepableWallets]);
 
   const loadMore = () => {
-    if (adminInfo?.token) {
+    if (hasMore && !loadingMore && adminInfo?.token) {
       fetchSweepableWallets(page + 1, adminInfo.token);
     }
   };
 
+  // --- FUNCIÓN DE BARRIDO MODIFICADA PARA LLAMADA REAL ---
   const handleSweep = async (address, currency) => {
     if (!destinationAddress || !password) {
-      return toast.error('Por favor, introduce la dirección de destino y tu contraseña.');
+      return toast.error('Por favor, introduce la dirección de destino y tu contraseña de administrador.');
     }
     const sweepKey = `${address}-${currency}`;
     setSweeping(sweepKey);
+
+    const payload = {
+      fromAddress: address,
+      currency,
+      destinationAddress,
+      adminPassword: password
+    };
+
+    const sweepPromise = api.post('/api/treasury/sweep', payload, {
+      headers: { Authorization: `Bearer ${adminInfo.token}` },
+    });
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success(`Simulación: Barrido de ${currency} desde ${address.substring(0, 10)}... iniciado.`);
-      fetchSweepableWallets(1, adminInfo.token);
+      await toast.promise(sweepPromise, {
+        loading: `Iniciando barrido de ${currency}...`,
+        success: (res) => {
+          fetchSweepableWallets(1, adminInfo.token); // Recargar la lista desde la página 1
+          return `¡Barrido iniciado! Hash: ${res.data.transactionHash.substring(0, 15)}...`;
+        },
+        error: (err) => err.response?.data?.message || `Error al barrer ${currency}.`
+      });
     } catch (error) {
-      toast.error(error.response?.data?.message || `Error al barrer ${currency}.`);
+      // El toast ya maneja el mensaje de error, aquí solo loggeamos si es necesario.
+      console.error("Error en el proceso de barrido:", error);
     } finally {
       setSweeping(null);
-      setPassword('');
+      // Opcional: limpiar la contraseña por seguridad después de cada intento
+      // setPassword(''); 
     }
   };
 
@@ -109,7 +129,7 @@ const SweepControlPage = () => {
                       <td className="p-3 font-semibold">{balance.currency}</td>
                       <td className="p-3 font-mono">{parseFloat(balance.amount).toFixed(6)}</td>
                       <td className="p-3">
-                        <button onClick={() => handleSweep(wallet.address, balance.currency)} disabled={sweeping === `${wallet.address}-${balance.currency}`} className="bg-accent-start hover:bg-accent-end text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-wait">
+                        <button onClick={() => handleSweep(wallet.address, balance.currency)} disabled={!!sweeping} className="bg-accent-start hover:bg-accent-end text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-wait">
                           {sweeping === `${wallet.address}-${balance.currency}` ? <FaSpinner className="animate-spin" /> : 'Barrer'}
                         </button>
                       </td>

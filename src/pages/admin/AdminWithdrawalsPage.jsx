@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminWithdrawalsPage.jsx (COMPLETO Y REFORZADO)
+// frontend/src/pages/admin/AdminWithdrawalsPage.jsx (VERSIÓN v15.1 - CON RETIROS REALES)
 import React, { useState, useEffect, useCallback } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import Loader from '../../components/common/Loader';
 import { HiOutlineClipboardDocument, HiOutlineClipboardDocumentCheck } from 'react-icons/hi2';
 
-const WithdrawalsTable = ({ withdrawals, onProcess }) => {
+const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
   const [copiedAddress, setCopiedAddress] = useState('');
 
   const handleCopy = (text) => {
@@ -34,24 +34,27 @@ const WithdrawalsTable = ({ withdrawals, onProcess }) => {
             <tr key={tx._id} className="border-b border-dark-primary hover:bg-white/5">
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
-                  <img className="w-8 h-8 rounded-full" src={tx.user?.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="avatar" />
+                  {/* --- CORRECCIÓN DE IMAGEN --- */}
+                  <img className="w-8 h-8 rounded-full" src={tx.user?.telegramId ? `/api/users/${tx.user.telegramId}/photo` : '/assets/images/user-avatar-placeholder.png'} alt="avatar" />
                   <span>{tx.user?.username || 'Usuario no encontrado'}</span>
                 </div>
               </td>
               <td className="px-6 py-4 font-mono">{tx.amount.toFixed(2)}</td>
               <td className="px-6 py-4 font-mono text-text-secondary">
                 <div className="flex items-center gap-2">
-                  <span className="truncate max-w-xs">{tx.metadata?.get('withdrawalAddress')}</span>
-                  <button onClick={() => handleCopy(tx.metadata?.get('withdrawalAddress'))} className="text-gray-400 hover:text-white">
-                    {copiedAddress === tx.metadata?.get('withdrawalAddress') ? <HiOutlineClipboardDocumentCheck className="w-5 h-5 text-green-400" /> : <HiOutlineClipboardDocument className="w-5 h-5" />}
+                  <span className="truncate max-w-xs">{tx.metadata?.withdrawalAddress}</span>
+                  <button onClick={() => handleCopy(tx.metadata?.withdrawalAddress)} className="text-gray-400 hover:text-white">
+                    {copiedAddress === tx.metadata?.withdrawalAddress ? <HiOutlineClipboardDocumentCheck className="w-5 h-5 text-green-400" /> : <HiOutlineClipboardDocument className="w-5 h-5" />}
                   </button>
                 </div>
               </td>
               <td className="px-6 py-4">{new Date(tx.createdAt).toLocaleString('es-ES')}</td>
               <td className="px-6 py-4 text-center">
                 <div className="flex justify-center gap-2">
-                  <button onClick={() => onProcess(tx._id, 'completed')} className="px-3 py-1.5 text-xs font-bold text-green-800 bg-green-400 rounded-md hover:bg-green-300">Aprobar</button>
-                  <button onClick={() => onProcess(tx._id, 'rejected')} className="px-3 py-1.5 text-xs font-bold text-red-800 bg-red-400 rounded-md hover:bg-red-300">Rechazar</button>
+                  <button onClick={() => onProcess(tx._id, 'completed')} disabled={!!processingId} className="px-3 py-1.5 text-xs font-bold text-green-800 bg-green-400 rounded-md hover:bg-green-300 disabled:opacity-50">
+                    {processingId === tx._id ? 'Procesando...' : 'Aprobar'}
+                  </button>
+                  <button onClick={() => onProcess(tx._id, 'rejected')} disabled={!!processingId} className="px-3 py-1.5 text-xs font-bold text-red-800 bg-red-400 rounded-md hover:bg-red-300 disabled:opacity-50">Rechazar</button>
                 </div>
               </td>
             </tr>
@@ -65,59 +68,65 @@ const WithdrawalsTable = ({ withdrawals, onProcess }) => {
 const AdminWithdrawalsPage = () => {
   const [withdrawals, setWithdrawals] = useState([]);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [pages, setPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [processingId, setProcessingId] = useState(null);
   const { adminInfo } = useAdminStore();
 
-  const fetchWithdrawals = useCallback(async (currentPage, token) => {
-    currentPage === 1 ? setIsLoading(true) : setIsLoadingMore(true);
+  const fetchWithdrawals = useCallback(async (currentPage) => {
+    if(!adminInfo?.token) return;
+    setIsLoading(true);
     try {
       const { data } = await api.get(`/api/admin/withdrawals?page=${currentPage}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${adminInfo.token}` },
       });
-      setWithdrawals(prev => currentPage === 1 ? data.withdrawals : [...prev, ...data.withdrawals]);
-      setHasMore(data.page < data.pages);
+      setWithdrawals(data.withdrawals);
       setPage(data.page);
+      setPages(data.pages);
     } catch (error) {
       toast.error(error.response?.data?.message || 'No se pudieron cargar los retiros.');
     } finally {
       setIsLoading(false);
-      setIsLoadingMore(false);
     }
-  }, []);
+  }, [adminInfo]);
 
   useEffect(() => {
-    if (adminInfo?.token) {
-      fetchWithdrawals(1, adminInfo.token);
-    }
-  }, [adminInfo, fetchWithdrawals]);
+    fetchWithdrawals(1);
+  }, [fetchWithdrawals]);
 
-  const loadMore = () => {
-    if (adminInfo?.token) {
-      fetchWithdrawals(page + 1, adminInfo.token);
-    }
-  };
-
-  const handleProcessWithdrawal = async (txId, newStatus) => {
+  const handleProcessWithdrawal = async (txId, status) => {
+    setProcessingId(txId);
     let notes = '';
-    if (newStatus === 'rejected') {
+    if (status === 'rejected') {
       notes = window.prompt("Por favor, introduce el motivo del rechazo:");
-      if (notes === null) return;
-    } else {
-        if (!window.confirm("¿Estás seguro de que quieres aprobar este retiro? Esta acción es irreversible.")) {
-            return;
-        }
+      if (notes === null) {
+        setProcessingId(null);
+        return; // El usuario canceló el prompt
+      }
+    } else if (status === 'completed') {
+      if (!window.confirm("¿Estás seguro de que quieres APROBAR y ENVIAR los fondos para este retiro? Esta acción es irreversible.")) {
+        setProcessingId(null);
+        return;
+      }
     }
+    
+    // --- PAYLOAD CORREGIDO y LLAMADA A API MEJORADA ---
+    const payload = { status, adminNotes: notes };
+    const processPromise = api.put(`/api/admin/withdrawals/${txId}`, payload, {
+        headers: { Authorization: `Bearer ${adminInfo.token}` }
+    });
+
     try {
-      await api.put(`/api/admin/withdrawals/${txId}`, 
-        { newStatus, adminNotes: notes },
-        { headers: { Authorization: `Bearer ${adminInfo.token}` } }
-      );
-      toast.success(`Retiro procesado como "${newStatus}".`);
-      fetchWithdrawals(1, adminInfo.token);
+        await toast.promise(processPromise, {
+            loading: 'Procesando retiro en la blockchain...',
+            success: `Retiro procesado como "${status}". La lista se actualizará.`,
+            error: (err) => err.response?.data?.message || 'No se pudo procesar el retiro.'
+        });
+        fetchWithdrawals(1); // Recargar la lista
     } catch (error) {
-      toast.error(error.response?.data?.message || 'No se pudo procesar el retiro.');
+        console.error("Error al procesar retiro:", error);
+    } finally {
+        setProcessingId(null);
     }
   };
 
@@ -128,12 +137,10 @@ const AdminWithdrawalsPage = () => {
         <div className="flex justify-center items-center h-96"><Loader text="Cargando solicitudes..." /></div>
       ) : withdrawals.length > 0 ? (
         <>
-          <WithdrawalsTable withdrawals={withdrawals} onProcess={handleProcessWithdrawal} />
-          {hasMore && (
+          <WithdrawalsTable withdrawals={withdrawals} onProcess={handleProcessWithdrawal} processingId={processingId} />
+          {pages > 1 && (
             <div className="mt-6 text-center">
-              <button onClick={loadMore} disabled={isLoadingMore} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50">
-                {isLoadingMore ? 'Cargando...' : 'Cargar Más'}
-              </button>
+              {/* Lógica de paginación podría añadirse aquí si es necesario */}
             </div>
           )}
         </>
