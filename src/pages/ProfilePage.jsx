@@ -1,4 +1,4 @@
-// frontend/src/pages/ProfilePage.jsx (VERSIÓN v17.9.2 - BLINDAJE FINAL)
+// frontend/src/pages/ProfilePage.jsx (VERSIÓN v17.9.4 - CÓDIGO 100% COMPLETO Y BLINDADO)
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -11,21 +11,13 @@ import {
     HiOutlineChatBubbleLeftRight, HiOutlineLanguage
 } from 'react-icons/hi2';
 
-// API para generar la dirección
 import api from '../api/axiosConfig';
-
-// Importamos TODOS los modales que usaremos
 import WithdrawalModal from '../components/modals/WithdrawalModal';
 import SwapModal from '../components/modals/SwapModal';
 import DepositAmountModal from '../components/modals/DepositAmountModal';
-// Ya no necesitamos CryptoCurrencySelectionModal ni DirectDepositModal aquí
 import Loader from '../components/common/Loader';
 
-
-const pageVariants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeInOut' } },
-};
+const pageVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeInOut' } }, };
 
 const ProfileHeader = ({ user }) => (
     <div className="flex justify-between items-center w-full">
@@ -34,7 +26,6 @@ const ProfileHeader = ({ user }) => (
         <span className="font-bold text-white">{user?.username || 'Usuario'}</span>
       </div>
       <div className="text-right bg-white/10 backdrop-blur-lg p-2 px-4 rounded-full border border-white/10">
-        {/* ==================== BLINDAJE #1 ==================== */}
         <span className="text-lg font-bold text-accent-end">{Number(user?.balance?.ntx || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} NTX</span>
         <p className="text-xs text-text-secondary">Valor Almacenado</p>
       </div>
@@ -59,18 +50,11 @@ const ProfilePage = () => {
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
   const [isDepositAmountModalOpen, setDepositAmountModalOpen] = useState(false);
 
-  // Verificación de seguridad para evitar renderizado si el usuario no ha cargado
   if (!user) {
-    return (
-        <div className="h-full w-full flex items-center justify-center">
-            <Loader text="Cargando perfil..."/>
-        </div>
-    );
+    return <div className="h-full w-full flex items-center justify-center"><Loader text="Cargando perfil..."/></div>
   }
 
-  // --- MANEJADORES PARA ABRIR MODALES ---
   const handleWithdrawClick = () => {
-    // BLINDAJE
     if ((user?.balance?.usdt || 0) < 1.0) {
       toast.error(`Saldo insuficiente. El mínimo para retirar es 1.00 USDT.`);
     } else {
@@ -79,7 +63,6 @@ const ProfilePage = () => {
   };
 
   const handleSwapClick = () => {
-    // BLINDAJE
     if ((user?.balance?.ntx || 0) < 10000) {
       toast.error(`Saldo NTX insuficiente. El mínimo para intercambiar es 10,000 NTX.`);
     } else {
@@ -87,9 +70,7 @@ const ProfilePage = () => {
     }
   };
 
-  const handleRechargeClick = () => {
-    setDepositAmountModalOpen(true);
-  };
+  const handleRechargeClick = () => setDepositAmountModalOpen(true);
   
   const handleAmountProceed = (amount) => {
     setDepositAmountModalOpen(false);
@@ -98,10 +79,7 @@ const ProfilePage = () => {
       loading: 'Obteniendo precios de mercado...',
       success: (response) => {
         navigate('/crypto-selection', { 
-            state: { 
-                totalCost: amount, 
-                cryptoPrices: response.data 
-            } 
+            state: { totalCost: amount, cryptoPrices: response.data } 
         });
         return 'Selecciona una moneda para pagar.';
       },
@@ -109,6 +87,7 @@ const ProfilePage = () => {
     });
   };
 
+  // ===================== SECCIONES COMPLETAS =====================
   const mainActions = [
     { label: t('profile.recharge'), icon: HiOutlineArrowDownOnSquare, onClick: handleRechargeClick },
     { label: t('profile.withdraw'), icon: HiOutlineArrowUpOnSquare, onClick: handleWithdrawClick },
@@ -123,6 +102,7 @@ const ProfilePage = () => {
     { label: t('profile.about'), icon: HiOutlineInformationCircle, onClick: () => navigate('/about') },
     { label: t('profile.support'), icon: HiOutlineChatBubbleLeftRight, onClick: () => navigate('/support') },
   ];
+  // ===============================================================
 
  return (
     <>
@@ -137,18 +117,15 @@ const ProfilePage = () => {
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/10 space-y-5">
           <div className="flex justify-around items-center">
               <div className="text-center">
-                  {/* ==================== BLINDAJE #2 ==================== */}
                   <p className="text-2xl font-bold text-white">{(user?.balance?.usdt || 0).toFixed(2)}</p>
                   <p className="text-xs text-text-secondary">Cartera de Corretaje (USDT)</p>
               </div>
               <div className="h-10 w-px bg-white/20" />
               <div className="text-center">
-                  {/* ==================== BLINDAJE #3 ==================== */}
                   <p className="text-2xl font-bold text-white">{(user?.balance?.ntx || 0).toFixed(2)}</p>
                   <p className="text-xs text-text-secondary">Cartera de Valor (NTX)</p>
               </div>
           </div>
-          
           <div className="grid grid-cols-4 gap-x-2 gap-y-4">
               {mainActions.map(action => <ActionButton key={action.label} {...action} />)}
           </div>
@@ -175,12 +152,7 @@ const ProfilePage = () => {
       <AnimatePresence>
         {isWithdrawalModalOpen && <WithdrawalModal onClose={() => setWithdrawalModalOpen(false)} />}
         {isSwapModalOpen && <SwapModal onClose={() => setIsSwapModalOpen(false)} />}
-        {isDepositAmountModalOpen && (
-            <DepositAmountModal 
-                onClose={() => setDepositAmountModalOpen(false)} 
-                onProceed={handleAmountProceed}
-            />
-        )}
+        {isDepositAmountModalOpen && <DepositAmountModal onClose={() => setDepositAmountModalOpen(false)} onProceed={handleAmountProceed} />}
       </AnimatePresence>
     </>
   );
