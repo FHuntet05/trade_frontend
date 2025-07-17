@@ -19,7 +19,6 @@ import RankingPage from './pages/RankingPage';
 import TeamPage from './pages/TeamPage';
 import ProfilePage from './pages/ProfilePage';
 import LanguagePage from './pages/LanguagePage';
-import RechargePage from './pages/RechargePage';
 import NotFoundPage from './pages/NotFoundPage';
 import FaqPage from './pages/FaqPage';
 import AboutPage from './pages/AboutPage';
