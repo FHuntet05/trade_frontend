@@ -1,4 +1,4 @@
-// frontend/src/pages/ProfilePage.jsx (VERSIÓN CON FLUJO DE RECARGA COMPLETO)
+// frontend/src/pages/ProfilePage.jsx (VERSIÓN v17.8 - RUTAS RELATIVAS CORREGIDAS)
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -11,20 +11,12 @@ import {
     HiOutlineChatBubbleLeftRight, HiOutlineLanguage
 } from 'react-icons/hi2';
 
-// API para generar la dirección
 import api from '../api/axiosConfig';
-
-// Importamos TODOS los modales que usaremos
 import WithdrawalModal from '../components/modals/WithdrawalModal';
 import SwapModal from '../components/modals/SwapModal';
 import DepositAmountModal from '../components/modals/DepositAmountModal';
-import CryptoCurrencySelectionModal from '../components/modals/CryptoCurrencySelectionModal';
-import DirectDepositModal from '../components/modals/DirectDepositModal';
 
-const pageVariants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeInOut' } },
-};
+const pageVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeInOut' } }, };
 
 const ProfileHeader = ({ user }) => (
     <div className="flex justify-between items-center w-full">
@@ -59,21 +51,17 @@ const ProfilePage = () => {
 
   if (!user) return null;
 
-  // --- MANEJADORES PARA MODALES ---
   const handleWithdrawClick = () => setWithdrawalModalOpen(true);
   const handleSwapClick = () => setIsSwapModalOpen(true);
   const handleRechargeClick = () => setDepositAmountModalOpen(true);
 
-  // --- MANEJADOR PARA EL FLUJO DE RECARGA ---
-  // Se llama desde DepositAmountModal
   const handleAmountProceed = async (amount) => {
-    setDepositAmountModalOpen(false); // Cierra el modal de cantidad
+    setDepositAmountModalOpen(false);
 
     const pricesPromise = api.get('/payment/prices');
     toast.promise(pricesPromise, {
       loading: 'Obteniendo precios de mercado...',
       success: (response) => {
-        // Al obtener los precios, navegamos a la página de selección
         navigate('/crypto-selection', { 
             state: { 
                 totalCost: amount, 
@@ -101,7 +89,7 @@ const ProfilePage = () => {
     { label: t('profile.support'), icon: HiOutlineChatBubbleLeftRight, onClick: () => navigate('/support') },
   ];
 
- return (
+  return (
     <>
       <motion.div 
         className="flex flex-col h-full space-y-6"
@@ -147,30 +135,13 @@ const ProfilePage = () => {
         </div>
       </motion.div>
 
-      {/* --- RENDERIZADO CONDICIONAL DE TODOS LOS MODALES --- */}
       <AnimatePresence>
-        {/* Modales existentes */}
         {isWithdrawalModalOpen && <WithdrawalModal onClose={() => setWithdrawalModalOpen(false)} />}
         {isSwapModalOpen && <SwapModal onClose={() => setIsSwapModalOpen(false)} />}
-        
-        {/* NUEVO FLUJO DE RECARGA */}
         {isDepositAmountModalOpen && (
             <DepositAmountModal 
                 onClose={() => setDepositAmountModalOpen(false)} 
                 onProceed={handleAmountProceed}
-            />
-        )}
-        {isCryptoSelectionModalOpen && (
-            <CryptoCurrencySelectionModal 
-                isLoading={isLoadingPayment}
-                onClose={() => setCryptoSelectionModalOpen(false)}
-                onSelect={handleCurrencySelect}
-            />
-        )}
-        {paymentInfo && isDirectDepositModalOpen && (
-            <DirectDepositModal
-                paymentInfo={paymentInfo}
-                onClose={closeAllPaymentModals}
             />
         )}
       </AnimatePresence>

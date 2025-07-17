@@ -1,12 +1,11 @@
-// frontend/src/pages/CryptoSelectionPage.jsx (VERSIÓN v17.7 - RUTA CORREGIDA)
+// frontend/src/pages/CryptoSelectionPage.jsx (VERSIÓN v17.8 - RUTAS RELATIVAS CORREGIDAS)
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import api from 'src/api/axiosConfig'; // <-- RUTA CORREGIDA (ABSOLUTA)
+import api from '../api/axiosConfig'; 
 import toast from 'react-hot-toast';
-
-import Loader from 'src/components/common/Loader'; // <-- RUTA CORREGIDA (ABSOLUTA)
-import DirectDepositModal from 'src/components/modals/DirectDepositModal'; // <-- RUTA CORREGIDA (ABSOLUTA)
+import Loader from '../components/common/Loader';
+import DirectDepositModal from '../components/modals/DirectDepositModal';
 import { HiArrowLeft } from 'react-icons/hi2';
 
 const SUPPORTED_CURRENCIES = [
@@ -49,7 +48,7 @@ const CryptoSelectionPage = () => {
       let amountToSend = totalCost;
       const price = cryptoPrices[selectedCurrency.currency];
       
-      if (selectedCurrency.currency !== 'USDT' && price > 0) { // Añadido chequeo de precio > 0
+      if (selectedCurrency.currency !== 'USDT' && price > 0) {
         amountToSend = totalCost / price;
       }
       
