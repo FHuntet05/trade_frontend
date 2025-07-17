@@ -1,4 +1,4 @@
-// frontend/src/pages/ProfilePage.jsx (VERSIÓN v17.9 - BLINDADA)
+// frontend/src/pages/ProfilePage.jsx (VERSIÓN v17.9.1 - ADAPTADA A NAVEGACIÓN, CÓDIGO COMPLETO)
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -11,23 +11,29 @@ import {
     HiOutlineChatBubbleLeftRight, HiOutlineLanguage
 } from 'react-icons/hi2';
 
+// API para generar la dirección
 import api from '../api/axiosConfig';
+
+// Importamos TODOS los modales que usaremos
 import WithdrawalModal from '../components/modals/WithdrawalModal';
 import SwapModal from '../components/modals/SwapModal';
 import DepositAmountModal from '../components/modals/DepositAmountModal';
-import Loader from '../components/common/Loader'; // <-- Importamos Loader
+// Ya no necesitamos CryptoCurrencySelectionModal ni DirectDepositModal aquí
+import Loader from '../components/common/Loader';
 
-const pageVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeInOut' } }, };
+
+const pageVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeInOut' } },
+};
 
 const ProfileHeader = ({ user }) => (
     <div className="flex justify-between items-center w-full">
       <div className="flex items-center gap-3 bg-white/10 backdrop-blur-lg p-2 px-4 rounded-full border border-white/10">
-        {/* BLINDAJE: Usamos valor por defecto para photoUrl */}
         <img src={user?.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
         <span className="font-bold text-white">{user?.username || 'Usuario'}</span>
       </div>
       <div className="text-right bg-white/10 backdrop-blur-lg p-2 px-4 rounded-full border border-white/10">
-        {/* BLINDAJE: Encadenamiento opcional y valor por defecto */}
         <span className="text-lg font-bold text-accent-end">{Number(user?.balance?.ntx || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} NTX</span>
         <p className="text-xs text-text-secondary">Valor Almacenado</p>
       </div>
@@ -48,41 +54,68 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   
+  // --- Estados para los modales que se abren desde esta página ---
   const [isWithdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
   const [isDepositAmountModalOpen, setDepositAmountModalOpen] = useState(false);
 
-  // BLINDAJE: Si el usuario aún no ha cargado, muestra un loader.
+  // Verificación de seguridad para evitar renderizado si el usuario no ha cargado
   if (!user) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
-        <Loader text="Cargando perfil..." />
-      </div>
+        <div className="h-full w-full flex items-center justify-center">
+            <Loader text="Cargando perfil..."/>
+        </div>
     );
   }
 
-  const handleWithdrawClick = () => setWithdrawalModalOpen(true);
-  const handleSwapClick = () => setIsSwapModalOpen(true);
-  const handleRechargeClick = () => setDepositAmountModalOpen(true);
+  // --- MANEJADORES PARA ABRIR MODALES ---
+  const handleWithdrawClick = () => {
+    if (user?.balance?.usdt < 1.0) {
+      toast.error(`Saldo insuficiente. El mínimo para retirar es 1.00 USDT.`);
+    } else {
+      setWithdrawalModalOpen(true);
+    }
+  };
 
-  const handleAmountProceed = async (amount) => {
-    setDepositAmountModalOpen(false);
+  const handleSwapClick = () => {
+    if (user?.balance?.ntx < 10000) {
+      toast.error(`Saldo NTX insuficiente. El mínimo para intercambiar es 10,000 NTX.`);
+    } else {
+      setIsSwapModalOpen(true);
+    }
+  };
+
+  const handleRechargeClick = () => {
+    setDepositAmountModalOpen(true);
+  };
+  
+  // ===================== INICIO DEL CAMBIO CLAVE =====================
+  // Esta es la función que se ejecuta cuando el usuario confirma la cantidad en el DepositAmountModal.
+  // Ahora, en lugar de abrir otro modal, prepara los datos y navega.
+  const handleAmountProceed = (amount) => {
+    setDepositAmountModalOpen(false); // Cerramos el modal de cantidad
+
+    // Usamos toast.promise para darle feedback al usuario mientras se obtienen los precios
     const pricesPromise = api.get('/payment/prices');
     toast.promise(pricesPromise, {
       loading: 'Obteniendo precios de mercado...',
       success: (response) => {
+        // Al obtener los precios con éxito, navegamos a la página de selección,
+        // pasando toda la información necesaria en el 'state' de la navegación.
         navigate('/crypto-selection', { 
             state: { 
                 totalCost: amount, 
                 cryptoPrices: response.data 
             } 
         });
-        return 'Selecciona una moneda para pagar.';
+        return 'Selecciona una moneda para pagar.'; // Mensaje de éxito del toast
       },
       error: (err) => err.response?.data?.message || "No se pudieron obtener los precios.",
     });
   };
+  // ====================== FIN DEL CAMBIO CLAVE =======================
 
+  // --- DEFINICIÓN DE ACCIONES ---
   const mainActions = [
     { label: t('profile.recharge'), icon: HiOutlineArrowDownOnSquare, onClick: handleRechargeClick },
     { label: t('profile.withdraw'), icon: HiOutlineArrowUpOnSquare, onClick: handleWithdrawClick },
@@ -98,10 +131,10 @@ const ProfilePage = () => {
     { label: t('profile.support'), icon: HiOutlineChatBubbleLeftRight, onClick: () => navigate('/support') },
   ];
 
-  return (
+ return (
     <>
       <motion.div 
-        className="flex flex-col h-full space-y-6"
+        className="flex flex-col h-full space-y-6 p-4"
         variants={pageVariants}
         initial="hidden"
         animate="visible"
@@ -111,13 +144,11 @@ const ProfilePage = () => {
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/10 space-y-5">
           <div className="flex justify-around items-center">
               <div className="text-center">
-                  {/* BLINDAJE: Encadenamiento opcional y valor por defecto */}
                   <p className="text-2xl font-bold text-white">{(user?.balance?.usdt || 0).toFixed(2)}</p>
                   <p className="text-xs text-text-secondary">Cartera de Corretaje (USDT)</p>
               </div>
               <div className="h-10 w-px bg-white/20" />
               <div className="text-center">
-                  {/* BLINDAJE: Encadenamiento opcional y valor por defecto */}
                   <p className="text-2xl font-bold text-white">{(user?.balance?.ntx || 0).toFixed(2)}</p>
                   <p className="text-xs text-text-secondary">Cartera de Valor (NTX)</p>
               </div>
@@ -146,6 +177,7 @@ const ProfilePage = () => {
         </div>
       </motion.div>
 
+      {/* --- RENDERIZADO CONDICIONAL DE LOS MODALES --- */}
       <AnimatePresence>
         {isWithdrawalModalOpen && <WithdrawalModal onClose={() => setWithdrawalModalOpen(false)} />}
         {isSwapModalOpen && <SwapModal onClose={() => setIsSwapModalOpen(false)} />}
@@ -155,6 +187,7 @@ const ProfilePage = () => {
                 onProceed={handleAmountProceed}
             />
         )}
+        {/* Ya no gestionamos CryptoSelectionModal ni DirectDepositModal desde aquí */}
       </AnimatePresence>
     </>
   );

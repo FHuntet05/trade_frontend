@@ -11,7 +11,6 @@ import UserInfoHeader from '../components/home/UserInfoHeader';
 import ToolCard from '../components/tools/ToolCard';
 import Loader from '../components/common/Loader';
 import PurchaseModal from '../components/tools/PurchaseModal'; // Usamos PurchaseModal, no PurchaseFlowModal
-import DirectDepositModal from '../components/modals/DirectDepositModal';
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 const SINGLE_PURCHASE_TOOL_NAMES = ["VIP 1", "VIP 2", "VIP 3"];
