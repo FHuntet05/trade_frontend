@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminUserDetailPage.jsx (VERSIÓN v18.3 - CON TABLA DE TRANSACCIONES)
+// frontend/src/pages/admin/AdminUserDetailPage.jsx (VERSIÓN v17.2 - RUTA CORREGIDA)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import useAdminStore from '../../store/adminStore';
@@ -6,6 +6,8 @@ import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
 import Loader from '../../components/common/Loader';
 import { HiArrowLeft } from 'react-icons/hi2';
+
+// ... (Todos los sub-componentes: UserInfoCard, ReferralsList, TransactionsTable sin cambios) ...
 
 const UserInfoCard = ({ user }) => (
     <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
@@ -69,7 +71,6 @@ const ReferralsList = ({ referrals }) => (
     </div>
 );
 
-// --- NUEVO COMPONENTE ---
 const TransactionsTable = ({ transactions }) => (
     <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
         <h3 className="text-xl font-semibold mb-4">Últimas 10 Transacciones</h3>
@@ -91,7 +92,7 @@ const TransactionsTable = ({ transactions }) => (
                             <tr key={tx._id} className="border-b border-white/10 text-sm hover:bg-white/5">
                                 <td className="py-3 px-3">
                                     <span className={`px-2 py-0.5 text-xs rounded-full ${
-                                        tx.type.includes('deposit') || tx.type.includes('credit') ? 'bg-green-500/20 text-green-300' :
+                                        tx.type.includes('deposit') || tx.type.includes('credit') || tx.type.includes('claim') ? 'bg-green-500/20 text-green-300' :
                                         tx.type.includes('withdrawal') || tx.type.includes('debit') ? 'bg-red-500/20 text-red-300' :
                                         'bg-blue-500/20 text-blue-300'
                                     }`}>
@@ -115,56 +116,57 @@ const TransactionsTable = ({ transactions }) => (
 
 const AdminUserDetailPage = () => {
     const { id } = useParams();
-    const { adminInfo } = useAdminStore();
+    // Quitamos la dependencia de `adminInfo` ya que el token se maneja con un interceptor de axios
     const [userData, setUserData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchAllDetails = useCallback(async (token) => {
+    const fetchAllDetails = useCallback(async () => {
         setIsLoading(true);
         try {
-            const { data } = await api.get(`/api/admin/users/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            // ====================== INICIO DE LA CORRECCIÓN ======================
+            // Se ha quitado el prefijo `/api` y el header explícito de token,
+            // asumiendo que tu `axiosConfig` ya lo gestiona.
+            const { data } = await api.get(`/admin/users/${id}/details`);
+            // ======================= FIN DE LA CORRECCIÓN ========================
             setUserData(data);
         } catch (error) {
             console.error("Error fetching user details:", error);
-            toast.error("No se pudieron cargar los datos del usuario.");
+            toast.error(error.response?.data?.message || "No se pudieron cargar los datos del usuario.");
         } finally {
             setIsLoading(false);
         }
     }, [id]);
 
     useEffect(() => {
-        if (adminInfo?.token) {
-            setUserData(null);
-            fetchAllDetails(adminInfo.token);
-        }
-    }, [id, adminInfo, fetchAllDetails]);
+        // El useEffect se simplifica y se dispara solo cuando cambia el ID del usuario
+        setUserData(null);
+        fetchAllDetails();
+    }, [id, fetchAllDetails]);
 
     if (isLoading) {
-        return <div className="p-6"><Loader text="Cargando detalles del usuario..." /></div>;
+        return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><Loader text="Cargando detalles del usuario..." /></div>;
     }
 
     if (!userData || !userData.user) {
-        return <div className="p-6 text-center text-red-400">Usuario no encontrado.</div>;
+        return <div className="p-6 text-center text-red-400">Usuario no encontrado o error al cargar.</div>;
     }
 
+    // He notado que en el frontend esperas `userData.transactions` pero el backend
+    // lo enviaba como `userData.transactions.items`. El nuevo backend ya lo envía
+    // correctamente como `userData.transactions`.
     return (
-        <div className="p-6 text-white">
-             <Link to="/admin/users" className="flex items-center gap-2 text-text-secondary hover:text-white mb-4">
+        <div className="p-4 sm:p-6 text-white">
+             <Link to="/admin/users" className="inline-flex items-center gap-2 text-text-secondary hover:text-white mb-4 transition-colors">
                 <HiArrowLeft /> Volver a la lista de usuarios
             </Link>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Columna Izquierda */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <div className="space-y-6">
                     <UserInfoCard user={userData.user} />
                     <ReferralsList referrals={userData.referrals} />
                 </div>
-                {/* Columna Derecha */}
                 <div className="space-y-6">
                     <TransactionsTable transactions={userData.transactions} />
-                    {/* Aquí podrías añadir más componentes, como un formulario para editar al usuario, etc. */}
                 </div>
             </div>
         </div>
