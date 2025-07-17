@@ -1,5 +1,5 @@
-// frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v18.5 - LÓGICA CONFIRMADA)
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+// frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v18.11 - CORRECCIÓN DEFINITIVA DE BUCLE INFINITO)
+import React, { useState, useEffect, useRef } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
@@ -32,73 +32,85 @@ const AdminTreasuryPage = () => {
     const [sweepContext, setSweepContext] = useState(null);
     const [sweepReport, setSweepReport] = useState(null);
 
-    const startScan = useCallback(async () => {
-        if (!adminInfo?.token) return;
-
-        setLoadingState({ list: true, scan: false });
-        setTreasuryData({ summary: { usdt: 0, bnb: 0, trx: 0 }, wallets: [] });
-        setElapsedTime(0);
-        if (timerRef.current) clearInterval(timerRef.current);
-        
-        try {
-            const { data: walletsToScan } = await api.get('/admin/treasury/wallets-list', {
-                headers: { Authorization: `Bearer ${adminInfo.token}` },
-            });
-
-            if (walletsToScan.length === 0) {
+    // CORRECCIÓN CRÍTICA: Se elimina el useCallback y se reestructura el useEffect
+    // para que se ejecute UNA SOLA VEZ al montar el componente, rompiendo el bucle infinito.
+    useEffect(() => {
+        const startScan = async () => {
+            if (!adminInfo?.token) {
                 setLoadingState({ list: false, scan: false });
-                setScanStatus('No hay wallets registradas en el sistema.');
+                setScanStatus('Token de administrador no encontrado.');
                 return;
             }
 
-            setLoadingState({ list: false, scan: true });
-            timerRef.current = setInterval(() => setElapsedTime(t => t + 1), 1000);
-
-            let tempSummary = { usdt: 0, bnb: 0, trx: 0 };
-            let walletsWithBalance = [];
-
-            for (let i = 0; i < walletsToScan.length; i++) {
-                const wallet = walletsToScan[i];
-                setScanStatus(`(${i + 1}/${walletsToScan.length}) Escaneando ${wallet.address}...`);
-                
-                try {
-                    const { data: balanceData } = await api.post('/admin/treasury/wallet-balance', 
-                        { address: wallet.address, chain: wallet.chain },
-                        { headers: { Authorization: `Bearer ${adminInfo.token}` } }
-                    );
-
-                    if (balanceData.success) {
-                        const { usdt, bnb, trx } = balanceData.balances;
-                        if (usdt > 0 || bnb > 0 || trx > 0) {
-                            tempSummary.usdt += usdt;
-                            tempSummary.bnb += bnb;
-                            tempSummary.trx += trx;
-                            walletsWithBalance.push({ ...wallet, balances: balanceData.balances });
-                            setTreasuryData({ summary: { ...tempSummary }, wallets: [...walletsWithBalance] });
-                        }
-                    }
-                } catch (error) {
-                    console.error(`Fallo al escanear ${wallet.address}:`, error.response?.data?.message || error.message);
-                }
-            }
-            
-            clearInterval(timerRef.current);
-            setScanStatus(`Escaneo completado.`);
-
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Error al obtener la lista de wallets.');
+            setLoadingState({ list: true, scan: false });
+            setTreasuryData({ summary: { usdt: 0, bnb: 0, trx: 0 }, wallets: [] });
+            setElapsedTime(0);
             if (timerRef.current) clearInterval(timerRef.current);
-        } finally {
-            setLoadingState({ list: false, scan: false });
-        }
-    }, [adminInfo]);
+            
+            try {
+                // Ahora sí, la petición se ejecutará.
+                console.log("FRONTEND: [1/3] Realizando petición a /admin/treasury/wallets-list");
+                const { data: walletsToScan } = await api.get('/admin/treasury/wallets-list', {
+                    headers: { Authorization: `Bearer ${adminInfo.token}` },
+                });
+                console.log(`FRONTEND: [2/3] Petición exitosa. Se encontraron ${walletsToScan.length} wallets para escanear.`);
 
-    useEffect(() => {
+                if (walletsToScan.length === 0) {
+                    setLoadingState({ list: false, scan: false });
+                    setScanStatus('No hay wallets registradas en el sistema.');
+                    return;
+                }
+
+                setLoadingState({ list: false, scan: true });
+                timerRef.current = setInterval(() => setElapsedTime(t => t + 1), 1000);
+
+                let tempSummary = { usdt: 0, bnb: 0, trx: 0 };
+                let walletsWithBalance = [];
+
+                for (let i = 0; i < walletsToScan.length; i++) {
+                    const wallet = walletsToScan[i];
+                    setScanStatus(`(${i + 1}/${walletsToScan.length}) Escaneando ${wallet.address}...`);
+                    
+                    try {
+                        const { data: balanceData } = await api.post('/admin/treasury/wallet-balance', 
+                            { address: wallet.address, chain: wallet.chain },
+                            { headers: { Authorization: `Bearer ${adminInfo.token}` } }
+                        );
+
+                        if (balanceData.success) {
+                            const { usdt, bnb, trx } = balanceData.balances;
+                            if (usdt > 0 || bnb > 0 || trx > 0) {
+                                tempSummary.usdt += usdt;
+                                tempSummary.bnb += bnb;
+                                tempSummary.trx += trx;
+                                walletsWithBalance.push({ ...wallet, balances: balanceData.balances });
+                                setTreasuryData({ summary: { ...tempSummary }, wallets: [...walletsWithBalance] });
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`Fallo al escanear ${wallet.address}:`, error.response?.data?.message || error.message);
+                    }
+                }
+                
+                clearInterval(timerRef.current);
+                setScanStatus(`Escaneo completado.`);
+                console.log("FRONTEND: [3/3] Escaneo de todas las wallets finalizado.");
+
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Error al obtener la lista de wallets.');
+                if (timerRef.current) clearInterval(timerRef.current);
+            } finally {
+                setLoadingState({ list: false, scan: false });
+            }
+        };
+
         startScan();
+
+        // Limpieza al desmontar el componente
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [startScan]);
+    }, [adminInfo]); // El efecto se re-ejecutará solo si 'adminInfo' cambia, lo cual es correcto.
 
     const handleOpenSweepModal = (chain) => {
         setSweepContext({ chain, token: 'USDT' });
@@ -116,7 +128,9 @@ const AdminTreasuryPage = () => {
           success: (res) => {
             setSweepReport(res.data);
             setIsReportModalOpen(true);
-            startScan();
+            // No es necesario llamar a startScan() aquí, ya que el useEffect se encargará si es necesario
+            // o simplemente refrescamos la página para un nuevo escaneo limpio.
+            window.location.reload(); 
             return 'Operación de barrido completada. Revisa el reporte.';
           },
           error: (err) => err.response?.data?.message || 'Error crítico durante el barrido.',
