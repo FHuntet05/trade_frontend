@@ -1,17 +1,14 @@
-// src/pages/ToolsPage.jsx (COMPLETO, SIN TOAST Y CON LÓGICA DE PRECIOS CORRECTA)
+// frontend/src/pages/ToolsPage.jsx (VERSIÓN v17.3 FINAL - SIMPLIFICADA)
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useToolsStore from '../store/toolsStore';
 import useUserStore from '../store/userStore';
-import api from '../api/axiosConfig';
-import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import UserInfoHeader from '../components/home/UserInfoHeader';
 import ToolCard from '../components/tools/ToolCard';
 import Loader from '../components/common/Loader';
-import PurchaseFlowModal from '../components/tools/PurchaseModal';
-import CryptoCurrencySelectionModal from '../components/modals/CryptoCurrencySelectionModal';
-import DirectDepositModal from '../components/modals/DirectDepositModal';
+import PurchaseModal from '../components/tools/PurchaseModal';
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 const SINGLE_PURCHASE_TOOL_NAMES = ["VIP 1", "VIP 2", "VIP 3"];
@@ -26,16 +23,10 @@ const StatCard = ({ label, value }) => (
 const ToolsPage = () => {
   const { tools, loading, error, fetchTools } = useToolsStore();
   const { user } = useUserStore();
+  const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('all_tools');
   const [selectedTool, setSelectedTool] = useState(null);
-  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
-  const [isCryptoSelectionModalOpen, setIsCryptoSelectionModalOpen] = useState(false);
-  const [isDirectDepositModalOpen, setIsDirectDepositModalOpen] = useState(false);
-  const [isLoadingPayment, setIsLoadingPayment] = useState(false);
-  const [purchaseContext, setPurchaseContext] = useState({ quantity: 1, totalCost: 0 });
-  const [paymentDetails, setPaymentDetails] = useState(null);
-  const [cryptoPrices, setCryptoPrices] = useState(null);
 
   useEffect(() => { fetchTools(); }, [fetchTools]);
 
@@ -53,71 +44,17 @@ const ToolsPage = () => {
 
   const handleBuyClick = (tool) => {
     setSelectedTool(tool);
-    setIsPurchaseModalOpen(true);
   };
   
-  const handleCloseAllModals = () => {
-    setIsPurchaseModalOpen(false);
-    setIsCryptoSelectionModalOpen(false);
-    setIsDirectDepositModalOpen(false);
+  const handleCloseModal = () => {
     setSelectedTool(null);
-    setPaymentDetails(null);
-    setCryptoPrices(null);
   };
 
-  const handleStartCryptoPayment = async (quantity) => {
-    if (!selectedTool) return;
-    const totalCost = selectedTool.price * quantity;
-    setPurchaseContext({ quantity, totalCost });
-    
-    setIsLoadingPayment(true);
-    // El toast ha sido eliminado. El estado `isLoadingPayment` se pasa al modal.
-    try {
-      const response = await api.get('/payment/prices');
-      setCryptoPrices(response.data);
-      setIsPurchaseModalOpen(false);
-      setIsCryptoSelectionModalOpen(true);
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || "No se pudieron obtener los precios.";
-      toast.error(errorMessage);
-    } finally {
-      setIsLoadingPayment(false);
-    }
+  const handleInitiateCryptoPayment = (tool, quantity, totalCost) => {
+    handleCloseModal();
+    navigate('/crypto-selection', { state: { tool, quantity, totalCost } });
   };
   
-  const handleCurrencySelected = async (selectedCurrency) => {
-    setIsLoadingPayment(true);
-    try {
-      const response = await api.post('/payment/generate-address', { 
-          chain: selectedCurrency.chain, 
-      });
-      const { address } = response.data;
-
-      let amountToSend = purchaseContext.totalCost;
-      const price = cryptoPrices[selectedCurrency.currency];
-
-      if (selectedCurrency.currency !== 'USDT' && price) {
-        amountToSend = purchaseContext.totalCost / price;
-      }
-      
-      setPaymentDetails({
-          paymentAddress: address,
-          paymentAmount: amountToSend.toFixed(8),
-          currency: `${selectedCurrency.currency} (${selectedCurrency.chain})`
-      });
-      
-      setIsCryptoSelectionModalOpen(false);
-      setIsDirectDepositModalOpen(true);
-
-    } catch (error) {
-        const errorMessage = error.response?.data?.message || 'Error al generar la dirección de pago.';
-        toast.error(errorMessage);
-        console.error("Error en handleCurrencySelected:", error);
-    } finally {
-        setIsLoadingPayment(false);
-    }
-  };
-
   const TabButton = ({ tabName, label, badgeCount }) => (
     <button
       onClick={() => setActiveTab(tabName)}
@@ -147,6 +84,7 @@ const ToolsPage = () => {
       <div className="flex justify-end">
         <button className="text-xs text-text-secondary hover:text-white">Historial de compras</button>
       </div>
+      
       <AnimatePresence mode="wait">
         {loading ? ( <motion.div key="loader"><Loader /></motion.div> ) 
         : error ? ( <motion.div key="error" className="text-center text-red-400">{error}</motion.div> ) 
@@ -173,25 +111,12 @@ const ToolsPage = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {isPurchaseModalOpen && selectedTool && (
-          <PurchaseFlowModal 
-            tool={selectedTool} 
-            onClose={handleCloseAllModals} 
-            onSelectCrypto={handleStartCryptoPayment}
+        {selectedTool && (
+          <PurchaseModal
+            tool={selectedTool}
+            onClose={handleCloseModal}
+            onInitiateCryptoPayment={handleInitiateCryptoPayment}
           />
-        )}
-        {isCryptoSelectionModalOpen && (
-            <CryptoCurrencySelectionModal
-                isLoading={isLoadingPayment}
-                onSelect={handleCurrencySelected}
-                onClose={handleCloseAllModals}
-            />
-        )}
-        {isDirectDepositModalOpen && paymentDetails && (
-            <DirectDepositModal
-                paymentInfo={paymentDetails}
-                onClose={handleCloseAllModals}
-            />
         )}
       </AnimatePresence>
     </div>
