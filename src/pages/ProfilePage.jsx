@@ -53,89 +53,40 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   
-  // --- ESTADOS PARA MODALES EXISTENTES ---
   const [isWithdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
-
-  // --- ESTADOS PARA EL NUEVO FLUJO DE RECARGA ---
-  const [isLoadingPayment, setIsLoadingPayment] = useState(false);
-  const [depositAmount, setDepositAmount] = useState(0); // Cantidad USDT a depositar
-  const [paymentInfo, setPaymentInfo] = useState(null); // Info para el modal final
-  
   const [isDepositAmountModalOpen, setDepositAmountModalOpen] = useState(false);
-  const [isCryptoSelectionModalOpen, setCryptoSelectionModalOpen] = useState(false);
-  const [isDirectDepositModalOpen, setDirectDepositModalOpen] = useState(false);
 
   if (!user) return null;
 
-  // --- MANEJADORES PARA MODALES EXISTENTES ---
-  const handleWithdrawClick = () => {
-    const MINIMUM_WITHDRAWAL = 1.0;
-    if (user.balance.usdt < MINIMUM_WITHDRAWAL) {
-      toast.error(`Saldo insuficiente. El mínimo para retirar es ${MINIMUM_WITHDRAWAL} USDT.`);
-    } else {
-      setWithdrawalModalOpen(true);
-    }
+  // --- MANEJADORES PARA MODALES ---
+  const handleWithdrawClick = () => setWithdrawalModalOpen(true);
+  const handleSwapClick = () => setIsSwapModalOpen(true);
+  const handleRechargeClick = () => setDepositAmountModalOpen(true);
+
+  // --- MANEJADOR PARA EL FLUJO DE RECARGA ---
+  // Se llama desde DepositAmountModal
+  const handleAmountProceed = async (amount) => {
+    setDepositAmountModalOpen(false); // Cierra el modal de cantidad
+
+    const pricesPromise = api.get('/payment/prices');
+    toast.promise(pricesPromise, {
+      loading: 'Obteniendo precios de mercado...',
+      success: (response) => {
+        // Al obtener los precios, navegamos a la página de selección
+        navigate('/crypto-selection', { 
+            state: { 
+                totalCost: amount, 
+                cryptoPrices: response.data 
+            } 
+        });
+        return 'Selecciona una moneda para pagar.';
+      },
+      error: (err) => err.response?.data?.message || "No se pudieron obtener los precios.",
+    });
   };
 
-  const handleSwapClick = () => {
-    const MINIMUM_NTX_SWAP = 10000;
-    if (user.balance.ntx < MINIMUM_NTX_SWAP) {
-      toast.error(`Saldo NTX insuficiente. El mínimo para intercambiar es ${MINIMUM_NTX_SWAP.toLocaleString()} NTX.`);
-    } else {
-      setIsSwapModalOpen(true);
-    }
-  };
-
-  // --- MANEJADORES PARA EL NUEVO FLUJO DE RECARGA ---
-  // Paso 1: El usuario hace clic en "Recargar" y abre el primer modal.
-  const handleRechargeClick = () => {
-    setDepositAmountModalOpen(true);
-  };
-  
-  // Paso 2: El usuario introduce un monto y procede.
-  const handleAmountProceed = (amount) => {
-    setDepositAmount(amount);
-    setDepositAmountModalOpen(false);
-    setCryptoSelectionModalOpen(true);
-  };
-  
-  // Paso 3: El usuario selecciona una criptomoneda.
-  const handleCurrencySelect = async (currency) => {
-    setIsLoadingPayment(true);
-    try {
-      // Llamamos al backend para generar la dirección de depósito
-      const response = await api.post('/payment/generate-address', {
-        amountUSDT: depositAmount,
-        chain: currency.chain,
-        currency: currency.currency,
-      });
-
-      // Guardamos la información de pago que nos devuelve el backend
-      setPaymentInfo(response.data);
-      setCryptoSelectionModalOpen(false);
-      setDirectDepositModalOpen(true);
-
-    } catch (error) {
-      console.error('Error al generar la dirección de pago:', error);
-      toast.error(error.response?.data?.message || 'No se pudo generar la dirección de pago.');
-      setCryptoSelectionModalOpen(false); // Cerramos el modal de selección en caso de error
-    } finally {
-      setIsLoadingPayment(false);
-    }
-  };
-  
-  const closeAllPaymentModals = () => {
-      setDepositAmountModalOpen(false);
-      setCryptoSelectionModalOpen(false);
-      setDirectDepositModalOpen(false);
-      setPaymentInfo(null);
-      setDepositAmount(0);
-  };
-
-  // --- DEFINICIÓN DE ACCIONES ---
   const mainActions = [
-    // La acción de recargar ahora dispara nuestro flujo de modales
     { label: t('profile.recharge'), icon: HiOutlineArrowDownOnSquare, onClick: handleRechargeClick },
     { label: t('profile.withdraw'), icon: HiOutlineArrowUpOnSquare, onClick: handleWithdrawClick },
     { label: t('profile.records'), icon: HiOutlineRectangleStack, onClick: () => navigate('/history') },
