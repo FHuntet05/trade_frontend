@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminWithdrawalsPage.jsx (VERSIÓN v17.0 - CORREGIDA Y ESTABILIZADA)
+// frontend/src/pages/admin/AdminWithdrawalsPage.jsx (VERSIÓN v17.0.3 - CORRECCIÓN DE RUTA)
 import React, { useState, useEffect, useCallback } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
@@ -6,8 +6,6 @@ import toast from 'react-hot-toast';
 import Loader from '../../components/common/Loader';
 import { HiOutlineClipboardDocument, HiOutlineClipboardDocumentCheck } from 'react-icons/hi2';
 
-// --- El componente de la tabla no tiene errores, pero lo incluyo para que el archivo esté completo. ---
-// He hecho una pequeña mejora para manejar el caso donde metadata o withdrawalAddress no existen.
 const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
   const [copiedAddress, setCopiedAddress] = useState('');
 
@@ -43,7 +41,6 @@ const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
               <td className="px-6 py-4 font-mono">{tx.amount.toFixed(2)}</td>
               <td className="px-6 py-4 font-mono text-text-secondary">
                 <div className="flex items-center gap-2">
-                  {/* MEJORA: Asegurarse de que metadata.walletAddress existe antes de mostrarlo */}
                   <span className="truncate max-w-xs">{tx.metadata?.walletAddress || 'N/A'}</span>
                   {tx.metadata?.walletAddress && (
                     <button onClick={() => handleCopy(tx.metadata.walletAddress)} className="text-gray-400 hover:text-white">
@@ -73,46 +70,38 @@ const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
 
 
 const AdminWithdrawalsPage = () => {
-  // ==================== INICIO DEL BLOQUE CORREGIDO ====================
-  
-  // 1. Estados definidos correctamente. `error` ahora existe.
   const [withdrawals, setWithdrawals] = useState([]);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(true); // Se mantiene en true al inicio.
-  const [error, setError] = useState(null); // Estado de error añadido.
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [processingId, setProcessingId] = useState(null);
   const { adminInfo } = useAdminStore();
 
-  // 2. La función `fetchWithdrawals` ahora es "Callback" para estabilidad en `useEffect`.
-  // Y lo más importante: ¡usa los setters de estado correctos! (`setWithdrawals`, `setError`).
   const fetchWithdrawals = useCallback(async (targetPage = 1) => {
     setIsLoading(true);
     setError(null);
     try {
-      const { data } = await api.get(`/api/admin/withdrawals/pending?page=${targetPage}`);
-      // Se usan los setters correctos
+      // CORRECCIÓN: Se ha eliminado el prefijo '/api' de la ruta.
+      const { data } = await api.get(`/admin/withdrawals/pending?page=${targetPage}`);
       setWithdrawals(data.withdrawals);
       setPage(data.page);
       setPages(data.pages);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "No se pudieron cargar las solicitudes. Intente de nuevo más tarde.";
+      // CORRECCIÓN: Añadido un mensaje de error que muestra la ruta fallida.
+      const requestedPath = err.config?.url || 'desconocida';
+      const errorMessage = `Ruta no encontrada - ${requestedPath}`;
       console.error("Error al obtener retiros:", err);
       setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error("Error al cargar las solicitudes.");
     } finally {
-      // ESTO AHORA SÍ SE EJECUTARÁ SIEMPRE.
       setIsLoading(false);
     }
-  }, []); // El array vacío significa que la función no se recrea en cada render.
+  }, []);
 
-  // 3. `useEffect` añadido. Esto hace que `fetchWithdrawals` se llame AUTOMÁTICAMENTE
-  // una sola vez cuando el componente se carga por primera vez.
   useEffect(() => {
     fetchWithdrawals(1);
   }, [fetchWithdrawals]);
-
-  // ==================== FIN DEL BLOQUE CORREGIDO ====================
 
   const handleProcessWithdrawal = async (txId, status) => {
     setProcessingId(txId);
@@ -131,14 +120,13 @@ const AdminWithdrawalsPage = () => {
       }
     }
     
-    // NOTA: La ruta correcta, según tu archivo de rutas, es `/process`.
-    const processPromise = api.put(`/api/admin/withdrawals/${txId}/process`, { status, adminNotes: notes });
+    // CORRECCIÓN: Se ha eliminado el prefijo '/api' de la ruta.
+    const processPromise = api.put(`/admin/withdrawals/${txId}/process`, { status, adminNotes: notes });
 
     try {
         await toast.promise(processPromise, {
             loading: 'Actualizando estado en la base de datos...',
             success: (res) => {
-                // Para una mejor UX, recargamos la lista después de procesar.
                 fetchWithdrawals(page);
                 return res.data.message || `Retiro procesado como "${status}".`;
             },
@@ -146,19 +134,17 @@ const AdminWithdrawalsPage = () => {
         });
     } catch (error) {
         console.error("Error al procesar retiro:", error);
-        // El toast.promise ya maneja el mensaje de error al usuario.
     } finally {
         setProcessingId(null);
     }
   };
 
-  // El renderizado ahora también maneja el estado de error.
   const renderContent = () => {
     if (isLoading) {
       return <div className="flex justify-center items-center h-96"><Loader text="Cargando solicitudes..." /></div>;
     }
     if (error) {
-      return <div className="text-center py-16 text-red-400"><p>{error}</p></div>;
+      return <div className="text-center py-16 text-red-400"><p className="font-mono bg-black/20 p-4 rounded-lg">{error}</p></div>;
     }
     if (withdrawals.length > 0) {
       return (
