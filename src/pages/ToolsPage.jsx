@@ -1,14 +1,17 @@
-// frontend/src/pages/ToolsPage.jsx (VERSIÓN v17.3 FINAL - SIMPLIFICADA)
+// frontend/src/pages/ToolsPage.jsx (VERSIÓN v17.6 - ADAPTADA A NAVEGACIÓN)
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Importamos useNavigate
 import useToolsStore from '../store/toolsStore';
 import useUserStore from '../store/userStore';
+import api from '../api/axiosConfig';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import UserInfoHeader from '../components/home/UserInfoHeader';
 import ToolCard from '../components/tools/ToolCard';
 import Loader from '../components/common/Loader';
-import PurchaseModal from '../components/tools/PurchaseModal';
+import PurchaseModal from '../components/tools/PurchaseModal'; // Usamos PurchaseModal, no PurchaseFlowModal
+import DirectDepositModal from '../components/modals/DirectDepositModal';
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 const SINGLE_PURCHASE_TOOL_NAMES = ["VIP 1", "VIP 2", "VIP 3"];
@@ -23,11 +26,11 @@ const StatCard = ({ label, value }) => (
 const ToolsPage = () => {
   const { tools, loading, error, fetchTools } = useToolsStore();
   const { user } = useUserStore();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Hook para navegar
   
   const [activeTab, setActiveTab] = useState('all_tools');
   const [selectedTool, setSelectedTool] = useState(null);
-
+  
   useEffect(() => { fetchTools(); }, [fetchTools]);
 
   const { ownedTools, toolCounts } = useMemo(() => {
@@ -46,13 +49,32 @@ const ToolsPage = () => {
     setSelectedTool(tool);
   };
   
-  const handleCloseModal = () => {
+  const handleCloseAllModals = () => {
     setSelectedTool(null);
   };
 
-  const handleInitiateCryptoPayment = (tool, quantity, totalCost) => {
-    handleCloseModal();
-    navigate('/crypto-selection', { state: { tool, quantity, totalCost } });
+  // ESTA ES LA FUNCIÓN CLAVE QUE CAMBIA
+  const handleStartCryptoPayment = async (quantity) => {
+    if (!selectedTool) return;
+    const totalCost = selectedTool.price * quantity;
+    
+    // Mostramos un loader mientras se obtienen los precios
+    const pricesPromise = api.get('/payment/prices');
+    toast.promise(pricesPromise, {
+        loading: 'Obteniendo precios...',
+        success: (response) => {
+            // Una vez obtenidos los precios, navegamos
+            navigate('/crypto-selection', {
+                state: {
+                    totalCost: totalCost,
+                    cryptoPrices: response.data,
+                }
+            });
+            handleCloseAllModals(); // Cierra el PurchaseModal
+            return 'Selecciona una moneda para pagar.';
+        },
+        error: (err) => err.response?.data?.message || 'No se pudieron obtener los precios.',
+    });
   };
   
   const TabButton = ({ tabName, label, badgeCount }) => (
@@ -112,10 +134,10 @@ const ToolsPage = () => {
 
       <AnimatePresence>
         {selectedTool && (
-          <PurchaseModal
-            tool={selectedTool}
-            onClose={handleCloseModal}
-            onInitiateCryptoPayment={handleInitiateCryptoPayment}
+          <PurchaseModal 
+            tool={selectedTool} 
+            onClose={handleCloseAllModals} 
+            onSelectCrypto={handleStartCryptoPayment} // Esta es la prop correcta según tu PurchaseModal
           />
         )}
       </AnimatePresence>
