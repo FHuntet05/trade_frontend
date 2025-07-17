@@ -73,26 +73,26 @@ const AdminWithdrawalsPage = () => {
   const [processingId, setProcessingId] = useState(null);
   const { adminInfo } = useAdminStore();
 
-  const fetchWithdrawals = useCallback(async (currentPage) => {
-    if(!adminInfo?.token) return;
-    setIsLoading(true);
-    try {
-      const { data } = await api.get(`/api/admin/withdrawals?page=${currentPage}`, {
-        headers: { Authorization: `Bearer ${adminInfo.token}` },
-      });
-      setWithdrawals(data.withdrawals);
-      setPage(data.page);
-      setPages(data.pages);
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'No se pudieron cargar los retiros.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [adminInfo]);
-
-  useEffect(() => {
-    fetchWithdrawals(1);
-  }, [fetchWithdrawals]);
+  const fetchWithdrawals = async () => {
+  setLoading(true); // Se activa el estado de carga
+  setError(null); // Limpiamos errores previos
+  try {
+    // 1. Intentamos hacer la llamada a la API
+    const response = await api.get('/api/admin/withdrawals/pending');
+    // 2. Si tiene éxito, guardamos los datos
+    setData(response.data.withdrawals);
+  } catch (err) {
+    // 3. Si falla (por un 404 o cualquier otro error), lo capturamos
+    console.error("Error al obtener retiros:", err);
+    setError("No se pudieron cargar las solicitudes. Intente de nuevo.");
+    // También mostramos un toast al usuario para que sepa qué pasó
+    toast.error("Error al cargar las solicitudes.");
+  } finally {
+    // 4. ESTO ES LO MÁS IMPORTANTE: Este bloque se ejecuta SIEMPRE,
+    // tanto si la llamada tuvo éxito como si falló.
+    setLoading(false); // Desactivamos el estado de carga
+  }
+};
 
   const handleProcessWithdrawal = async (txId, status) => {
     setProcessingId(txId);
