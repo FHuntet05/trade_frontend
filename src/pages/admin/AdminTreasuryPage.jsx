@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v18.12 - ADAPTADO A TU STORE)
+// frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v19.0 - ESTADO SÓLIDO)
 import React, { useState, useEffect, useRef } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
@@ -25,7 +25,6 @@ const AdminTreasuryPage = () => {
     const [elapsedTime, setElapsedTime] = useState(0);
     const timerRef = useRef(null);
     
-    // CORRECCIÓN CRÍTICA: Se usan las variables correctas de TU store.
     const { token, isHydrated } = useAdminStore();
     
     const [isSweepModalOpen, setIsSweepModalOpen] = useState(false);
@@ -37,11 +36,10 @@ const AdminTreasuryPage = () => {
         const startScan = async () => {
             if (!isHydrated) {
                 setLoadingState({ list: true, scan: false });
-                setScanStatus('Sincronizando estado...');
+                setScanStatus('Sincronizando estado de la sesión...');
                 return;
             }
 
-            // CORRECCIÓN CRÍTICA: La comprobación ahora usa 'token', que es el nombre correcto en tu store.
             if (!token) {
                 setLoadingState({ list: false, scan: false });
                 setScanStatus('Token de administrador no encontrado. Por favor, inicia sesión de nuevo.');
@@ -55,7 +53,7 @@ const AdminTreasuryPage = () => {
             
             try {
                 const { data: walletsToScan } = await api.get('/admin/treasury/wallets-list', {
-                    headers: { Authorization: `Bearer ${token}` }, // Usamos 'token'
+                    headers: { Authorization: `Bearer ${token}` },
                 });
 
                 if (walletsToScan.length === 0) {
@@ -77,7 +75,7 @@ const AdminTreasuryPage = () => {
                     try {
                         const { data: balanceData } = await api.post('/admin/treasury/wallet-balance', 
                             { address: wallet.address, chain: wallet.chain },
-                            { headers: { Authorization: `Bearer ${token}` } } // Usamos 'token'
+                            { headers: { Authorization: `Bearer ${token}` } }
                         );
 
                         if (balanceData.success) {
@@ -111,7 +109,7 @@ const AdminTreasuryPage = () => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [isHydrated, token]); // El efecto ahora depende de 'isHydrated' y 'token' de forma segura.
+    }, [isHydrated, token]);
 
     const handleOpenSweepModal = (chain) => {
         setSweepContext({ chain, token: 'USDT' });
@@ -121,7 +119,7 @@ const AdminTreasuryPage = () => {
     const handleSweepConfirm = async (sweepDetails) => {
         setIsSweepModalOpen(false);
         const sweepPromise = api.post('/admin/sweep-funds', sweepDetails, {
-            headers: { Authorization: `Bearer ${token}` }, // Usamos 'token'
+            headers: { Authorization: `Bearer ${token}` },
         });
 
         toast.promise(sweepPromise, {

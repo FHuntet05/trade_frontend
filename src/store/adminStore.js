@@ -1,4 +1,4 @@
-// frontend/src/store/adminStore.js (VERSIÓN v18.12 - ADAPTADO A TU LÓGICA CON HIDRATACIÓN)
+// frontend/src/store/adminStore.js (VERSIÓN v19.0 - ESTADO SÓLIDO)
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
@@ -10,7 +10,7 @@ const useAdminStore = create(
       token: null,
       isAuthenticated: false,
       isLoading: false,
-      isHydrated: false, // <-- LÍNEA 1/3 AÑADIDA: La bandera de estado.
+      isHydrated: false, // La bandera que nos dice si ya cargó desde localStorage
 
       login: async (username, password) => {
         set({ isLoading: true });
@@ -58,22 +58,26 @@ const useAdminStore = create(
       },
 
       logout: () => {
-        set({ admin: null, token: null, isAuthenticated: false });
+        set({ admin: null, token: null, isAuthenticated: false, isHydrated: false });
         delete api.defaults.headers.common['Authorization'];
       },
 
       setTwoFactorEnabled: (status) => {
         set((state) => ({ admin: state.admin ? { ...state.admin, isTwoFactorEnabled: status } : null }));
       },
-
-      // LÍNEA 2/3 AÑADIDA: La acción para cambiar la bandera.
+      
       setHydrated: () => set({ isHydrated: true }), 
     }),
     {
       name: 'neuro-link-admin-storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ token: state.token, admin: state.admin, isAuthenticated: state.isAuthenticated }),
-      // LÍNEA 3/3 AÑADIDA: Esta función se ejecuta automáticamente cuando Zustand termina de cargar desde localStorage.
+      partialize: (state) => ({ 
+        token: state.token, 
+        admin: state.admin, 
+        isAuthenticated: state.isAuthenticated,
+        // CORRECCIÓN CRÍTICA: Añadimos 'isHydrated' a la lista de estados persistidos.
+        isHydrated: state.isHydrated 
+      }),
       onRehydrateStorage: (state) => {
         console.log('[Store] Hidratación completada. Dando señal de listo.');
         state.setHydrated();
