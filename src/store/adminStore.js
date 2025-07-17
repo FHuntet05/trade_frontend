@@ -1,4 +1,4 @@
-// frontend/src/store/adminStore.js (COMPLETO CON LÓGICA 2FA)
+// frontend/src/store/adminStore.js (VERSIÓN v18.12 - ADAPTADO A TU LÓGICA CON HIDRATACIÓN)
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
@@ -10,6 +10,7 @@ const useAdminStore = create(
       token: null,
       isAuthenticated: false,
       isLoading: false,
+      isHydrated: false, // <-- LÍNEA 1/3 AÑADIDA: La bandera de estado.
 
       login: async (username, password) => {
         set({ isLoading: true });
@@ -17,12 +18,10 @@ const useAdminStore = create(
           const { data } = await api.post('/auth/login/admin', { username, password });
           
           if (data.twoFactorRequired) {
-            // El backend nos pide el segundo factor. No estamos autenticados aún.
             set({ isLoading: false });
             return { success: true, twoFactorRequired: true, userId: data.userId };
           }
           
-          // Login normal (sin 2FA)
           set({
             admin: { username: data.username, role: data.role, isTwoFactorEnabled: data.isTwoFactorEnabled },
             token: data.token,
@@ -39,7 +38,6 @@ const useAdminStore = create(
         }
       },
 
-      // Nueva función para completar el login con el token 2FA
       completeTwoFactorLogin: async (userId, token) => {
         set({ isLoading: true });
         try {
@@ -67,11 +65,19 @@ const useAdminStore = create(
       setTwoFactorEnabled: (status) => {
         set((state) => ({ admin: state.admin ? { ...state.admin, isTwoFactorEnabled: status } : null }));
       },
+
+      // LÍNEA 2/3 AÑADIDA: La acción para cambiar la bandera.
+      setHydrated: () => set({ isHydrated: true }), 
     }),
     {
       name: 'neuro-link-admin-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token, admin: state.admin, isAuthenticated: state.isAuthenticated }),
+      // LÍNEA 3/3 AÑADIDA: Esta función se ejecuta automáticamente cuando Zustand termina de cargar desde localStorage.
+      onRehydrateStorage: (state) => {
+        console.log('[Store] Hidratación completada. Dando señal de listo.');
+        state.setHydrated();
+      },
     }
   )
 );

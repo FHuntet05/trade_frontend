@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v18.11 - CORRECCIÓN DEFINITIVA DE BUCLE INFINITO)
+// frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v18.12 - ADAPTADO A TU STORE)
 import React, { useState, useEffect, useRef } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
@@ -25,20 +25,26 @@ const AdminTreasuryPage = () => {
     const [elapsedTime, setElapsedTime] = useState(0);
     const timerRef = useRef(null);
     
-    const { adminInfo } = useAdminStore();
+    // CORRECCIÓN CRÍTICA: Se usan las variables correctas de TU store.
+    const { token, isHydrated } = useAdminStore();
     
     const [isSweepModalOpen, setIsSweepModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [sweepContext, setSweepContext] = useState(null);
     const [sweepReport, setSweepReport] = useState(null);
 
-    // CORRECCIÓN CRÍTICA: Se elimina el useCallback y se reestructura el useEffect
-    // para que se ejecute UNA SOLA VEZ al montar el componente, rompiendo el bucle infinito.
     useEffect(() => {
         const startScan = async () => {
-            if (!adminInfo?.token) {
+            if (!isHydrated) {
+                setLoadingState({ list: true, scan: false });
+                setScanStatus('Sincronizando estado...');
+                return;
+            }
+
+            // CORRECCIÓN CRÍTICA: La comprobación ahora usa 'token', que es el nombre correcto en tu store.
+            if (!token) {
                 setLoadingState({ list: false, scan: false });
-                setScanStatus('Token de administrador no encontrado.');
+                setScanStatus('Token de administrador no encontrado. Por favor, inicia sesión de nuevo.');
                 return;
             }
 
@@ -48,12 +54,9 @@ const AdminTreasuryPage = () => {
             if (timerRef.current) clearInterval(timerRef.current);
             
             try {
-                // Ahora sí, la petición se ejecutará.
-                console.log("FRONTEND: [1/3] Realizando petición a /admin/treasury/wallets-list");
                 const { data: walletsToScan } = await api.get('/admin/treasury/wallets-list', {
-                    headers: { Authorization: `Bearer ${adminInfo.token}` },
+                    headers: { Authorization: `Bearer ${token}` }, // Usamos 'token'
                 });
-                console.log(`FRONTEND: [2/3] Petición exitosa. Se encontraron ${walletsToScan.length} wallets para escanear.`);
 
                 if (walletsToScan.length === 0) {
                     setLoadingState({ list: false, scan: false });
@@ -74,7 +77,7 @@ const AdminTreasuryPage = () => {
                     try {
                         const { data: balanceData } = await api.post('/admin/treasury/wallet-balance', 
                             { address: wallet.address, chain: wallet.chain },
-                            { headers: { Authorization: `Bearer ${adminInfo.token}` } }
+                            { headers: { Authorization: `Bearer ${token}` } } // Usamos 'token'
                         );
 
                         if (balanceData.success) {
@@ -94,7 +97,6 @@ const AdminTreasuryPage = () => {
                 
                 clearInterval(timerRef.current);
                 setScanStatus(`Escaneo completado.`);
-                console.log("FRONTEND: [3/3] Escaneo de todas las wallets finalizado.");
 
             } catch (error) {
                 toast.error(error.response?.data?.message || 'Error al obtener la lista de wallets.');
@@ -106,11 +108,10 @@ const AdminTreasuryPage = () => {
 
         startScan();
 
-        // Limpieza al desmontar el componente
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [adminInfo]); // El efecto se re-ejecutará solo si 'adminInfo' cambia, lo cual es correcto.
+    }, [isHydrated, token]); // El efecto ahora depende de 'isHydrated' y 'token' de forma segura.
 
     const handleOpenSweepModal = (chain) => {
         setSweepContext({ chain, token: 'USDT' });
@@ -120,7 +121,7 @@ const AdminTreasuryPage = () => {
     const handleSweepConfirm = async (sweepDetails) => {
         setIsSweepModalOpen(false);
         const sweepPromise = api.post('/admin/sweep-funds', sweepDetails, {
-            headers: { Authorization: `Bearer ${adminInfo.token}` },
+            headers: { Authorization: `Bearer ${token}` }, // Usamos 'token'
         });
 
         toast.promise(sweepPromise, {
@@ -128,8 +129,6 @@ const AdminTreasuryPage = () => {
           success: (res) => {
             setSweepReport(res.data);
             setIsReportModalOpen(true);
-            // No es necesario llamar a startScan() aquí, ya que el useEffect se encargará si es necesario
-            // o simplemente refrescamos la página para un nuevo escaneo limpio.
             window.location.reload(); 
             return 'Operación de barrido completada. Revisa el reporte.';
           },
@@ -159,7 +158,7 @@ const AdminTreasuryPage = () => {
                 {(loadingState.list || loadingState.scan) && (
                     <div className="flex justify-center items-center h-64 bg-dark-secondary p-6 rounded-lg border border-white/10">
                        <div className="text-center">
-                            <Loader text={loadingState.list ? 'Obteniendo lista de wallets...' : 'Escaneando...'} />
+                            <Loader text={loadingState.list ? 'Sincronizando...' : 'Escaneando...'} />
                             <p className="mt-4 text-sm text-text-secondary font-mono">{scanStatus}</p>
                             {loadingState.scan && <p className="text-sm text-accent-start">Tiempo transcurrido: {elapsedTime}s</p>}
                        </div>
