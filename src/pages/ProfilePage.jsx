@@ -1,4 +1,4 @@
-// frontend/src/pages/ProfilePage.jsx (VERSIÓN v17.8 - RUTAS RELATIVAS CORREGIDAS)
+// frontend/src/pages/ProfilePage.jsx (VERSIÓN v17.9 - BLINDADA)
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -15,17 +15,20 @@ import api from '../api/axiosConfig';
 import WithdrawalModal from '../components/modals/WithdrawalModal';
 import SwapModal from '../components/modals/SwapModal';
 import DepositAmountModal from '../components/modals/DepositAmountModal';
+import Loader from '../components/common/Loader'; // <-- Importamos Loader
 
 const pageVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeInOut' } }, };
 
 const ProfileHeader = ({ user }) => (
     <div className="flex justify-between items-center w-full">
       <div className="flex items-center gap-3 bg-white/10 backdrop-blur-lg p-2 px-4 rounded-full border border-white/10">
-        <img src={user.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
-        <span className="font-bold text-white">{user.username || 'Usuario'}</span>
+        {/* BLINDAJE: Usamos valor por defecto para photoUrl */}
+        <img src={user?.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+        <span className="font-bold text-white">{user?.username || 'Usuario'}</span>
       </div>
       <div className="text-right bg-white/10 backdrop-blur-lg p-2 px-4 rounded-full border border-white/10">
-        <span className="text-lg font-bold text-accent-end">{Number(user.balance.ntx).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} NTX</span>
+        {/* BLINDAJE: Encadenamiento opcional y valor por defecto */}
+        <span className="text-lg font-bold text-accent-end">{Number(user?.balance?.ntx || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} NTX</span>
         <p className="text-xs text-text-secondary">Valor Almacenado</p>
       </div>
     </div>
@@ -49,7 +52,14 @@ const ProfilePage = () => {
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
   const [isDepositAmountModalOpen, setDepositAmountModalOpen] = useState(false);
 
-  if (!user) return null;
+  // BLINDAJE: Si el usuario aún no ha cargado, muestra un loader.
+  if (!user) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <Loader text="Cargando perfil..." />
+      </div>
+    );
+  }
 
   const handleWithdrawClick = () => setWithdrawalModalOpen(true);
   const handleSwapClick = () => setIsSwapModalOpen(true);
@@ -57,7 +67,6 @@ const ProfilePage = () => {
 
   const handleAmountProceed = async (amount) => {
     setDepositAmountModalOpen(false);
-
     const pricesPromise = api.get('/payment/prices');
     toast.promise(pricesPromise, {
       loading: 'Obteniendo precios de mercado...',
@@ -102,12 +111,14 @@ const ProfilePage = () => {
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/10 space-y-5">
           <div className="flex justify-around items-center">
               <div className="text-center">
-                  <p className="text-2xl font-bold text-white">{user.balance.usdt.toFixed(2) || '0.00'}</p>
+                  {/* BLINDAJE: Encadenamiento opcional y valor por defecto */}
+                  <p className="text-2xl font-bold text-white">{(user?.balance?.usdt || 0).toFixed(2)}</p>
                   <p className="text-xs text-text-secondary">Cartera de Corretaje (USDT)</p>
               </div>
               <div className="h-10 w-px bg-white/20" />
               <div className="text-center">
-                  <p className="text-2xl font-bold text-white">{user.balance.ntx.toFixed(2) || '0.00'}</p>
+                  {/* BLINDAJE: Encadenamiento opcional y valor por defecto */}
+                  <p className="text-2xl font-bold text-white">{(user?.balance?.ntx || 0).toFixed(2)}</p>
                   <p className="text-xs text-text-secondary">Cartera de Valor (NTX)</p>
               </div>
           </div>
