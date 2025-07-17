@@ -1,22 +1,20 @@
-// frontend/src/pages/admin/components/Sidebar.jsx (CÓDIGO CONFIRMADO Y VALIDADO v15.0)
+// frontend/src/pages/admin/components/Sidebar.jsx (VERSIÓN v18.0 - SIMPLIFICADO)
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   HiOutlineHome, HiOutlineUsers, HiOutlineReceiptRefund, 
   HiOutlineQuestionMarkCircle, HiOutlineWrenchScrewdriver, HiOutlineCog6Tooth, 
-  HiOutlineBuildingLibrary, HiOutlineShieldCheck,
-  HiOutlineArchiveBoxArrowDown 
+  HiOutlineBuildingLibrary, HiOutlineShieldCheck
 } from 'react-icons/hi2';
 
-// La ruta /admin/sweep-control es la que vamos a configurar.
+// Hemos eliminado "Control de Barrido" para unificar la funcionalidad en la nueva página de "Tesorería".
 const navLinks = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: HiOutlineHome },
   { name: 'Usuarios', href: '/admin/users', icon: HiOutlineUsers },
   { name: 'Transacciones', href: '/admin/transactions', icon: HiOutlineReceiptRefund },
   { name: 'Retiros', href: '/admin/withdrawals', icon: HiOutlineQuestionMarkCircle },
+  { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary }, // <-- ESTA ES NUESTRA PÁGINA
   { name: 'Herramientas', href: '/admin/tools', icon: HiOutlineWrenchScrewdriver },
-  { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary },
-  { name: 'Control de Barrido', href: '/admin/sweep-control', icon: HiOutlineArchiveBoxArrowDown }, // <-- ENLACE CONFIRMADO
   { name: 'Seguridad', href: '/admin/security', icon: HiOutlineShieldCheck },
   { name: 'Configuración', href: '/admin/settings', icon: HiOutlineCog6Tooth },
 ];
