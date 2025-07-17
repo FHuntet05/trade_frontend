@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v18.4 - OPTIMIZADO Y COMPLETO)
+// frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v18.5 - LÓGICA CONFIRMADA)
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
@@ -179,7 +179,7 @@ const AdminTreasuryPage = () => {
                                 <table className="w-full text-left">
                                     <thead className="text-xs text-text-secondary uppercase bg-dark-tertiary">
                                         <tr>
-                                            <th className="p-3">User ID</th>
+                                            <th className="p-3">Usuario</th>
                                             <th className="p-3">Wallet Address</th>
                                             <th className="p-3">Chain</th>
                                             <th className="p-3 text-right">Saldo USDT</th>
@@ -189,7 +189,7 @@ const AdminTreasuryPage = () => {
                                     <tbody className="divide-y divide-white/10">
                                         {treasuryData.wallets.length > 0 ? treasuryData.wallets.map((wallet) => (
                                             <tr key={wallet.address} className="hover:bg-dark-tertiary">
-                                                <td className="p-3 font-mono text-xs">{wallet.user ? wallet.user.toString() : 'N/A'}</td>
+                                                <td className="p-3 font-medium">{wallet.user?.username || 'Usuario Desconocido'}</td>
                                                 <td className="p-3 font-mono text-sm">{wallet.address}</td>
                                                 <td className="p-3">
                                                   <span className={`px-2 py-1 text-xs font-bold rounded-full ${wallet.chain === 'BSC' ? 'bg-yellow-400/20 text-yellow-300' : 'bg-red-400/20 text-red-300'}`}>
