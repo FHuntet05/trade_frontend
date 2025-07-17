@@ -1,11 +1,12 @@
-// frontend/src/pages/CryptoSelectionPage.jsx (NUEVO ARCHIVO)
-import React, { useState, useEffect } from 'react';
+// frontend/src/pages/CryptoSelectionPage.jsx (VERSIÓN v17.7 - RUTA CORREGIDA)
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import api from '../api/axiosConfig';
+import api from 'src/api/axiosConfig'; // <-- RUTA CORREGIDA (ABSOLUTA)
 import toast from 'react-hot-toast';
-import Loader from '../components/common/Loader';
-import DirectDepositModal from '../components/modals/DirectDepositModal';
+
+import Loader from 'src/components/common/Loader'; // <-- RUTA CORREGIDA (ABSOLUTA)
+import DirectDepositModal from 'src/components/modals/DirectDepositModal'; // <-- RUTA CORREGIDA (ABSOLUTA)
 import { HiArrowLeft } from 'react-icons/hi2';
 
 const SUPPORTED_CURRENCIES = [
@@ -32,7 +33,7 @@ const CurrencyItem = ({ currency, onSelect, disabled }) => (
 const CryptoSelectionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { totalCost, cryptoPrices } = location.state || {};
+  const { tool, quantity, totalCost, cryptoPrices } = location.state || {};
   
   const [isLoading, setIsLoading] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState(null);
@@ -48,7 +49,7 @@ const CryptoSelectionPage = () => {
       let amountToSend = totalCost;
       const price = cryptoPrices[selectedCurrency.currency];
       
-      if (selectedCurrency.currency !== 'USDT' && price) {
+      if (selectedCurrency.currency !== 'USDT' && price > 0) { // Añadido chequeo de precio > 0
         amountToSend = totalCost / price;
       }
       
@@ -69,25 +70,40 @@ const CryptoSelectionPage = () => {
       return (
           <div className="min-h-screen bg-dark-primary text-white p-4 flex flex-col items-center justify-center">
               <h1 className="text-xl text-red-400">Error: Faltan datos para el pago.</h1>
-              <button onClick={() => navigate('/tools')} className="mt-4 px-4 py-2 bg-accent-start rounded-lg">Volver a la Tienda</button>
+              <button onClick={() => navigate(-1)} className="mt-4 px-4 py-2 bg-accent-start rounded-lg">Volver</button>
           </div>
       );
   }
 
+  const isPurchaseFlow = !!tool;
+
   return (
     <div className="min-h-screen bg-dark-primary text-white p-4">
       <header className="flex items-center mb-6">
-        <button onClick={() => navigate('/tools')} className="mr-4 p-2 rounded-full hover:bg-white/10">
+        <button onClick={() => navigate(-1)} className="mr-4 p-2 rounded-full hover:bg-white/10">
           <HiArrowLeft className="w-6 h-6" />
         </button>
-        <h1 className="text-2xl font-bold">Seleccionar Criptomoneda</h1>
+        <h1 className="text-2xl font-bold">{isPurchaseFlow ? 'Completar Compra' : 'Seleccionar Moneda'}</h1>
       </header>
 
       <main className="max-w-md mx-auto bg-dark-secondary p-6 rounded-2xl border border-white/10">
-        <div className="text-center mb-6">
-          <p className="text-text-secondary">Total a Pagar:</p>
-          <p className="text-3xl font-bold font-mono">{totalCost.toFixed(2)} USDT</p>
-        </div>
+        {isPurchaseFlow ? (
+          <div className="flex items-center justify-between mb-6 bg-black/20 p-4 rounded-lg">
+              <div className="flex items-center gap-4">
+                  <img src={tool.imageUrl} alt={tool.name} className="w-12 h-12" />
+                  <div>
+                      <p className="font-bold">{tool.name} (x{quantity})</p>
+                      <p className="text-sm text-text-secondary">Total a Pagar:</p>
+                  </div>
+              </div>
+              <p className="text-2xl font-mono">{totalCost.toFixed(2)} USDT</p>
+          </div>
+        ) : (
+          <div className="text-center mb-6">
+            <p className="text-text-secondary">Total a Depositar:</p>
+            <p className="text-3xl font-bold font-mono">{totalCost.toFixed(2)} USDT</p>
+          </div>
+        )}
         
         <div className="space-y-3">
           {isLoading 
