@@ -2,12 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useToolsStore from '../store/toolsStore';
-
-// --- INICIO DE LA CORRECCIÓN #1: IMPORTAR LA ACCIÓN DE ACTUALIZACIÓN ---
-// Importamos el hook Y la acción para actualizar el estado del usuario.
-import useUserStore from '../store/userStore';
-// --- FIN DE LA CORRECCIÓN #1 ---
-
+import useUserStore from '../store/userStore'; // <-- CORRECCIÓN #1: Importar solo el hook por defecto.
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,12 +24,9 @@ const StatCard = ({ label, value }) => (
 
 const ToolsPage = () => {
   const { tools, loading, error, fetchTools } = useToolsStore();
-  
-  // --- INICIO DE LA CORRECCIÓN #2: OBTENER LA FUNCIÓN DE ACTUALIZACIÓN ---
-  // Obtenemos tanto el objeto 'user' como la función 'updateUser' desde el store.
+  // --- INICIO DE LA CORRECCIÓN #2: Obtener la acción del hook correctamente. ---
   const { user, updateUser } = useUserStore();
   // --- FIN DE LA CORRECCIÓN #2 ---
-
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('all_tools');
@@ -72,10 +64,7 @@ const ToolsPage = () => {
         loading: 'Obteniendo precios...',
         success: (response) => {
             navigate('/crypto-selection', {
-                state: {
-                    totalCost: totalCost,
-                    cryptoPrices: response.data,
-                }
+                state: { totalCost, cryptoPrices: response.data }
             });
             handleCloseAllModals();
             return 'Selecciona una moneda para pagar.';
@@ -84,8 +73,7 @@ const ToolsPage = () => {
     });
   };
 
-  // --- INICIO DE LA CORRECCIÓN #3: NUEVA FUNCIÓN PARA COMPRA CON SALDO ---
-  // Creamos una función dedicada para la compra con saldo, que contiene la lógica crucial.
+  // --- INICIO DE LA CORRECCIÓN #3: Lógica de compra con saldo que SÍ actualiza el estado. ---
   const handlePurchaseWithBalance = async (quantity) => {
     if (!selectedTool) return;
 
@@ -97,19 +85,19 @@ const ToolsPage = () => {
     toast.promise(purchasePromise, {
       loading: 'Procesando compra...',
       success: (response) => {
-        // ¡ESTE ES EL PASO CLAVE QUE FALTABA!
-        // Actualizamos el estado global con los datos del usuario devueltos por la API.
-        // Esto notificará a toda la aplicación (incluida la HomePage) que el usuario ha cambiado.
+        // ¡ESTE ES EL PASO CLAVE Y DEFINITIVO!
+        // Le decimos al store de Zustand que actualice sus datos con el nuevo objeto de usuario
+        // que nos devuelve el backend. Esto dispara la reactividad en toda la app.
         updateUser(response.data.user);
         
-        handleCloseAllModals(); // Cerramos el modal
+        handleCloseAllModals();
         return response.data.message || '¡Compra exitosa!';
       },
       error: (err) => err.response?.data?.message || 'No se pudo completar la compra.',
     });
   };
   // --- FIN DE LA CORRECCIÓN #3 ---
-  
+
   const TabButton = ({ tabName, label, badgeCount }) => (
     <button
       onClick={() => setActiveTab(tabName)}
@@ -167,14 +155,12 @@ const ToolsPage = () => {
 
       <AnimatePresence>
         {selectedTool && (
-          // --- INICIO DE LA CORRECCIÓN #4: PASAR LA NUEVA FUNCIÓN AL MODAL ---
           <PurchaseModal 
             tool={selectedTool} 
             onClose={handleCloseAllModals} 
-            onSelectCrypto={handleStartCryptoPayment} // Esta maneja el flujo de pago con crypto
-            onPurchaseWithBalance={handlePurchaseWithBalance} // Esta maneja el flujo de pago con saldo
+            onSelectCrypto={handleStartCryptoPayment}
+            onPurchaseWithBalance={handlePurchaseWithBalance} // Se pasa la función correcta.
           />
-          // --- FIN DE LA CORRECCIÓN #4 ---
         )}
       </AnimatePresence>
     </div>

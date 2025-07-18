@@ -1,4 +1,4 @@
-// frontend/src/hooks/useTaskLogic.js (COMPLETO Y FINAL)
+// frontend/src/hooks/useTaskLogic.js (FLUJO CORREGIDO v21.19)
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
@@ -25,44 +25,48 @@ export const useTaskLogic = () => {
 
   const handleClaimSuccess = (updatedUser) => {
     updateUser(updatedUser);
-    fetchTaskStatus();
+    fetchTaskStatus(); // Refrescamos el estado de las tareas
   };
 
   const handleGoToTask = async (task) => {
-    // Para tareas que solo navegan dentro de la app
     if (task.id === 'boughtUpgrade') return navigate('/tools');
     if (task.id === 'invitedTenFriends') return navigate('/team');
 
-     // --- INICIO DE LA CORRECCIÓN DE LÓGICA ---
-    if (task.id === 'joinedTelegram' && task.link && !taskStatus.claimedTasks.joinedTelegram) {
-      // 1. Abrir el enlace de Telegram INMEDIATAMENTE para una respuesta rápida.
-      window.Telegram.WebApp.openTelegramLink(task.link);
+    // --- INICIO DE LA CORRECCIÓN DE LÓGICA DE TAREA ---
+    if (task.id === 'joinedTelegram' && task.link && !taskStatus.isCompleted.joinedTelegram) {
+      // 1. Mostrar un loader para que el usuario sepa que algo está pasando.
+      const actionPromise = api.post('/tasks/mark-as-visited', { taskName: task.id });
       
-      // 2. Realizar la llamada a la API en segundo plano sin bloquear al usuario.
-      try {
-        await api.post('/tasks/mark-as-visited', { taskName: task.id });
-        // Actualizamos el estado local para reflejar el intento.
-        setTaskStatus(prev => ({
-          ...prev,
-          claimedTasks: { ...prev.claimedTasks, joinedTelegramAttempt: true }
-        }));
-      } catch (error) {
-        // Si la llamada en segundo plano falla, informamos al usuario, pero no es un error bloqueante.
-        console.error("Error al marcar la tarea como visitada:", error);
-        toast.error('No se pudo verificar la visita, pero puedes intentar reclamar la tarea si te uniste al canal.');
-      }
+      toast.promise(actionPromise, {
+        loading: 'Verificando y abriendo canal...',
+        success: (response) => {
+          // 2. Si la API responde correctamente, abrimos el enlace.
+          window.Telegram.WebApp.openTelegramLink(task.link);
+          // 3. Actualizamos el estado local INMEDIATAMENTE para que el botón "Reclamar" aparezca
+          //    sin necesidad de esperar a que el usuario vuelva y se refresque la página.
+          setTaskStatus(prev => ({
+            ...prev,
+            isCompleted: { ...prev.isCompleted, joinedTelegram: true }
+          }));
+          return response.data.message || '¡Listo para reclamar!';
+        },
+        error: (err) => err.response?.data?.message || 'No se pudo procesar la acción.',
+      });
     }
+    // --- FIN DE LA CORRECCIÓN DE LÓGICA DE TAREA ---
   };
 
   const handleClaimTask = async (task) => {
-    toast.loading('Reclamando recompensa...', { id: `task-claim-${task.id}` });
-    try {
-      const response = await api.post('/tasks/claim', { taskName: task.id });
-      toast.success(response.data.message || '¡Recompensa reclamada!', { id: `task-claim-${task.id}` });
-      handleClaimSuccess(response.data.user);
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'No se pudo reclamar la recompensa.', { id: `task-claim-${task.id}` });
-    }
+    const claimPromise = api.post('/tasks/claim', { taskName: task.id });
+    
+    toast.promise(claimPromise, {
+      loading: 'Reclamando recompensa...',
+      success: (response) => {
+        handleClaimSuccess(response.data.user);
+        return response.data.message || '¡Recompensa reclamada!';
+      },
+      error: (err) => err.response?.data?.message || 'No se pudo reclamar la recompensa.',
+    });
   };
 
   return { taskStatus, isLoading, handleClaimTask, handleGoToTask };
