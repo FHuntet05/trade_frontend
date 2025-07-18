@@ -12,6 +12,7 @@ import {
   HiOutlineBuildingLibrary, 
   HiOutlineShieldCheck, 
   HiOutlineFunnel,
+  HiOutlineDesktopComputer,
   HiOutlineMegaphone // <-- NUEVO ICONO IMPORTADO
 } from 'react-icons/hi2';
 
@@ -25,6 +26,7 @@ const navLinks = [
   // ===================== NUEVO ENLACE =====================
   { name: 'Notificaciones', href: '/admin/notifications', icon: HiOutlineMegaphone },
   // ========================================================
+  { name: 'Monitor Blockchain', href: '/admin/blockchain-monitor', icon: HiOutlineDesktopComputer },
   { name: 'Herramientas', href: '/admin/tools', icon: HiOutlineWrenchScrewdriver },
   { name: 'Seguridad', href: '/admin/security', icon: HiOutlineShieldCheck },
   { name: 'Ajustes', href: '/admin/settings', icon: HiOutlineCog6Tooth },
