@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminLoginPage.jsx (COMPLETO CON FLUJO 2FA)
+// frontend/src/pages/admin/AdminLoginPage.jsx (VALIDADO Y CORRECTO)
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAdminStore from '../../store/adminStore';

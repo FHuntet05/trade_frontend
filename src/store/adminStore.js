@@ -1,4 +1,4 @@
-// frontend/src/store/adminStore.js (VERSIÓN v19.1 - LA VERSIÓN FINAL Y COMPATIBLE)
+// frontend/src/store/adminStore.js (VERSIÓN v19.2 - LA SOLUCIÓN FINAL Y COMPATIBLE)
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
@@ -49,7 +49,6 @@ const useAdminStore = create(
             isLoading: false,
           });
           api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-          // CORRECCIÓN CRÍTICA: Devolvemos el objeto que el componente de Login espera.
           return { success: true };
         } catch (error) {
           const message = error.response?.data?.message || 'Error al verificar el token.';
@@ -66,7 +65,7 @@ const useAdminStore = create(
       setTwoFactorEnabled: (status) => {
         set((state) => ({ admin: state.admin ? { ...state.admin, isTwoFactorEnabled: status } : null }));
       },
-      
+
       setHydrated: () => set({ isHydrated: true }), 
     }),
     {
@@ -76,11 +75,13 @@ const useAdminStore = create(
         token: state.token, 
         admin: state.admin, 
         isAuthenticated: state.isAuthenticated,
-        isHydrated: state.isHydrated 
+        isHydrated: state.isHydrated
       }),
-      onRehydrateStorage: (state) => {
+      // CORRECCIÓN DEFINITIVA: Se llama a la acción del store usando getState().
+      // Esto evita el error "f is not a function" que rompía tu login.
+      onRehydrateStorage: () => {
         console.log('[Store] Hidratación completada. Dando señal de listo.');
-        state.setHydrated();
+        useAdminStore.getState().setHydrated();
       },
     }
   )
