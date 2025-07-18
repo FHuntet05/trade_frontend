@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/components/Sidebar.jsx (CON NUEVO ENLACE)
+// RUTA: frontend/src/pages/admin/components/Sidebar.jsx (CORREGIDO Y LISTO PARA DEPLOY)
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
@@ -12,8 +12,8 @@ import {
   HiOutlineBuildingLibrary, 
   HiOutlineShieldCheck, 
   HiOutlineFunnel,
-  HiOutlineDesktopComputer,
-  HiOutlineMegaphone // <-- NUEVO ICONO IMPORTADO
+  HiOutlineMegaphone,
+  HiOutlineCommandLine // <-- CORRECCIÓN: Icono reemplazado por uno que sí existe.
 } from 'react-icons/hi2';
 
 const navLinks = [
@@ -23,10 +23,9 @@ const navLinks = [
   { name: 'Retiros', href: '/admin/withdrawals', icon: HiOutlineQuestionMarkCircle },
   { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary },
   { name: 'Dispensador Gas', href: '/admin/gas-dispenser', icon: HiOutlineFunnel },
-  // ===================== NUEVO ENLACE =====================
   { name: 'Notificaciones', href: '/admin/notifications', icon: HiOutlineMegaphone },
-  // ========================================================
-  { name: 'Monitor Blockchain', href: '/admin/blockchain-monitor', icon: HiOutlineDesktopComputer },
+  // --- CORRECCIÓN ---
+  { name: 'Monitor Blockchain', href: '/admin/blockchain-monitor', icon: HiOutlineCommandLine },
   { name: 'Herramientas', href: '/admin/tools', icon: HiOutlineWrenchScrewdriver },
   { name: 'Seguridad', href: '/admin/security', icon: HiOutlineShieldCheck },
   { name: 'Ajustes', href: '/admin/settings', icon: HiOutlineCog6Tooth },

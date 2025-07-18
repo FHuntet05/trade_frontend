@@ -14,7 +14,48 @@ const StatusBadge = ({ status }) => {
     };
     return <span className={`${baseClasses} ${statusMap[status] || 'bg-gray-500/20 text-gray-300'}`}>{status}</span>;
 };
+// --- NUEVO COMPONENTE DE ACCIONES ---
+const TxActions = ({ tx }) => {
+    const [isLoading, setIsLoading] = useState(false);
 
+    // Una transacción se considera "atascada" si es de BSC, está pendiente y tiene más de 2 minutos.
+    const isStuck = tx.chain === 'BSC' && tx.status === 'PENDING' && (new Date() - new Date(tx.createdAt)) > 2 * 60 * 1000;
+
+    if (!isStuck) {
+        return <span className="text-xs text-gray-500">-</span>;
+    }
+
+    const handleAction = async (actionType) => {
+        const endpoint = actionType === 'cancel' ? '/admin/blockchain-monitor/cancel-tx' : '/admin/blockchain-monitor/speedup-tx';
+        const confirmation = window.confirm(`¿Estás seguro de que quieres ${actionType === 'cancel' ? 'CANCELAR' : 'ACELERAR'} esta transacción? Esta acción es irreversible y consumirá gas.`);
+        if (!confirmation) return;
+
+        setIsLoading(true);
+        const promise = api.post(endpoint, { txHash: tx.txHash });
+        toast.promise(promise, {
+            loading: `Enviando transacción de ${actionType === 'cancel' ? 'cancelación' : 'aceleración'}...`,
+            success: (res) => {
+                setIsLoading(false);
+                return res.data.message || 'Operación enviada.';
+            },
+            error: (err) => {
+                setIsLoading(false);
+                return err.response?.data?.message || 'Error en la operación.';
+            }
+        });
+    };
+
+    return (
+        <div className="flex justify-center gap-2">
+            <button onClick={() => handleAction('cancel')} disabled={isLoading} className="p-1 rounded-md bg-red-500/20 hover:bg-red-500/40" title="Cancelar Transacción">
+                <HiOutlineXCircle className="w-4 h-4 text-red-300" />
+            </button>
+            <button onClick={() => handleAction('speedup')} disabled={isLoading} className="p-1 rounded-md bg-blue-500/20 hover:bg-blue-500/40" title="Acelerar Transacción">
+                <HiOutlineRocketLaunch className="w-4 h-4 text-blue-300" />
+            </button>
+        </div>
+    );
+};
 const AdminBlockchainMonitorPage = () => {
     const [transactions, setTransactions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
