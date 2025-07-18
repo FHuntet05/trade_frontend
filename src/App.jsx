@@ -120,7 +120,7 @@ function App() {
           <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
-            <Route path="/admin/users/:id/details" element={<AdminUserDetailPage />} />
+             <Route path="/admin/users/:id" element={<AdminUserDetailPage />} />
             <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
             <Route path="/admin/withdrawals" element={<AdminWithdrawalsPage />} />
             <Route path="/admin/tools" element={<AdminToolsPage />} />
@@ -130,6 +130,7 @@ function App() {
             <Route path="/admin/sweep-control" element={<SweepControlPage />} />
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/admin/gas-dispenser" element={<GasDispenserPage />} />
+           
           </Route>
         </Route>
         
