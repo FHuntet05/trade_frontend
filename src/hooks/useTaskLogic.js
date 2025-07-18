@@ -1,4 +1,4 @@
-// frontend/hooks/useTaskLogic.js (CÓDIGO COMPLETO Y CORREGIDO FINALMENTE)
+// frontend/hooks/useTaskLogic.js (CÓDIGO COMPLETO Y CORREGIDO)
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
@@ -9,31 +9,30 @@ export const useTaskLogic = () => {
   const [taskStatus, setTaskStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Esta función es estable para una carga inicial
-  const fetchTaskStatus = useCallback(async () => {
+  // Función unificada para obtener el estado de las tareas.
+  // Es la única fuente de verdad para actualizar la UI.
+  const fetchTaskStatus = useCallback(async (isInitialLoad = false) => {
+    if (isInitialLoad) {
+      setIsLoading(true);
+    }
     try {
       const { data } = await api.get('/tasks/status');
       setTaskStatus(data);
     } catch (error) {
       console.error("Error fetching task status:", error);
+      toast.error("No se pudo actualizar el estado de las tareas.");
     } finally {
-      setIsLoading(false);
+      if (isInitialLoad) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
+  // Carga inicial al montar el componente
   useEffect(() => {
-    fetchTaskStatus();
+    fetchTaskStatus(true);
   }, [fetchTaskStatus]);
 
-  // Esta versión es para refrescos silenciosos y robustos
-  const fetchTaskStatusSilently = useCallback(async () => {
-    try {
-      const { data } = await api.get('/tasks/status');
-      setTaskStatus(data);
-    } catch (error) {
-      console.error("Silent fetch failed:", error);
-    }
-  }, []);
 
   const handleGoToTask = async (task) => {
     if (task.id === 'joinedTelegram' && task.link) {
@@ -42,7 +41,11 @@ export const useTaskLogic = () => {
       
       try {
         await api.post('/tasks/mark-as-visited', { taskId: 'joinedTelegram' });
-        await fetchTaskStatusSilently();
+        // === INICIO DE LA CORRECCIÓN DEL FLUJO DE DATOS ===
+        // Confiamos en que el backend ha guardado el estado.
+        // Ahora simplemente pedimos la nueva verdad para refrescar la UI.
+        await fetchTaskStatus();
+        // === FIN DE LA CORRECCIÓN DEL FLUJO DE DATOS ===
         toast.success('¡Vuelve para reclamar tu recompensa!', { id: toastId });
       } catch (error) {
         console.error("Error marking task as visited:", error);
@@ -55,21 +58,15 @@ export const useTaskLogic = () => {
     const toastId = toast.loading('Reclamando recompensa...');
     try {
       const { data } = await api.post('/tasks/claim', { taskId });
-      updateUser(data.user); 
-      toast.success(data.message || '¡Recompensa reclamada!', { id: toastId });
+      updateUser(data.user); // Actualizamos el usuario global (saldo, etc.)
+      
+      // === INICIO DE LA CORRECCIÓN DEL FLUJO DE DATOS ===
+      // El backend ha guardado el estado "reclamado".
+      // Pedimos la nueva verdad para que la UI muestre el botón como desactivado.
+      await fetchTaskStatus();
+      // === FIN DE LA CORRECCIÓN DEL FLUJO DE DATOS ===
 
-      // === INICIO DE LA CORRECCIÓN CRÍTICA Y DEFINITIVA ===
-      // En lugar de depender de un re-fetch que puede fallar o ser lento,
-      // actualizamos el estado local de forma MANUAL e INSTANTÁNEA.
-      // Esto garantiza que la UI reaccione inmediatamente y desactive el botón.
-      setTaskStatus(prevStatus => ({
-        ...prevStatus, // Copia el estado anterior
-        claimedTasks: {
-          ...prevStatus.claimedTasks, // Copia las tareas ya reclamadas
-          [taskId]: true // Marca la tarea actual como reclamada
-        }
-      }));
-      // === FIN DE LA CORRECCIÓN CRÍTICA Y DEFINITIVA ===
+      toast.success(data.message || '¡Recompensa reclamada!', { id: toastId });
 
     } catch (error) {
       toast.error(error.response?.data?.message || 'No se pudo reclamar la tarea.', { id: toastId });
