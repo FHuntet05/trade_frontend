@@ -1,12 +1,10 @@
-// frontend/src/components/home/TaskCenter.jsx (COMPLETO Y FINAL)
+// frontend/src/components/home/TaskCenter.jsx (VERSIÓN v22.0 - REPARADA)
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTaskLogic } from '../../hooks/useTaskLogic';
-import useUserStore from '../../store/userStore';
-import TaskItem from '../tasks/TaskItem';
+import TaskItem from '../tasks/TaskItem'; // Ruta actualizada
 
 const TaskCenter = () => {
-  const { user } = useUserStore();
   const { taskStatus, isLoading, handleClaimTask, handleGoToTask } = useTaskLogic();
 
   const allTasks = [
@@ -26,24 +24,9 @@ const TaskCenter = () => {
     );
   }
 
-  if (!taskStatus || !user) {
-      return null;
+  if (!taskStatus) {
+      return null; // No renderizar nada si no se pudo cargar el estado
   }
-  
-  const isTaskCompletable = (task) => {
-    if (taskStatus.claimedTasks[task.id]) return false;
-    
-    switch (task.id) {
-        case 'boughtUpgrade':
-            return user.activeTools && user.activeTools.length > 0;
-        case 'invitedTenFriends':
-            return taskStatus.referralCount >= 3;
-        case 'joinedTelegram':
-            return taskStatus.claimedTasks.joinedTelegramAttempt === true;
-        default:
-            return false;
-    }
-  };
 
   return (
     <div className="w-full space-y-4 bg-dark-secondary p-4 rounded-2xl border border-white/10">
@@ -53,11 +36,9 @@ const TaskCenter = () => {
           <TaskItem
             key={task.id}
             task={task}
-            isClaimed={taskStatus.claimedTasks[task.id] || false}
-            isCompleted={isTaskCompletable(task)}
-            referralCount={taskStatus.referralCount || 0}
+            status={taskStatus}
             onGoToTask={handleGoToTask}
-            onClaim={handleClaimTask} // <-- Pasamos la función de reclamar
+            onClaim={handleClaimTask}
           />
         ))}
       </motion.div>
