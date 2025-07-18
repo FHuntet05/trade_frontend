@@ -1,4 +1,5 @@
-// frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v19.1 - COMPATIBLE CON EL NUEVO STORE)
+// RUTA: frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v19.1 - COMPATIBLE CON EL NUEVO STORE)
+
 import React, { useState, useEffect, useRef } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
@@ -25,7 +26,11 @@ const AdminTreasuryPage = () => {
     const [elapsedTime, setElapsedTime] = useState(0);
     const timerRef = useRef(null);
     
-    const { token, isHydrated } = useAdminStore();
+    // <-- CAMBIO: Usamos un selector para un rendimiento óptimo.
+    const { token, isHydrated } = useAdminStore(state => ({
+        token: state.token,
+        isHydrated: state.isHydrated,
+    }));
     
     const [isSweepModalOpen, setIsSweepModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -43,6 +48,7 @@ const AdminTreasuryPage = () => {
             if (!token) {
                 setLoadingState({ list: false, scan: false });
                 setScanStatus('Token de administrador no encontrado. Por favor, inicia sesión de nuevo.');
+                toast.error("Acceso denegado. Se requiere autenticación.");
                 return;
             }
 
@@ -52,9 +58,8 @@ const AdminTreasuryPage = () => {
             if (timerRef.current) clearInterval(timerRef.current);
             
             try {
-                const { data: walletsToScan } = await api.get('/admin/treasury/wallets-list', {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                // El token ya está en las cabeceras por defecto de axios gracias a la lógica del store.
+                const { data: walletsToScan } = await api.get('/admin/treasury/wallets-list');
 
                 if (walletsToScan.length === 0) {
                     setLoadingState({ list: false, scan: false });
@@ -73,10 +78,10 @@ const AdminTreasuryPage = () => {
                     setScanStatus(`(${i + 1}/${walletsToScan.length}) Escaneando ${wallet.address}...`);
                     
                     try {
-                        const { data: balanceData } = await api.post('/admin/treasury/wallet-balance', 
-                            { address: wallet.address, chain: wallet.chain },
-                            { headers: { Authorization: `Bearer ${token}` } }
-                        );
+                        const { data: balanceData } = await api.post('/admin/treasury/wallet-balance', { 
+                            address: wallet.address, 
+                            chain: wallet.chain 
+                        });
 
                         if (balanceData.success) {
                             const { usdt, bnb, trx } = balanceData.balances;
@@ -118,9 +123,7 @@ const AdminTreasuryPage = () => {
 
     const handleSweepConfirm = async (sweepDetails) => {
         setIsSweepModalOpen(false);
-        const sweepPromise = api.post('/admin/sweep-funds', sweepDetails, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const sweepPromise = api.post('/admin/sweep-funds', sweepDetails);
 
         toast.promise(sweepPromise, {
           loading: 'Ejecutando barrido masivo... Esta operación puede tardar.',

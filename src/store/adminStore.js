@@ -1,17 +1,20 @@
-// frontend/src/store/adminStore.js (VERSIÓN v19.2 - LA SOLUCIÓN FINAL Y COMPATIBLE)
+// RUTA: frontend/src/store/adminStore.js (COMPLETO CON LÓGICA 2FA Y BLINDAJE DE HIDRATACIÓN)
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
 const useAdminStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
+      // --- ESTADO ---
       admin: null,
       token: null,
       isAuthenticated: false,
       isLoading: false,
-      isHydrated: false, // La bandera que nos dice si ya cargó desde localStorage
+      isHydrated: false, // <-- NUEVO: Bandera de estado para la hidratación.
 
+      // --- ACCIONES ---
       login: async (username, password) => {
         set({ isLoading: true });
         try {
@@ -58,7 +61,7 @@ const useAdminStore = create(
       },
 
       logout: () => {
-        set({ admin: null, token: null, isAuthenticated: false, isHydrated: false });
+        set({ admin: null, token: null, isAuthenticated: false });
         delete api.defaults.headers.common['Authorization'];
       },
 
@@ -66,24 +69,36 @@ const useAdminStore = create(
         set((state) => ({ admin: state.admin ? { ...state.admin, isTwoFactorEnabled: status } : null }));
       },
 
-      setHydrated: () => set({ isHydrated: true }), 
+      // <-- NUEVO: Acción para actualizar el estado de hidratación.
+      setHydrated: () => {
+        set({ isHydrated: true });
+      },
     }),
     {
+      // --- CONFIGURACIÓN DE PERSISTENCIA ---
       name: 'neuro-link-admin-storage',
       storage: createJSONStorage(() => localStorage),
+
+      // Especifica qué partes del estado se guardan. 'isHydrated' se omite intencionadamente.
       partialize: (state) => ({ 
         token: state.token, 
         admin: state.admin, 
-        isAuthenticated: state.isAuthenticated,
-        isHydrated: state.isHydrated
+        isAuthenticated: state.isAuthenticated 
       }),
-      // CORRECCIÓN DEFINITIVA: Se llama a la acción del store usando getState().
-      // Esto evita el error "f is not a function" que rompía tu login.
-      onRehydrateStorage: () => {
-        console.log('[Store] Hidratación completada. Dando señal de listo.');
-        useAdminStore.getState().setHydrated();
-      },
+
+      // <-- CLAVE DE LA SOLUCIÓN: Lógica a ejecutar post-hidratación.
+      onRehydrateStorage: () => (state) => {
+        // 1. Marca la hidratación como completa.
+        state.setHydrated();
+
+        // 2. Re-aplica el token a las cabeceras de axios al iniciar la app.
+        const currentToken = state.token;
+        if (currentToken) {
+          api.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+        }
+      }
     }
   )
 );
+
 export default useAdminStore;
