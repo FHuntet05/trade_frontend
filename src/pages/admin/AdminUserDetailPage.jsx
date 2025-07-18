@@ -66,17 +66,40 @@ const TransactionsTable = ({ userId }) => {
 
     useEffect(() => { fetchTransactions(1); }, [fetchTransactions]);
 
-    return (
+     return (
     <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
         <h3 className="text-xl font-semibold mb-4">Historial de Transacciones</h3>
-        {isLoading && <Loader />}
-        {!isLoading && transactions.items.length === 0 ? <p className="text-text-secondary">No hay transacciones.</p> : (
+        {isLoading && <div className="flex justify-center p-4"><Loader /></div>}
+        {!isLoading && transactions.items.length === 0 ? <p className="text-text-secondary text-center py-4">No hay transacciones.</p> : (
             <>
-            <div className="overflow-x-auto"><table className="w-full text-left">...</table></div>
-            <div className="flex justify-between items-center mt-4">
-                <button onClick={() => fetchTransactions(transactions.page - 1)} disabled={transactions.page <= 1}>Anterior</button>
+            {/* --- INICIO DE LA CORRECCIÓN: TABLA ROTA --- */}
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="text-xs text-text-secondary uppercase bg-dark-tertiary">
+                        <tr>
+                            <th className="p-3">Fecha</th>
+                            <th className="p-3">Tipo</th>
+                            <th className="p-3">Monto</th>
+                            <th className="p-3">Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {transactions.items.map(tx => (
+                            <tr key={tx._id} className="hover:bg-dark-tertiary border-b border-white/10">
+                                <td className="p-3 text-sm">{new Date(tx.createdAt).toLocaleString()}</td>
+                                <td className="p-3 text-sm">{tx.type}</td>
+                                <td className={`p-3 text-sm font-mono ${tx.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>{tx.amount.toFixed(2)} {tx.currency}</td>
+                                <td className="p-3 text-sm text-text-secondary">{tx.description}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            {/* --- FIN DE LA CORRECCIÓN --- */}
+            <div className="flex justify-between items-center mt-4 text-sm">
+                <button onClick={() => fetchTransactions(transactions.page - 1)} disabled={transactions.page <= 1} className="px-3 py-1 rounded bg-dark-tertiary disabled:opacity-50">Anterior</button>
                 <span>Página {transactions.page} de {transactions.totalPages}</span>
-                <button onClick={() => fetchTransactions(transactions.page + 1)} disabled={transactions.page >= transactions.totalPages}>Siguiente</button>
+                <button onClick={() => fetchTransactions(transactions.page + 1)} disabled={transactions.page >= transactions.totalPages} className="px-3 py-1 rounded bg-dark-tertiary disabled:opacity-50">Siguiente</button>
             </div>
             </>
         )}

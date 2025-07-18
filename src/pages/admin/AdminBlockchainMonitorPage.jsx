@@ -47,11 +47,12 @@ const TxActions = ({ tx }) => {
 
     return (
         <div className="flex justify-center gap-2">
+            {/* --- CORRECCIÓN DE ÍCONOS --- */}
             <button onClick={() => handleAction('cancel')} disabled={isLoading} className="p-1 rounded-md bg-red-500/20 hover:bg-red-500/40" title="Cancelar Transacción">
-                <HiOutlineXCircle className="w-4 h-4 text-red-300" />
+                <HiXCircle className="w-4 h-4 text-red-300" />
             </button>
             <button onClick={() => handleAction('speedup')} disabled={isLoading} className="p-1 rounded-md bg-blue-500/20 hover:bg-blue-500/40" title="Acelerar Transacción">
-                <HiOutlineRocketLaunch className="w-4 h-4 text-blue-300" />
+                <HiRocketLaunch className="w-4 h-4 text-blue-300" />
             </button>
         </div>
     );
