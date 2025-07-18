@@ -1,4 +1,4 @@
-// frontend/src/components/tasks/TaskItem.jsx
+// frontend/components/tasks/TaskItem.jsx (CÓDIGO COMPLETO Y SIN CAMBIOS)
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FaTelegramPlane, FaCheckCircle, FaGift, FaUsers, FaHammer } from 'react-icons/fa';

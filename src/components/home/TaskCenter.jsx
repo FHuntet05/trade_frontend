@@ -1,8 +1,8 @@
-// frontend/src/components/home/TaskCenter.jsx (VERSIÓN v22.0 - REPARADA)
+// frontend/src/components/home/TaskCenter.jsx (CÓDIGO COMPLETO Y SIN CAMBIOS)
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTaskLogic } from '../../hooks/useTaskLogic';
-import TaskItem from '../tasks/TaskItem'; // Ruta actualizada
+import TaskItem from '../tasks/TaskItem';
 
 const TaskCenter = () => {
   const { taskStatus, isLoading, handleClaimTask, handleGoToTask } = useTaskLogic();
@@ -25,7 +25,7 @@ const TaskCenter = () => {
   }
 
   if (!taskStatus) {
-      return null; // No renderizar nada si no se pudo cargar el estado
+      return null;
   }
 
   return (
