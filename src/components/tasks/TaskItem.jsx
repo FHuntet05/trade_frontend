@@ -11,12 +11,10 @@ const ICONS = {
 
 const TaskItem = ({ task, status, onGoToTask, onClaim }) => {
     const { id, title, description, reward, link } = task;
-
     const isClaimed = status?.claimedTasks?.[id] || false;
     
     const getCompletionStatus = () => {
         if (isClaimed) return 'claimed';
-
         switch (id) {
             case 'boughtUpgrade':
                 return status?.hasBoughtUpgrade ? 'claimable' : 'pending';
@@ -81,7 +79,6 @@ const TaskItem = ({ task, status, onGoToTask, onClaim }) => {
                     <span>{reward.toLocaleString()}</span>
                 </div>
             </div>
-            
             <div className="flex justify-between items-center">
                 <div className="text-xs text-gray-400 flex items-center gap-2">
                     {ICONS[id] || ''}
