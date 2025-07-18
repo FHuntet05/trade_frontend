@@ -3,9 +3,16 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  HiOutlineHome, HiOutlineUsers, HiOutlineReceiptRefund, 
-  HiOutlineQuestionMarkCircle, HiOutlineWrenchScrewdriver, HiOutlineCog6Tooth, 
-  HiOutlineBuildingLibrary, HiOutlineShieldCheck, HiOutlineFunnel 
+  HiOutlineHome, 
+  HiOutlineUsers, 
+  HiOutlineReceiptRefund, 
+  HiOutlineQuestionMarkCircle, 
+  HiOutlineWrenchScrewdriver, 
+  HiOutlineCog6Tooth, 
+  HiOutlineBuildingLibrary, 
+  HiOutlineShieldCheck, 
+  HiOutlineFunnel,
+  HiOutlineMegaphone // <-- NUEVO ICONO IMPORTADO
 } from 'react-icons/hi2';
 
 const navLinks = [
@@ -14,8 +21,10 @@ const navLinks = [
   { name: 'Transacciones', href: '/admin/transactions', icon: HiOutlineReceiptRefund },
   { name: 'Retiros', href: '/admin/withdrawals', icon: HiOutlineQuestionMarkCircle },
   { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary },
-  // --- NUEVO ENLACE PARA LA GASOLINERA ---
   { name: 'Dispensador Gas', href: '/admin/gas-dispenser', icon: HiOutlineFunnel },
+  // ===================== NUEVO ENLACE =====================
+  { name: 'Notificaciones', href: '/admin/notifications', icon: HiOutlineMegaphone },
+  // ========================================================
   { name: 'Herramientas', href: '/admin/tools', icon: HiOutlineWrenchScrewdriver },
   { name: 'Seguridad', href: '/admin/security', icon: HiOutlineShieldCheck },
   { name: 'Ajustes', href: '/admin/settings', icon: HiOutlineCog6Tooth },
