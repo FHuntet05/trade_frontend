@@ -111,7 +111,7 @@ function App() {
     }
   }, [initializeAuth]);
 
-  return (
+    return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
       <Routes>
@@ -119,20 +119,23 @@ function App() {
         
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>
+            {/* --- INICIO DE LA CORRECCIÓN FINAL DE RUTAS --- */}
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
-             <Route path="/admin/users/:id" element={<AdminUserDetailPage />} />
+            <Route path="/admin/users/:id/details" element={<AdminUserDetailPage />} />
             <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
             <Route path="/admin/withdrawals" element={<AdminWithdrawalsPage />} />
             <Route path="/admin/tools" element={<AdminToolsPage />} />
             <Route path="/admin/security" element={<AdminSecurityPage />} />
             <Route path="/admin/settings" element={<AdminSettingsPage />} />
             <Route path="/admin/treasury" element={<AdminTreasuryPage />} />
-             <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
+            <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
             <Route path="/admin/sweep-control" element={<SweepControlPage />} />
-            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/admin/gas-dispenser" element={<GasDispenserPage />} />
             <Route path="/admin/blockchain-monitor" element={<AdminBlockchainMonitorPage />} />
-           <Route path="/admin/gas-dispenser" element={<GasDispenserPage />} />
+            {/* Ruta por defecto siempre al final */}
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            {/* --- FIN DE LA CORRECCIÓN FINAL DE RUTAS --- */}
           </Route>
         </Route>
         
@@ -141,5 +144,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;

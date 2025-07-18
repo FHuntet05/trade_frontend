@@ -29,10 +29,27 @@ const CurrencyItem = ({ currency, onSelect, disabled }) => (
 const CryptoSelectionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { totalCost, cryptoPrices } = location.state || {}; // Se simplifica, ya no se necesita tool/quantity aquí
+   // --- INICIO DE LA CORRECCIÓN: GUARDIA ROBUSTA ---
+  // Se verifica la existencia de `location.state` y sus propiedades ANTES de desestructurar.
+  const hasValidState = location.state && typeof location.state.totalCost !== 'undefined' && location.state.cryptoPrices;
   
   const [isLoading, setIsLoading] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState(null);
+
+  if (!hasValidState) {
+      return (
+          <div className="min-h-screen bg-dark-primary text-white p-4 flex flex-col items-center justify-center text-center">
+              <h1 className="text-xl text-red-400 font-bold mb-2">Error de Flujo de Pago</h1>
+              <p className="text-text-secondary mb-4">No se recibieron los datos necesarios. Por favor, inicia el proceso de compra de nuevo.</p>
+              <button onClick={() => navigate('/tools')} className="mt-4 px-4 py-2 bg-accent-start rounded-lg font-semibold">Volver a Herramientas</button>
+          </div>
+      );
+  }
+  
+  // Si el estado es válido, ahora sí podemos desestructurar de forma segura.
+  const { totalCost, cryptoPrices } = location.state;
+  // --- FIN DE LA CORRECCIÓN ---
+  
   const handleCurrencySelected = async (selectedCurrency) => {
     setIsLoading(true);
     try {
@@ -60,30 +77,15 @@ const CryptoSelectionPage = () => {
         setIsLoading(false);
     }
   };
-  
-  if (!totalCost || !cryptoPrices) {
-      return (
-          <div className="min-h-screen bg-dark-primary text-white p-4 flex flex-col items-center justify-center">
-              <h1 className="text-xl text-red-400">Error: Faltan datos para el pago.</h1>
-              <button onClick={() => navigate(-1)} className="mt-4 px-4 py-2 bg-accent-start rounded-lg">Volver</button>
-          </div>
-      );
-  }
 
-  const isPurchaseFlow = !!tool;
-
- return (
-    // --- CORRECCIÓN: Se mantiene el fondo del layout pero el contenido se rediseña ---
+  return (
     <div className="p-4">
       <header className="flex items-center mb-6">
         <button onClick={() => navigate(-1)} className="mr-4 p-2 rounded-full hover:bg-white/10">
           <HiArrowLeft className="w-6 h-6" />
         </button>
-        {/* --- CORRECCIÓN: Título adaptado al de la imagen de referencia --- */}
         <h1 className="text-xl font-bold">Recargar Seleccionar</h1>
       </header>
-
-      {/* --- CORRECCIÓN: Se elimina el contenedor y el header de "Total a depositar" --- */}
       <main className="space-y-3">
         {isLoading 
           ? <div className="flex justify-center pt-10"><Loader text="Generando dirección..." /></div>
@@ -97,14 +99,8 @@ const CryptoSelectionPage = () => {
           ))
         }
       </main>
-      
       <AnimatePresence>
-        {paymentInfo && (
-          <DirectDepositModal 
-            paymentInfo={paymentInfo}
-            onClose={() => setPaymentInfo(null)}
-          />
-        )}
+        {paymentInfo && <DirectDepositModal paymentInfo={paymentInfo} onClose={() => setPaymentInfo(null)} />}
       </AnimatePresence>
     </div>
   );
