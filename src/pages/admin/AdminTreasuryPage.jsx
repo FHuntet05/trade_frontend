@@ -1,4 +1,4 @@
-// frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v19.0 - ESTADO SÓLIDO)
+// frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN v19.1 - COMPATIBLE CON EL NUEVO STORE)
 import React, { useState, useEffect, useRef } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
