@@ -1,22 +1,24 @@
-// frontend/src/pages/admin/components/Sidebar.jsx (VERSIÓN v18.0 - SIMPLIFICADO)
+// RUTA: frontend/src/pages/admin/components/Sidebar.jsx (CON NUEVO ENLACE)
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   HiOutlineHome, HiOutlineUsers, HiOutlineReceiptRefund, 
   HiOutlineQuestionMarkCircle, HiOutlineWrenchScrewdriver, HiOutlineCog6Tooth, 
-  HiOutlineBuildingLibrary, HiOutlineShieldCheck
+  HiOutlineBuildingLibrary, HiOutlineShieldCheck, HiOutlineFunnel 
 } from 'react-icons/hi2';
 
-// Hemos eliminado "Control de Barrido" para unificar la funcionalidad en la nueva página de "Tesorería".
 const navLinks = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: HiOutlineHome },
   { name: 'Usuarios', href: '/admin/users', icon: HiOutlineUsers },
   { name: 'Transacciones', href: '/admin/transactions', icon: HiOutlineReceiptRefund },
   { name: 'Retiros', href: '/admin/withdrawals', icon: HiOutlineQuestionMarkCircle },
-  { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary }, // <-- ESTA ES NUESTRA PÁGINA
+  { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary },
+  // --- NUEVO ENLACE PARA LA GASOLINERA ---
+  { name: 'Dispensador Gas', href: '/admin/gas-dispenser', icon: HiOutlineFunnel },
   { name: 'Herramientas', href: '/admin/tools', icon: HiOutlineWrenchScrewdriver },
   { name: 'Seguridad', href: '/admin/security', icon: HiOutlineShieldCheck },
-  { name: 'Configuración', href: '/admin/settings', icon: HiOutlineCog6Tooth },
+  { name: 'Ajustes', href: '/admin/settings', icon: HiOutlineCog6Tooth },
 ];
 
 const Sidebar = () => {

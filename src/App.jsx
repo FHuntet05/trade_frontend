@@ -38,6 +38,7 @@ import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminSecurityPage from './pages/admin/AdminSecurityPage';
 import AdminTreasuryPage from './pages/admin/AdminTreasuryPage';
 import SweepControlPage from './pages/admin/SweepControlPage';
+import GasDispenserPage from './pages/admin/GasDispenserPage';
 
 // ======================= INICIO DEL CAMBIO CRÍTICO =======================
 // Este componente ahora es el ÚNICO guardián de la aplicación de usuario.
@@ -128,6 +129,7 @@ function App() {
             <Route path="/admin/treasury" element={<AdminTreasuryPage />} />
             <Route path="/admin/sweep-control" element={<SweepControlPage />} />
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/admin/gas-dispenser" element={<GasDispenserPage />} />
           </Route>
         </Route>
         
