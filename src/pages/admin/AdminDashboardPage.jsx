@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminDashboardPage.jsx (CORREGIDO v21.6 - ELIMINACIÓN RAÍZ)
+// RUTA: frontend/src/pages/admin/AdminDashboardPage.jsx (CORRECCIÓN FINAL v21.7)
 
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axiosConfig';
@@ -7,11 +7,16 @@ import toast from 'react-hot-toast';
 import Loader from '../../components/common/Loader';
 import StatCard from './components/StatCard';
 import UserGrowthChart from './components/UserGrowthChart';
-// --- INICIO DE LA CORRECCIÓN ---
-// 1. Se importa HiOutlineHourglass (para reemplazar Clock) y HiOutlineBanknotes (faltaba).
-import { HiOutlineUsers, HiOutlineCurrencyDollar, HiOutlineHourglass, HiOutlineBanknotes } from 'react-icons/hi2';
-// 2. Se elimina HiOutlineClock de la importación (no existe).
-// --- FIN DE LA CORRECCIÓN ---
+
+// --- INICIO DE LA CORRECCIÓN FINAL ---
+// 1. Se reemplaza el inexistente 'HiOutlineHourglass' por 'HiOutlineExclamationCircle', que sí existe.
+import { 
+  HiOutlineUsers, 
+  HiOutlineCurrencyDollar, 
+  HiOutlineExclamationCircle, 
+  HiOutlineBanknotes 
+} from 'react-icons/hi2';
+// --- FIN DE LA CORRECCIÓN FINAL ---
 
 const AdminDashboardPage = () => {
   const [stats, setStats] = useState(null);
@@ -45,10 +50,10 @@ const AdminDashboardPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Total Usuarios" value={stats.totalUsers.toLocaleString('es-ES')} icon={HiOutlineUsers} />
         <StatCard title="Volumen Depósitos" value={`$${stats.totalDepositVolume.toLocaleString('es-ES')}`} icon={HiOutlineCurrencyDollar} />
-        {/* --- INICIO DE LA CORRECCIÓN --- */}
-        {/* 3. Se reemplaza el ícono en la StatCard. */}
-        <StatCard title="Retiros Pendientes" value={stats.pendingWithdrawals.toLocaleString('es-ES')} icon={HiOutlineHourglass} />
-        {/* --- FIN DE LA CORRECCIÓN --- */}
+        {/* --- INICIO DE LA CORRECCIÓN FINAL --- */}
+        {/* 2. Se utiliza el nuevo ícono garantizado. */}
+        <StatCard title="Retiros Pendientes" value={stats.pendingWithdrawals.toLocaleString('es-ES')} icon={HiOutlineExclamationCircle} />
+        {/* --- FIN DE LA CORRECCIÓN FINAL --- */}
         <div className="bg-dark-primary p-6 rounded-lg border border-white/10">
             <div className="flex items-center gap-6">
                 <div className="bg-accent-start/20 p-4 rounded-full"><HiOutlineBanknotes className="w-8 h-8 text-accent-start" /></div>
