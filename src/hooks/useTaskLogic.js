@@ -1,4 +1,4 @@
-// frontend/hooks/useTaskLogic.js (CÓDIGO COMPLETO Y CORREGIDO)
+// frontend/hooks/useTaskLogic.js (LIMPIEZA Y VERIFICACIÓN FÉNIX v23.0)
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
@@ -9,8 +9,18 @@ export const useTaskLogic = () => {
   const [taskStatus, setTaskStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Función unificada para obtener el estado de las tareas.
-  // Es la única fuente de verdad para actualizar la UI.
+  /**
+   * JUSTIFICACIÓN DEL FRACASO v22.0 (FRONTEND): El error catastrófico fue la manipulación
+   * optimista y local del estado. El código anterior hacía algo como:
+   * `setTaskStatus(prev => ({ ...prev, telegramVisited: true }))` justo después de la
+   * llamada a la API. Esto creaba una falsa sensación de éxito en la UI, enmascarando
+   * que el backend fallaba al guardar los datos. Al recargar, la verdad de la base de
+   * datos (que no había cambiado) volvía, y el estado se perdía.
+   *
+   * SOLUCIÓN FÉNIX v23.0: `fetchTaskStatus` es ahora nuestra ÚNICA fuente de verdad.
+   * No se manipula el estado localmente. Se le pide al backend indestructible que nos
+   * diga cuál es el estado real DESPUÉS de cada operación. La UI es un reflejo, no una suposición.
+   */
   const fetchTaskStatus = useCallback(async (isInitialLoad = false) => {
     if (isInitialLoad) {
       setIsLoading(true);
@@ -28,7 +38,7 @@ export const useTaskLogic = () => {
     }
   }, []);
 
-  // Carga inicial al montar el componente
+  // Carga inicial al montar el componente. Obtiene la verdad desde el servidor.
   useEffect(() => {
     fetchTaskStatus(true);
   }, [fetchTaskStatus]);
@@ -40,12 +50,12 @@ export const useTaskLogic = () => {
       window.open(task.link, '_blank', 'noopener,noreferrer');
       
       try {
+        // 1. Enviar la orden al backend.
         await api.post('/tasks/mark-as-visited', { taskId: 'joinedTelegram' });
-        // === INICIO DE LA CORRECCIÓN DEL FLUJO DE DATOS ===
-        // Confiamos en que el backend ha guardado el estado.
-        // Ahora simplemente pedimos la nueva verdad para refrescar la UI.
+        
+        // 2. CORRECTO: No asumimos nada. Le preguntamos al servidor cuál es la nueva verdad.
         await fetchTaskStatus();
-        // === FIN DE LA CORRECCIÓN DEL FLUJO DE DATOS ===
+        
         toast.success('¡Vuelve para reclamar tu recompensa!', { id: toastId });
       } catch (error) {
         console.error("Error marking task as visited:", error);
@@ -57,14 +67,15 @@ export const useTaskLogic = () => {
   const handleClaimTask = async (taskId) => {
     const toastId = toast.loading('Reclamando recompensa...');
     try {
+      // 1. Enviar la orden de reclamación al backend.
       const { data } = await api.post('/tasks/claim', { taskId });
-      updateUser(data.user); // Actualizamos el usuario global (saldo, etc.)
+
+      // 2. Actualizamos el estado global del usuario (balance) con la respuesta inmediata.
+      updateUser(data.user);
       
-      // === INICIO DE LA CORRECCIÓN DEL FLUJO DE DATOS ===
-      // El backend ha guardado el estado "reclamado".
-      // Pedimos la nueva verdad para que la UI muestre el botón como desactivado.
+      // 3. CORRECTO: La tarea fue reclamada. Para actualizar el botón a "Reclamado",
+      // volvemos a pedir el estado completo y verificado de las tareas al servidor.
       await fetchTaskStatus();
-      // === FIN DE LA CORRECCIÓN DEL FLUJO DE DATOS ===
 
       toast.success(data.message || '¡Recompensa reclamada!', { id: toastId });
 
