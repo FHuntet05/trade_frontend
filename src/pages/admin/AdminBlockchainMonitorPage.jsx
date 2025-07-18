@@ -1,9 +1,14 @@
-// RUTA: frontend/src/pages/admin/AdminBlockchainMonitorPage.jsx (NUEVO ARCHIVO)
+// RUTA: frontend/src/pages/admin/AdminBlockchainMonitorPage.jsx (CORRECCIÓN FINAL v21.12)
 
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axiosConfig';
 import { toast } from 'react-hot-toast';
-import { HiOutlineDesktopComputer } from 'react-icons/hi2';
+
+// --- INICIO DE LA CORRECCIÓN FINAL ---
+// Se reemplaza el nombre incorrecto 'HiOutlineDesktopComputer' por el correcto 'HiOutlineComputerDesktop'.
+// Se mantienen los otros íconos que ya eran correctos.
+import { HiOutlineComputerDesktop, HiXCircle, HiRocketLaunch } from 'react-icons/hi2';
+// --- FIN DE LA CORRECCIÓN FINAL ---
 
 const StatusBadge = ({ status }) => {
     const baseClasses = "px-2 py-1 text-xs font-bold rounded-full";
@@ -14,11 +19,9 @@ const StatusBadge = ({ status }) => {
     };
     return <span className={`${baseClasses} ${statusMap[status] || 'bg-gray-500/20 text-gray-300'}`}>{status}</span>;
 };
-// --- NUEVO COMPONENTE DE ACCIONES ---
+
 const TxActions = ({ tx }) => {
     const [isLoading, setIsLoading] = useState(false);
-
-    // Una transacción se considera "atascada" si es de BSC, está pendiente y tiene más de 2 minutos.
     const isStuck = tx.chain === 'BSC' && tx.status === 'PENDING' && (new Date() - new Date(tx.createdAt)) > 2 * 60 * 1000;
 
     if (!isStuck) {
@@ -47,7 +50,6 @@ const TxActions = ({ tx }) => {
 
     return (
         <div className="flex justify-center gap-2">
-            {/* --- CORRECCIÓN DE ÍCONOS --- */}
             <button onClick={() => handleAction('cancel')} disabled={isLoading} className="p-1 rounded-md bg-red-500/20 hover:bg-red-500/40" title="Cancelar Transacción">
                 <HiXCircle className="w-4 h-4 text-red-300" />
             </button>
@@ -74,15 +76,15 @@ const AdminBlockchainMonitorPage = () => {
         };
 
         fetchTxs();
-        const intervalId = setInterval(fetchTxs, 10000); // Refrescar cada 10 segundos
+        const intervalId = setInterval(fetchTxs, 10000);
 
-        return () => clearInterval(intervalId); // Limpiar el intervalo al desmontar
+        return () => clearInterval(intervalId);
     }, []);
 
     return (
         <div className="space-y-6">
             <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
-                <h1 className="text-2xl font-semibold mb-1 flex items-center gap-3"><HiOutlineDesktopComputer /> Monitor de Blockchain</h1>
+                <h1 className="text-2xl font-semibold mb-1 flex items-center gap-3"><HiOutlineComputerDesktop /> Monitor de Blockchain</h1>
                 <p className="text-text-secondary">Vista en tiempo real de las últimas operaciones en la blockchain (dispensación y barridos).</p>
             </div>
 
@@ -96,18 +98,20 @@ const AdminBlockchainMonitorPage = () => {
                                 <th className="p-3">Cadena</th>
                                 <th className="p-3">Tx Hash</th>
                                 <th className="p-3 text-center">Estado</th>
+                                <th className="p-3 text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="5" className="text-center p-6">Cargando...</td></tr>
+                                <tr><td colSpan="6" className="text-center p-6">Cargando...</td></tr>
                             ) : transactions.map(tx => (
                                 <tr key={tx._id} className="hover:bg-dark-tertiary border-b border-white/10">
                                     <td className="p-3 text-sm">{new Date(tx.createdAt).toLocaleString()}</td>
                                     <td className="p-3 text-sm">{tx.type}</td>
                                     <td className="p-3 text-sm">{tx.chain}</td>
-                                    <td className="p-3 font-mono text-xs"><a href={tx.chain === 'BSC' ? `https://bscscan.com/tx/${tx.txHash}` : `https://tronscan.org/#/transaction/${tx.txHash}`} target="_blank" rel="noopener noreferrer" className="hover:text-accent-start">{tx.txHash.substring(0, 20)}...</a></td>
+                                    <td className="p-3 font-mono text-xs"><a href={tx.chain === 'BSC' ? `https://bscscan.com/tx/${tx.txHash}` : `https://tronscan.org/#/transaction/${tx.txHash}`} target="_blank" rel="noopener noreferrer" className="hover:text-accent-start">{tx.txHash ? tx.txHash.substring(0, 20) + '...' : 'N/A'}</a></td>
                                     <td className="p-3 text-center"><StatusBadge status={tx.status} /></td>
+                                    <td className="p-3 text-center"><TxActions tx={tx} /></td>
                                 </tr>
                             ))}
                         </tbody>
