@@ -8,13 +8,13 @@ const SupportPage = () => (
       <p>Si tienes algún problema, duda o sugerencia, no dudes en contactarnos. Nuestro equipo de soporte está aquí para ayudarte.</p>
       <div>
         <h3 className="font-semibold text-text-primary mb-1">Canal de Telegram</h3>
-        <a href="https://t.me/Jjavaa5" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-          @t.me/your_support_channel
+        <a href="https://t.me/NeurolinkServic" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          https://t.me/NeurolinkServic
         </a>
       </div>
       <div>
         <h3 className="font-semibold text-text-primary mb-1">Correo Electrónico</h3>
-        <p>support@neurolink.app</p>
+        <p>https://t.me/NeurolinkServic</p>
       </div>
     </div>
     

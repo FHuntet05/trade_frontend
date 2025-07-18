@@ -1,8 +1,13 @@
-// frontend/src/pages/ToolsPage.jsx (VERSIÓN v17.6 - ADAPTADA A NAVEGACIÓN)
+// frontend/src/pages/ToolsPage.jsx (COMPLETO Y REPARADO v21.19)
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom'; // Importamos useNavigate
+import { useNavigate } from 'react-router-dom';
 import useToolsStore from '../store/toolsStore';
+
+// --- INICIO DE LA CORRECCIÓN #1: IMPORTAR LA ACCIÓN DE ACTUALIZACIÓN ---
+// Importamos el hook Y la acción para actualizar el estado del usuario.
 import useUserStore from '../store/userStore';
+// --- FIN DE LA CORRECCIÓN #1 ---
+
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import UserInfoHeader from '../components/home/UserInfoHeader';
 import ToolCard from '../components/tools/ToolCard';
 import Loader from '../components/common/Loader';
-import PurchaseModal from '../components/tools/PurchaseModal'; // Usamos PurchaseModal, no PurchaseFlowModal
+import PurchaseModal from '../components/tools/PurchaseModal';
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 const SINGLE_PURCHASE_TOOL_NAMES = ["VIP 1", "VIP 2", "VIP 3"];
@@ -24,8 +29,13 @@ const StatCard = ({ label, value }) => (
 
 const ToolsPage = () => {
   const { tools, loading, error, fetchTools } = useToolsStore();
-  const { user } = useUserStore();
-  const navigate = useNavigate(); // Hook para navegar
+  
+  // --- INICIO DE LA CORRECCIÓN #2: OBTENER LA FUNCIÓN DE ACTUALIZACIÓN ---
+  // Obtenemos tanto el objeto 'user' como la función 'updateUser' desde el store.
+  const { user, updateUser } = useUserStore();
+  // --- FIN DE LA CORRECCIÓN #2 ---
+
+  const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('all_tools');
   const [selectedTool, setSelectedTool] = useState(null);
@@ -52,29 +62,53 @@ const ToolsPage = () => {
     setSelectedTool(null);
   };
 
-  // ESTA ES LA FUNCIÓN CLAVE QUE CAMBIA
+  // Esta función maneja la navegación para el pago con criptomonedas
   const handleStartCryptoPayment = async (quantity) => {
     if (!selectedTool) return;
     const totalCost = selectedTool.price * quantity;
     
-    // Mostramos un loader mientras se obtienen los precios
     const pricesPromise = api.get('/payment/prices');
     toast.promise(pricesPromise, {
         loading: 'Obteniendo precios...',
         success: (response) => {
-            // Una vez obtenidos los precios, navegamos
             navigate('/crypto-selection', {
                 state: {
                     totalCost: totalCost,
                     cryptoPrices: response.data,
                 }
             });
-            handleCloseAllModals(); // Cierra el PurchaseModal
+            handleCloseAllModals();
             return 'Selecciona una moneda para pagar.';
         },
         error: (err) => err.response?.data?.message || 'No se pudieron obtener los precios.',
     });
   };
+
+  // --- INICIO DE LA CORRECCIÓN #3: NUEVA FUNCIÓN PARA COMPRA CON SALDO ---
+  // Creamos una función dedicada para la compra con saldo, que contiene la lógica crucial.
+  const handlePurchaseWithBalance = async (quantity) => {
+    if (!selectedTool) return;
+
+    const purchasePromise = api.post('/tools/purchase-with-balance', {
+      toolId: selectedTool._id,
+      quantity,
+    });
+
+    toast.promise(purchasePromise, {
+      loading: 'Procesando compra...',
+      success: (response) => {
+        // ¡ESTE ES EL PASO CLAVE QUE FALTABA!
+        // Actualizamos el estado global con los datos del usuario devueltos por la API.
+        // Esto notificará a toda la aplicación (incluida la HomePage) que el usuario ha cambiado.
+        updateUser(response.data.user);
+        
+        handleCloseAllModals(); // Cerramos el modal
+        return response.data.message || '¡Compra exitosa!';
+      },
+      error: (err) => err.response?.data?.message || 'No se pudo completar la compra.',
+    });
+  };
+  // --- FIN DE LA CORRECCIÓN #3 ---
   
   const TabButton = ({ tabName, label, badgeCount }) => (
     <button
@@ -133,11 +167,14 @@ const ToolsPage = () => {
 
       <AnimatePresence>
         {selectedTool && (
+          // --- INICIO DE LA CORRECCIÓN #4: PASAR LA NUEVA FUNCIÓN AL MODAL ---
           <PurchaseModal 
             tool={selectedTool} 
             onClose={handleCloseAllModals} 
-            onSelectCrypto={handleStartCryptoPayment} // Esta es la prop correcta según tu PurchaseModal
+            onSelectCrypto={handleStartCryptoPayment} // Esta maneja el flujo de pago con crypto
+            onPurchaseWithBalance={handlePurchaseWithBalance} // Esta maneja el flujo de pago con saldo
           />
+          // --- FIN DE LA CORRECCIÓN #4 ---
         )}
       </AnimatePresence>
     </div>
