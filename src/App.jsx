@@ -40,7 +40,7 @@ import AdminTreasuryPage from './pages/admin/AdminTreasuryPage';
 import SweepControlPage from './pages/admin/SweepControlPage';
 import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
-
+import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 // ======================= INICIO DEL CAMBIO CRÍTICO =======================
 // Este componente ahora es el ÚNICO guardián de la aplicación de usuario.
 function UserAppShell() {
@@ -131,8 +131,8 @@ function App() {
              <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
             <Route path="/admin/sweep-control" element={<SweepControlPage />} />
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="/admin/gas-dispenser" element={<GasDispenserPage />} />
-           
+            <Route path="/admin/blockchain-monitor" element={<AdminBlockchainMonitorPage />} />
+           <Route path="/admin/gas-dispenser" element={<GasDispenserPage />} />
           </Route>
         </Route>
         

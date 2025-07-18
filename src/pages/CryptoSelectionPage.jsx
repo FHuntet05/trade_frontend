@@ -6,8 +6,7 @@ import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import Loader from '../components/common/Loader';
 import DirectDepositModal from '../components/modals/DirectDepositModal';
-import { HiArrowLeft } from 'react-icons/hi2';
-
+import { HiArrowLeft, HiChevronRight } from 'react-icons/hi2'; // Se añade HiChevronRigh
 const SUPPORTED_CURRENCIES = [
   { name: 'USDT (Red BSC - BEP20)', ticker: 'USDT_BSC', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png', chain: 'BSC', currency: 'USDT' },
   { name: 'USDT (Red Tron - TRC20)', ticker: 'USDT_TRON', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png', chain: 'TRON', currency: 'USDT' },
@@ -19,24 +18,21 @@ const CurrencyItem = ({ currency, onSelect, disabled }) => (
   <button
     onClick={() => onSelect(currency)}
     disabled={disabled}
-    className="w-full flex items-center p-3 bg-black/20 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    className="w-full flex items-center p-4 bg-dark-tertiary/50 rounded-lg hover:bg-dark-tertiary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
   >
-    <img src={currency.logo} alt={currency.name} className="w-8 h-8 rounded-full mr-4" />
-    <div className="text-left">
-      <p className="font-bold text-white">{currency.name}</p>
-      <p className="text-sm text-text-secondary">{currency.ticker}</p>
-    </div>
+    <img src={currency.logo} alt={currency.name} className="w-10 h-10 rounded-full mr-4" />
+    <span className="font-bold text-white text-lg">{currency.name}</span>
+    <HiChevronRight className="w-6 h-6 text-text-secondary ml-auto" />
   </button>
 );
 
 const CryptoSelectionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { tool, quantity, totalCost, cryptoPrices } = location.state || {};
+  const { totalCost, cryptoPrices } = location.state || {}; // Se simplifica, ya no se necesita tool/quantity aquí
   
   const [isLoading, setIsLoading] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState(null);
-
   const handleCurrencySelected = async (selectedCurrency) => {
     setIsLoading(true);
     try {
@@ -76,47 +72,30 @@ const CryptoSelectionPage = () => {
 
   const isPurchaseFlow = !!tool;
 
-  return (
-    <div className="min-h-screen bg-dark-primary text-white p-4">
+ return (
+    // --- CORRECCIÓN: Se mantiene el fondo del layout pero el contenido se rediseña ---
+    <div className="p-4">
       <header className="flex items-center mb-6">
         <button onClick={() => navigate(-1)} className="mr-4 p-2 rounded-full hover:bg-white/10">
           <HiArrowLeft className="w-6 h-6" />
         </button>
-        <h1 className="text-2xl font-bold">{isPurchaseFlow ? 'Completar Compra' : 'Seleccionar Moneda'}</h1>
+        {/* --- CORRECCIÓN: Título adaptado al de la imagen de referencia --- */}
+        <h1 className="text-xl font-bold">Recargar Seleccionar</h1>
       </header>
 
-      <main className="max-w-md mx-auto bg-dark-secondary p-6 rounded-2xl border border-white/10">
-        {isPurchaseFlow ? (
-          <div className="flex items-center justify-between mb-6 bg-black/20 p-4 rounded-lg">
-              <div className="flex items-center gap-4">
-                  <img src={tool.imageUrl} alt={tool.name} className="w-12 h-12" />
-                  <div>
-                      <p className="font-bold">{tool.name} (x{quantity})</p>
-                      <p className="text-sm text-text-secondary">Total a Pagar:</p>
-                  </div>
-              </div>
-              <p className="text-2xl font-mono">{totalCost.toFixed(2)} USDT</p>
-          </div>
-        ) : (
-          <div className="text-center mb-6">
-            <p className="text-text-secondary">Total a Depositar:</p>
-            <p className="text-3xl font-bold font-mono">{totalCost.toFixed(2)} USDT</p>
-          </div>
-        )}
-        
-        <div className="space-y-3">
-          {isLoading 
-            ? <Loader text="Generando dirección..." />
-            : SUPPORTED_CURRENCIES.map((currency) => (
-                <CurrencyItem 
-                  key={currency.ticker} 
-                  currency={currency} 
-                  onSelect={handleCurrencySelected}
-                  disabled={isLoading}
-                />
-            ))
-          }
-        </div>
+      {/* --- CORRECCIÓN: Se elimina el contenedor y el header de "Total a depositar" --- */}
+      <main className="space-y-3">
+        {isLoading 
+          ? <div className="flex justify-center pt-10"><Loader text="Generando dirección..." /></div>
+          : SUPPORTED_CURRENCIES.map((currency) => (
+              <CurrencyItem 
+                key={currency.name} 
+                currency={currency} 
+                onSelect={handleCurrencySelected}
+                disabled={isLoading}
+              />
+          ))
+        }
       </main>
       
       <AnimatePresence>
