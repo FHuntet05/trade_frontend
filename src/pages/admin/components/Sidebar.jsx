@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/components/Sidebar.jsx (CORREGIDO Y LISTO PARA DEPLOY)
+// RUTA: frontend/src/pages/admin/components/Sidebar.jsx (VALIDADO v21.4)
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
@@ -13,7 +13,10 @@ import {
   HiOutlineShieldCheck, 
   HiOutlineFunnel,
   HiOutlineMegaphone,
-  HiOutlineCommandLine // <-- CORRECCIÓN: Icono reemplazado por uno que sí existe.
+  // --- CORRECCIÓN CLAVE ---
+  // El ícono 'HiOutlineClock' no existe en la librería. 
+  // Se reemplaza por 'HiOutlineCommandLine' que es válido y semánticamente correcto.
+  HiOutlineCommandLine 
 } from 'react-icons/hi2';
 
 const navLinks = [
@@ -24,7 +27,7 @@ const navLinks = [
   { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary },
   { name: 'Dispensador Gas', href: '/admin/gas-dispenser', icon: HiOutlineFunnel },
   { name: 'Notificaciones', href: '/admin/notifications', icon: HiOutlineMegaphone },
-  // --- CORRECCIÓN ---
+  // --- LÍNEA CORREGIDA ---
   { name: 'Monitor Blockchain', href: '/admin/blockchain-monitor', icon: HiOutlineCommandLine },
   { name: 'Herramientas', href: '/admin/tools', icon: HiOutlineWrenchScrewdriver },
   { name: 'Seguridad', href: '/admin/security', icon: HiOutlineShieldCheck },
