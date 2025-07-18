@@ -1,4 +1,4 @@
-// --- START OF FILE src/pages/TeamPage.jsx (VERSIÓN COMPLETA Y FUNCIONAL) ---
+// frontend/src/pages/TeamPage.jsx (COMPLETO Y REPARADO v21.20)
 
 import React, { useState, useEffect } from 'react';
 import useUserStore from '../store/userStore';
@@ -59,7 +59,6 @@ const TeamPage = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    // Pequeño delay para permitir que la animación de salida termine antes de limpiar los datos
     setTimeout(() => {
       setSelectedLevel(null);
       setLevelUsers([]);
@@ -93,12 +92,10 @@ const TeamPage = () => {
         shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedLink}`;
         break;
       default:
-        // Para otras redes, abrimos un genérico o copiamos el enlace
         copyLink();
         return;
     }
     
-    // Abrimos el enlace en una nueva pestaña
     window.open(shareUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -130,12 +127,15 @@ const TeamPage = () => {
               className="flex flex-col space-y-6"
             >
               
+              {/* --- INICIO DE LA CORRECCIÓN DE UI --- */}
+              {/* Pasamos los valores numéricos en bruto y usamos la prop 'isCurrency' */}
               <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
-                <TeamStatCard label="Miembros del Equipo" value={stats.totalTeamMembers || 0} icon={<HiUsers size={20} />} />
-                <TeamStatCard label="Comisión Total" value={`$${(stats.totalCommission || 0).toFixed(2)}`} icon={<HiBanknotes size={20} />} />
-                <TeamStatCard label="Recargas del Equipo" value={`$${(stats.totalTeamRecharge || 0).toFixed(2)}`} icon={<HiArrowDownTray size={20} />} />
-                <TeamStatCard label="Retiros del Equipo" value={`$${(stats.totalWithdrawals || 0).toFixed(2)}`} icon={<HiArrowUpTray size={20} />} />
+                <TeamStatCard label="Miembros del Equipo" value={stats.totalTeamMembers} icon={<HiUsers size={20} />} />
+                <TeamStatCard label="Comisión Total" value={stats.totalCommission} icon={<HiBanknotes size={20} />} isCurrency={true} />
+                <TeamStatCard label="Recargas del Equipo" value={stats.totalTeamRecharge} icon={<HiArrowDownTray size={20} />} isCurrency={true} />
+                <TeamStatCard label="Retiros del Equipo" value={stats.totalWithdrawals} icon={<HiArrowUpTray size={20} />} isCurrency={true} />
               </motion.div>
+              {/* --- FIN DE LA CORRECCIÓN DE UI --- */}
 
               <motion.div variants={itemVariants} className="bg-dark-secondary p-4 rounded-xl border border-white/10 space-y-4">
                 <div className="flex items-center space-x-2">
@@ -200,5 +200,3 @@ const TeamPage = () => {
 };
 
 export default TeamPage;
-
-// --- END OF FILE src/pages/TeamPage.jsx ---
