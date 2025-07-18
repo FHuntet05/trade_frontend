@@ -1,16 +1,19 @@
-// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (VERSIÓN QUIRÚRGICA v20.5)
+// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (CORREGIDO v21.6 - ELIMINACIÓN RAÍZ)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import api from '../../api/axiosConfig';
 import Loader from '../../components/common/Loader';
-import { HiOutlineFunnel, HiCheckCircle, HiXCircle, HiOutlineClock } from 'react-icons/hi2';
+// --- INICIO DE LA CORRECCIÓN ---
+// 1. Se importa HiOutlineArrowPath (el ícono de 'spinner' correcto).
+import { HiOutlineFunnel, HiCheckCircle, HiXCircle, HiOutlineArrowPath } from 'react-icons/hi2';
+// 2. Se elimina HiOutlineClock (no existe).
+// --- FIN DE LA CORRECCIÓN ---
 
 const GasDispenserPage = () => {
     const [activeChain, setActiveChain] = useState('BSC');
     const [data, setData] = useState({ centralWalletBalance: 0, walletsNeedingGas: [] });
     const [isLoading, setIsLoading] = useState(true);
-    // --- NUEVO ESTADO: para rastrear el estado de dispensación de cada wallet individual ---
     const [dispensingStatus, setDispensingStatus] = useState({});
     const [report, setReport] = useState(null);
 
@@ -33,23 +36,18 @@ const GasDispenserPage = () => {
         analyzeGas();
     }, [analyzeGas]);
 
-    // --- NUEVA FUNCIÓN: Maneja la dispensación de una ÚNICA wallet ---
     const handleSingleDispatch = async (wallet) => {
         const { address, requiredGas } = wallet;
-        
         setDispensingStatus(prev => ({ ...prev, [address]: 'loading' }));
-        
         const dispatchPromise = api.post('/admin/gas-dispenser/dispatch', { 
             chain: activeChain, 
             targets: [{ address, amount: requiredGas }] 
         });
-        
         toast.promise(dispatchPromise, {
             loading: `Dispensando ${requiredGas.toFixed(6)} ${currency} a ${address.substring(0, 8)}...`,
             success: (res) => {
                 setDispensingStatus(prev => ({ ...prev, [address]: 'success' }));
                 setReport(res.data);
-                // Refrescamos todo el análisis para obtener los balances más recientes
                 analyzeGas();
                 return `Gas dispensado exitosamente.`;
             },
@@ -66,9 +64,12 @@ const GasDispenserPage = () => {
         const status = dispensingStatus[wallet.address];
         const canAfford = data.centralWalletBalance >= wallet.requiredGas;
 
+        // --- INICIO DE LA CORRECCIÓN ---
+        // 3. Se reemplaza el ícono en la función renderActionButton.
         if (status === 'loading') {
-            return <HiOutlineClock className="w-5 h-5 text-gray-400 animate-spin" />;
+            return <HiOutlineArrowPath className="w-5 h-5 text-gray-400 animate-spin" />;
         }
+        // --- FIN DE LA CORRECCIÓN ---
         if (status === 'success') {
             return <HiCheckCircle className="w-6 h-6 text-green-500" />;
         }
