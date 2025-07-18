@@ -25,33 +25,34 @@ export const useTaskLogic = () => {
 
   const handleClaimSuccess = (updatedUser) => {
     updateUser(updatedUser);
-    fetchTaskStatus(); // Refrescamos el estado de las tareas
+    fetchTaskStatus();
   };
 
-  const handleGoToTask = async (task) => {
+  const handleGoToTask = (task) => {
     if (task.id === 'boughtUpgrade') return navigate('/tools');
     if (task.id === 'invitedTenFriends') return navigate('/team');
 
     // --- INICIO DE LA CORRECCIÓN DE LÓGICA DE TAREA ---
-    if (task.id === 'joinedTelegram' && task.link && !taskStatus.isCompleted.joinedTelegram) {
-      // 1. Mostrar un loader para que el usuario sepa que algo está pasando.
-      const actionPromise = api.post('/tasks/mark-as-visited', { taskName: task.id });
-      
-      toast.promise(actionPromise, {
-        loading: 'Verificando y abriendo canal...',
-        success: (response) => {
-          // 2. Si la API responde correctamente, abrimos el enlace.
-          window.Telegram.WebApp.openTelegramLink(task.link);
-          // 3. Actualizamos el estado local INMEDIATAMENTE para que el botón "Reclamar" aparezca
-          //    sin necesidad de esperar a que el usuario vuelva y se refresque la página.
+    if (task.id === 'joinedTelegram' && task.link && !taskStatus?.isCompleted?.joinedTelegram) {
+      // 1. Abrir el enlace INMEDIATAMENTE. Esta es la única acción que depende del clic directo del usuario.
+      window.Telegram.WebApp.openTelegramLink(task.link);
+
+      // 2. Realizar la llamada a la API en segundo plano para notificar al backend.
+      // No usamos toast.promise para no bloquear.
+      api.post('/tasks/mark-as-visited', { taskName: task.id })
+        .then(response => {
+          // 3. Actualizamos el estado local para que el botón "Reclamar" aparezca al volver,
+          //    sin necesidad de un refresh completo.
+          console.log(response.data.message); // Log para depuración
           setTaskStatus(prev => ({
             ...prev,
             isCompleted: { ...prev.isCompleted, joinedTelegram: true }
           }));
-          return response.data.message || '¡Listo para reclamar!';
-        },
-        error: (err) => err.response?.data?.message || 'No se pudo procesar la acción.',
-      });
+        })
+        .catch(error => {
+          console.error("Error al marcar la tarea como visitada:", error);
+          toast.error('No se pudo verificar la visita, pero puedes intentar reclamar la tarea si te uniste al canal.');
+        });
     }
     // --- FIN DE LA CORRECCIÓN DE LÓGICA DE TAREA ---
   };

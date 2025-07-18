@@ -1,4 +1,4 @@
-// frontend/src/components/tools/PurchaseModal.jsx (VERSIÓN v17.6 - SIN CAMBIOS LÓGICOS, SOLO NOMBRE)
+// frontend/src/components/tools/PurchaseModal.jsx (COMPLETO Y REPARADO v21.21)
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { HiXMark, HiOutlineCreditCard, HiOutlineCurrencyDollar, HiMinus, HiPlus } from 'react-icons/hi2';
@@ -28,7 +28,10 @@ const PurchaseModal = ({ tool, onClose, onSelectCrypto }) => {
     setIsProcessing(true);
     toast.loading('Procesando compra...', { id: 'payment' });
     try {
-      const response = await api.post('/wallet/purchase-with-balance', {
+      // --- INICIO DE LA CORRECCIÓN DEFINITIVA ---
+      // Se llama al endpoint CORRECTO, que contiene la lógica para resetear el contador.
+      const response = await api.post('/tools/purchase-with-balance', {
+      // --- FIN DE LA CORRECCIÓN DEFINITIVA ---
         toolId: tool._id,
         quantity: quantity,
       });
