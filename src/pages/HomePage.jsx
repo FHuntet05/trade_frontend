@@ -1,54 +1,74 @@
-// frontend/src/pages/HomePage.jsx (CÓDIGO COMPLETO CON LÓGICA DE SINCRONIZACIÓN)
-import React, { useEffect } from 'react';
+// frontend/src/pages/HomePage.jsx (CÓDIGO COMPLETO CON BLINDAJE ANTI-BUCLE)
+import React, { useEffect, useRef } from 'react'; // Importamos useRef
 import { useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
 import api from '../api/axiosConfig';
 
+// Mantenemos las importaciones de componentes
 import UserInfoHeader from '../components/home/UserInfoHeader';
 import RealTimeClock from '../components/home/RealTimeClock';
 import AnimatedCounter from '../components/home/AnimatedCounter';
 import TaskCenter from '../components/home/TaskCenter';
 import NotificationFeed from '../components/home/NotificationFeed';
 import { useMiningLogic } from '../hooks/useMiningLogic';
+import Loader from '../components/common/Loader'; // Importamos el Loader para el estado de carga
 
 const HomePage = () => {
-  // Obtenemos las acciones y datos del store
-  const { user, updateUser, syncUserWithBackend } = useUserStore();
+  // Obtenemos los estados y acciones del store
+  const { user, updateUser, syncUserWithBackend, isAuthenticated, isLoadingAuth } = useUserStore();
   const location = useLocation();
+  // Usamos useRef para garantizar una única ejecución de la inicialización
+  const hasInitialized = useRef(false);
 
-  // === INICIO DE LA LÓGICA DE SINCRONIZACIÓN INICIAL ===
-  // Este useEffect es la nueva puerta de entrada a la aplicación.
-  // Se ejecuta una sola vez cuando la página se carga.
+  // === INICIO DEL BLINDAJE DE SINCRONIZACIÓN ===
   useEffect(() => {
+    // Cláusula de guarda: si ya hemos inicializado, no hacemos nada más.
+    if (hasInitialized.current) {
+      return;
+    }
+
     const initialize = async () => {
-      // 1. Obtenemos los datos del usuario desde el objeto de Telegram
       const tg = window.Telegram?.WebApp;
       if (!tg || !tg.initDataUnsafe?.user) {
         console.error("Contexto de Telegram no disponible. No se puede sincronizar.");
-        // Aquí podríamos mostrar un error, pero el UserAppShell ya se encarga
-        // de mostrar la pantalla de error si la autenticación falla.
         return;
       }
       const telegramUser = tg.initDataUnsafe.user;
 
-      // 2. Leemos el código de referido de la URL, que fue puesto por nuestro RootInterceptor
       const searchParams = new URLSearchParams(location.search);
       const refCode = searchParams.get('ref');
 
-      // 3. Llamamos a la acción del store para que se encargue de la comunicación con el backend
-      console.log(`[HomePage] Iniciando sincronización para ${telegramUser.id} con refCode: ${refCode}`);
+      console.log(`[HomePage] Intentando sincronización para ${telegramUser.id} con refCode: ${refCode}`);
       await syncUserWithBackend(telegramUser, refCode);
     };
 
+    // Marcamos que la inicialización ha comenzado para evitar que se repita.
+    hasInitialized.current = true;
     initialize();
-  }, [syncUserWithBackend, location.search]); // Dependencias para asegurar que se ejecuta correctamente
-  // === FIN DE LA LÓGICA DE SINCRONIZACIÓN INICIAL ===
+    
+  }, [syncUserWithBackend, location.search]);
+  // === FIN DEL BLINDAJE DE SINCRONIZACIÓN ===
 
+  // Lógica para el estado de carga y error (ahora dentro de HomePage)
+  if (isLoadingAuth) {
+      return (
+          <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
+              <Loader text="Conectando..." />
+          </div>
+      );
+  }
 
-  // El resto de la lógica de la página se mantiene igual.
-  // Solo se ejecutará y renderizará correctamente una vez que 'user'
-  // esté poblado en el store tras una sincronización exitosa.
+  // Si después de la carga no estamos autenticados, algo salió mal.
+  // Esto reemplaza la necesidad del UserAppShell para este caso.
+  if (!isAuthenticated) {
+      // Podríamos mostrar una pantalla de error aquí, pero por ahora,
+      // el loader infinito es el síntoma que estamos resolviendo.
+      // Un return null es más seguro que un crash.
+      return null; 
+  }
+
+  // A partir de aquí, el código asume que 'user' existe y es válido.
   const lastClaim = user?.lastMiningClaim;
   const miningRate = user?.effectiveMiningRate ?? 0;
   const miningStatus = user?.miningStatus ?? 'IDLE'; 
@@ -97,7 +117,6 @@ const HomePage = () => {
   
   const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
 
-  // El return de JSX se mantiene exactamente igual.
   return (
     <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
       <div className="px-4 pt-4 space-y-4">
