@@ -29,6 +29,13 @@ const useUserStore = create(
       syncUserWithBackend: async (telegramUser, refCode) => {
         set({ isLoadingAuth: true });
         try {
+          // ======================= LÍNEA DE AUTOPSIA =======================
+          console.log('--- AUTOPSIA: DATOS ENVIADOS A LA API ---');
+          console.log('telegramUser:', JSON.stringify(telegramUser, null, 2));
+          console.log('refCode:', refCode);
+          console.log('-------------------------------------------');
+          // ===============================================================
+          
           const response = await api.post('/auth/sync', { telegramUser, refCode });
           const { token, user, settings } = response.data;
           set({ user, token, isAuthenticated: true, settings, isLoadingAuth: false });
@@ -36,9 +43,7 @@ const useUserStore = create(
           console.error('Error al sincronizar usuario:', error);
           set({ user: null, token: null, isAuthenticated: false, isLoadingAuth: false });
         }
-      },
-      updateUser: (newUserObject) => set((state) => ({ ...state, user: newUserObject })),
-      logout: () => set({ user: null, token: null, isAuthenticated: false, isLoadingAuth: false }),
+      }
     }),
     {
       name: 'neuro-link-storage',
