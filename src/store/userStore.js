@@ -1,4 +1,4 @@
-// frontend/src/store/userStore.js (CÓDIGO COMPLETO Y CORREGIDO)
+// frontend/src/store/userStore.js (CÓDIGO COMPLETO Y RECONSTRUIDO)
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
@@ -12,37 +12,30 @@ const useUserStore = create(
       isLoadingAuth: true,
       settings: null,
       
-      login: async ({ initData }) => { // <-- CORRECCIÓN: ya no necesitamos 'startParam' aquí
+      // La nueva función de sincronización. Es llamada por la página principal.
+      syncUserWithBackend: async (telegramUser, refCode) => {
         set({ isLoadingAuth: true });
         try {
-          if (!initData) {
-            throw new Error("No se encontraron los datos de Telegram (initData).");
+          if (!telegramUser) {
+            throw new Error("Datos de usuario de Telegram no encontrados.");
           }
 
-          // === INICIO DE LA CORRECCIÓN CRÍTICA ===
-          // Se elimina el envío del `startParam` por separado.
-          // Enviamos únicamente el `initData` crudo. El backend se encargará
-          // de parsearlo y extraer el código de referido de forma segura.
-          const response = await api.post('/auth/login', { initData });
-          // === FIN DE LA CORRECCIÓN CRÍTICA ===
-
+          // Llama al nuevo endpoint de sincronización
+          const response = await api.post('/auth/sync', { user: telegramUser, refCode });
           const { token, user, settings } = response.data;
           
-          set({ user, token, isAuthenticated: true, settings });
-          console.log("Login exitoso y configuración global cargada.");
-
+          set({ user, token, isAuthenticated: true, settings, isLoadingAuth: false });
+          console.log("Sincronización y login exitosos.");
+          
         } catch (error) {
-          const errorMessage = error.response?.data?.message || error.message || "Error desconocido en la autenticación.";
-          console.error("Fallo fatal en el login:", errorMessage);
-          set({ user: null, token: null, isAuthenticated: false, settings: null });
-        } finally {
-          console.log("Finalizando estado de carga de autenticación.");
-          set({ isLoadingAuth: false });
+          const errorMessage = error.response?.data?.message || error.message || "Error en la sincronización.";
+          console.error("Fallo fatal en la sincronización:", errorMessage);
+          set({ user: null, token: null, isAuthenticated: false, isLoadingAuth: false });
         }
       },
 
       logout: () => {
-        set({ user: null, token: null, isAuthenticated: false, isLoadingAuth: false, settings: null });
+        set({ user: null, token: null, isAuthenticated: false, settings: null });
       },
       
       updateUser: (updatedUserData) => {

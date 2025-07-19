@@ -43,6 +43,16 @@ import AdminNotificationsPage from './pages/admin/AdminNotificationsPage';
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 // ======================= INICIO DEL CAMBIO CRÍTICO =======================
 // Este componente ahora es el ÚNICO guardián de la aplicación de usuario.
+// Componente Interceptor
+function RootInterceptor() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const refCode = searchParams.get('startapp');
+  const destination = `/home${refCode ? `?ref=${refCode}` : ''}`;
+  return <Navigate to={destination} replace />;
+}
+
+// UserAppShell se mantiene igual, es el guardián de la app
 function UserAppShell() {
   const { user, isAuthenticated, isLoadingAuth, settings } = useUserStore((state) => ({
     user: state.user,
@@ -51,8 +61,6 @@ function UserAppShell() {
     settings: state.settings,
   }));
 
-  // 1. ESTADO DE CARGA: Mientras se autentica, muestra un loader a pantalla completa.
-  //    NADA más se renderiza. Esto previene cualquier acceso a 'user' antes de tiempo.
   if (isLoadingAuth) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
@@ -61,17 +69,14 @@ function UserAppShell() {
     );
   }
 
-  // 2. ESTADO DE ERROR DE AUTENTICACIÓN: Si la autenticación terminó y no es exitosa.
   if (!isAuthenticated) {
     return <AuthErrorScreen message={"No se pudo conectar. Por favor, reinicia la Mini App desde Telegram."} />;
   }
   
-  // 3. ESTADO DE USUARIO ADMIN: Si el usuario es admin, lo redirige.
   if (user?.role === 'admin') {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  // 4. ESTADO DE MANTENIMIENTO:
   if (settings?.maintenanceMode) {
     return <MaintenanceScreen message={settings.maintenanceMessage} />;
   }
@@ -100,17 +105,6 @@ function UserAppShell() {
 // ======================== FIN DEL CAMBIO CRÍTICO =========================
 
 function App() {
-  const initializeAuth = useUserStore((state) => state.login);
-  useEffect(() => {
-    const tg = window.Telegram?.WebApp;
-    if (tg && tg.initData) {
-      initializeAuth({ initData: tg.initData, startParam: tg.initDataUnsafe?.start_param });
-    } else {
-      console.error("Telegram WebApp no está disponible. Ejecutando en modo de desarrollo sin autenticación.");
-      useUserStore.getState().logout();
-    }
-  }, [initializeAuth]);
-
     return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
@@ -139,7 +133,8 @@ function App() {
           </Route>
         </Route>
         
-        <Route path="/*" element={<UserAppShell />} />
+        <Route path="/" element={<RootInterceptor />} />
+        <Route path="/home/*" element={<UserAppShell />} />
       </Routes>
     </Router>
   );
