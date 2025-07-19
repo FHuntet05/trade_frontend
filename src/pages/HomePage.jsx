@@ -1,9 +1,10 @@
-// frontend/pages/HomePage.jsx (VERSIÓN RESTAURACIÓN FINAL v26.0)
-import React, { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+// frontend/pages/HomePage.jsx (VERSIÓN UNIFICACIÓN FINAL v27.0)
+import React from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
 import api from '../api/axiosConfig';
+
+// Componentes
 import UserInfoHeader from '../components/home/UserInfoHeader';
 import RealTimeClock from '../components/home/RealTimeClock';
 import AnimatedCounter from '../components/home/AnimatedCounter';
@@ -14,30 +15,17 @@ import Loader from '../components/common/Loader';
 import AuthErrorScreen from '../components/AuthErrorScreen';
 
 const HomePage = () => {
-    const { user, isAuthenticated, isLoadingAuth, updateUser, syncUserWithBackend, logout } = useUserStore();
-    const location = useLocation();
-    const hasSynced = useRef(false);
+    // Obtenemos los datos del store. La autenticación ahora es manejada globalmente por AuthInitializer.
+    const { user, isAuthenticated, isLoadingAuth, updateUser } = useUserStore();
 
-    useEffect(() => {
-        if (hasSynced.current) return;
-        hasSynced.current = true;
-        const tg = window.Telegram?.WebApp;
-        if (tg && tg.initData) {
-            tg.ready();
-            const searchParams = new URLSearchParams(location.search);
-            const refCode = searchParams.get('refCode');
-            syncUserWithBackend(tg.initDataUnsafe.user, refCode);
-        } else {
-            logout();
-        }
-    }, [location.search, syncUserWithBackend, logout]);
-
+    // La lógica de minería ahora está protegida por los guardias de carga y autenticación.
     const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
         user?.lastMiningClaim,
         user?.effectiveMiningRate ?? 0,
         user?.miningStatus ?? 'IDLE'
     );
 
+    // Las funciones de manejo de acciones se mantienen igual
     const handleStartMining = async () => {
         toast.loading('Iniciando ciclo...', { id: 'mining_control' });
         try {
@@ -63,9 +51,17 @@ const HomePage = () => {
     };
     const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
 
-    if (isLoadingAuth) { return <div className="flex items-center justify-center h-full"><Loader text="Conectando..." /></div>; }
-    if (!isAuthenticated || !user) { return <AuthErrorScreen message="Error de autenticación. Por favor, reinicia." />; }
+    // --- GUARDIA DE CARGA: Esencial para evitar errores en hooks como useMiningLogic ---
+    if (isLoadingAuth) {
+        return <div className="flex items-center justify-center h-full"><Loader text="Conectando..." /></div>;
+    }
+
+    // --- GUARDIA DE AUTENTICACIÓN: Si algo falla, se muestra un error claro ---
+    if (!isAuthenticated || !user) {
+        return <AuthErrorScreen message="Error de autenticación. Por favor, reinicia." />;
+    }
     
+    // --- Renderizado principal, ahora seguro ---
     return (
         <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
             <div className="px-4 pt-4 space-y-4">
@@ -90,4 +86,5 @@ const HomePage = () => {
         </div>
     );
 };
+
 export default HomePage;
