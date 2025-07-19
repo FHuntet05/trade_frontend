@@ -1,6 +1,7 @@
-// frontend/src/App.jsx (VERSIÓN v17.9.3 - BLINDAJE DE ROUTER)
+// frontend/src/App.jsx (VERSIÓN CORREGIDA v24.0)
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+// ... (resto de imports sin cambios)
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 
@@ -41,8 +42,7 @@ import SweepControlPage from './pages/admin/SweepControlPage';
 import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
-// ======================= INICIO DEL CAMBIO CRÍTICO =======================
-// Este componente ahora es el ÚNICO guardián de la aplicación de usuario.
+
 function UserAppShell() {
   const { user, isAuthenticated, isLoadingAuth, settings } = useUserStore((state) => ({
     user: state.user,
@@ -51,8 +51,6 @@ function UserAppShell() {
     settings: state.settings,
   }));
 
-  // 1. ESTADO DE CARGA: Mientras se autentica, muestra un loader a pantalla completa.
-  //    NADA más se renderiza. Esto previene cualquier acceso a 'user' antes de tiempo.
   if (isLoadingAuth) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
@@ -61,27 +59,23 @@ function UserAppShell() {
     );
   }
 
-  // 2. ESTADO DE ERROR DE AUTENTICACIÓN: Si la autenticación terminó y no es exitosa.
   if (!isAuthenticated) {
     return <AuthErrorScreen message={"No se pudo conectar. Por favor, reinicia la Mini App desde Telegram."} />;
   }
   
-  // 3. ESTADO DE USUARIO ADMIN: Si el usuario es admin, lo redirige.
   if (user?.role === 'admin') {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  // 4. ESTADO DE MANTENIMIENTO:
   if (settings?.maintenanceMode) {
     return <MaintenanceScreen message={settings.maintenanceMessage} />;
   }
 
-  // 5. ESTADO DE ÉXITO: Solo si todas las comprobaciones anteriores pasan,
-  //    se renderiza el resto de la aplicación de usuario.
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<HomePage />} />
+        <Route index element={<Navigate to="/home" replace />} /> {/* Redirige de / a /home */}
+        <Route path="home" element={<HomePage />} />
         <Route path="tools" element={<ToolsPage />} />
         <Route path="ranking" element={<RankingPage />} />
         <Route path="team" element={<TeamPage />} />
@@ -97,29 +91,52 @@ function UserAppShell() {
     </Routes>
   );
 }
-// ======================== FIN DEL CAMBIO CRÍTICO =========================
 
-function App() {
-  const initializeAuth = useUserStore((state) => state.login);
+// ======================= INICIO DEL CAMBIO CRÍTICO =======================
+// Componente para manejar la lógica de inicialización
+function AuthInitializer() {
+  // CORRECCIÓN 1: Llamar a la función correcta 'syncUserWithBackend'
+  const syncUser = useUserStore((state) => state.syncUserWithBackend);
+  const logout = useUserStore((state) => state.logout);
+  const location = useLocation();
+
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (tg && tg.initData) {
-      initializeAuth({ initData: tg.initData, startParam: tg.initDataUnsafe?.start_param });
-    } else {
-      console.error("Telegram WebApp no está disponible. Ejecutando en modo de desarrollo sin autenticación.");
-      useUserStore.getState().logout();
-    }
-  }, [initializeAuth]);
+      tg.ready();
+      tg.expand();
+      
+      // CORRECCIÓN 2: Lógica robusta para extraer el código de referido
+      // El bot de Telegram pasa '?ref=...' que se convierte en parte del hash en react-router
+      const params = new URLSearchParams(location.search);
+      const refCode = params.get('ref') || tg.initDataUnsafe?.start_param || null;
 
-    return (
+      if (refCode) {
+        console.log(`[Auth] Código de referido detectado: ${refCode}`);
+      }
+
+      // CORRECCIÓN 3: Pasar los parámetros correctos a la función del store
+      syncUser(tg.initDataUnsafe.user, refCode);
+
+    } else {
+      console.error("Telegram WebApp no está disponible. Entorno no válido.");
+      logout();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Se ejecuta solo una vez al montar el componente
+
+  return null; // Este componente no renderiza nada
+}
+
+function App() {
+  return (
     <Router>
+      <AuthInitializer /> {/* El inicializador se ejecuta aquí */}
       <Toaster position="top-center" reverseOrder={false} />
       <Routes>
         <Route path="/admin/login" element={<AdminLoginPage />} />
-        
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>
-            {/* --- INICIO DE LA CORRECCIÓN FINAL DE RUTAS --- */}
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/users/:id/details" element={<AdminUserDetailPage />} />
@@ -133,15 +150,15 @@ function App() {
             <Route path="/admin/sweep-control" element={<SweepControlPage />} />
             <Route path="/admin/gas-dispenser" element={<GasDispenserPage />} />
             <Route path="/admin/blockchain-monitor" element={<AdminBlockchainMonitorPage />} />
-            {/* Ruta por defecto siempre al final */}
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-            {/* --- FIN DE LA CORRECCIÓN FINAL DE RUTAS --- */}
           </Route>
         </Route>
-        
+        {/* UserAppShell ahora se encarga de todas las rutas no-admin */}
         <Route path="/*" element={<UserAppShell />} />
       </Routes>
     </Router>
   );
 }
+// ======================== FIN DEL CAMBIO CRÍTICO =========================
+
 export default App;
