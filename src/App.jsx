@@ -1,15 +1,17 @@
-// frontend/src/App.jsx (VERSIÓN UNIFICACIÓN FINAL v27.0)
+// frontend/src/App.jsx (VERSIÓN FINAL, COMPLETA Y FUNCIONAL v28.0)
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 
-// Layouts y Páginas
+// Componentes y Páginas
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
+import Loader from './components/common/Loader';
+import AuthErrorScreen from './components/AuthErrorScreen';
 import HomePage from './pages/HomePage';
-// ... (todos sus demás imports de páginas están aquí, no los omito)
+// ... (todos sus demás imports de páginas están aquí)
 import ToolsPage from './pages/ToolsPage';
 import RankingPage from './pages/RankingPage';
 import TeamPage from './pages/TeamPage';
@@ -36,10 +38,9 @@ import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 
+// ======================= INICIO DE LA ARQUITECTURA DEFINITIVA =======================
 
-// ======================= INICIO DE LA UNIFICACIÓN FINAL =======================
-
-// Componente "puente" para referidos. Su lógica es correcta y se mantiene.
+// 1. Redireccionador de Referidos (Sin cambios, funciona bien)
 function RootRedirector() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -48,63 +49,70 @@ function RootRedirector() {
   return <Navigate to={destination} replace />;
 }
 
-// Inicializador GLOBAL e INTELIGENTE para la autenticación.
+// 2. Inicializador Global de Autenticación (Sin cambios, funciona bien)
 function AuthInitializer() {
     const { syncUserWithBackend, logout, isAuthenticated } = useUserStore();
     const location = useLocation();
-
     useEffect(() => {
-        // CONDICIÓN CLAVE: Si ya estamos autenticados, o si la ruta es de admin, NO HACEMOS NADA.
-        // Esto permite que la página de login de admin funcione sin interferencias.
-        if (isAuthenticated || window.location.pathname.startsWith('/admin')) {
-            return;
-        }
-
+        if (isAuthenticated || window.location.pathname.startsWith('/admin')) return;
         const tg = window.Telegram?.WebApp;
         if (tg && tg.initData) {
             tg.ready();
-            // Leemos el refCode de la URL, que fue preparado por RootRedirector.
             const searchParams = new URLSearchParams(location.search);
             const refCode = searchParams.get('refCode');
-            
-            console.log(`[AuthInitializer] Disparando sincronización. RefCode: ${refCode}`);
             syncUserWithBackend(tg.initDataUnsafe.user, refCode);
         } else {
-            // Si no estamos en el admin y no hay datos de telegram, es un entorno inválido para el usuario.
-             if (!window.location.pathname.startsWith('/admin')) {
-                logout();
-             }
+             if (!window.location.pathname.startsWith('/admin')) logout();
         }
-    }, [location.pathname, isAuthenticated, syncUserWithBackend, logout, location.search]); // Dependencias correctas
-
-    return null; // Este componente no renderiza nada.
+    }, [location.pathname, isAuthenticated, syncUserWithBackend, logout, location.search]);
+    return null;
 }
 
+// 3. El Guardián de Roles (LA PIEZA QUE FALTABA)
+// Este componente decide a dónde va el usuario DESPUÉS de la autenticación.
+function UserGatekeeper() {
+    const { user, isAuthenticated, isLoadingAuth } = useUserStore();
+
+    if (isLoadingAuth) {
+        return <div className="w-full h-screen flex items-center justify-center bg-dark-primary"><Loader text="Autenticando..." /></div>;
+    }
+    if (!isAuthenticated) {
+        return <AuthErrorScreen message="Autenticación requerida. Por favor, reinicia desde Telegram." />;
+    }
+    // ESTA ES LA LÓGICA DE REDIRECCIÓN DEL ADMINISTRADOR RESTAURADA
+    if (user?.role === 'admin') {
+        return <Navigate to="/admin/dashboard" replace />;
+    }
+    // Si es un usuario normal, renderiza el Layout principal.
+    return <Layout />;
+}
 
 function App() {
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
-      {/* El inicializador ahora es global y se ejecuta en cada cambio de ruta */}
       <AuthInitializer />
 
       <Routes>
         <Route path="/" element={<RootRedirector />} />
         
-        {/* TODAS sus rutas de usuario y admin se mantienen intactas */}
-        <Route element={<Layout />}>
+        {/* El Guardián ahora protege TODAS las rutas de usuario. */}
+        <Route element={<UserGatekeeper />}>
             <Route path="/home" element={<HomePage />} />
             <Route path="/tools" element={<ToolsPage />} />
             <Route path="/ranking" element={<RankingPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/profile" element={<ProfilePage />} />
         </Route>
+        
+        {/* El resto de sus rutas, completas y sin omisiones */}
         <Route path="/language" element={<LanguagePage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/history" element={<FinancialHistoryPage />} />
         <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
+        
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>
@@ -124,11 +132,12 @@ function App() {
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
         </Route>
+        
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
   );
 }
-// ======================== FIN DE LA UNIFICACIÓN FINAL =========================
+// ======================== FIN DE LA ARQUITECTURA DEFINITIVA =========================
 
 export default App;

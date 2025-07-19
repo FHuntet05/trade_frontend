@@ -1,4 +1,4 @@
-// frontend/pages/HomePage.jsx (VERSIÓN UNIFICACIÓN FINAL v27.0)
+// frontend/pages/HomePage.jsx (VERSIÓN FINAL, SIMPLIFICADA v28.0)
 import React from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
@@ -11,14 +11,13 @@ import AnimatedCounter from '../components/home/AnimatedCounter';
 import TaskCenter from '../components/home/TaskCenter';
 import NotificationFeed from '../components/home/NotificationFeed';
 import { useMiningLogic } from '../hooks/useMiningLogic';
-import Loader from '../components/common/Loader';
-import AuthErrorScreen from '../components/AuthErrorScreen';
 
 const HomePage = () => {
-    // Obtenemos los datos del store. La autenticación ahora es manejada globalmente por AuthInitializer.
-    const { user, isAuthenticated, isLoadingAuth, updateUser } = useUserStore();
+    // La página ya no necesita saber sobre isLoadingAuth o isAuthenticated.
+    // El Guardián (Gatekeeper) se ha encargado de eso.
+    const { user, updateUser } = useUserStore();
 
-    // La lógica de minería ahora está protegida por los guardias de carga y autenticación.
+    // Esta lógica ahora es segura porque la página no se renderizará si 'user' es null.
     const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
         user?.lastMiningClaim,
         user?.effectiveMiningRate ?? 0,
@@ -50,18 +49,8 @@ const HomePage = () => {
         }
     };
     const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
-
-    // --- GUARDIA DE CARGA: Esencial para evitar errores en hooks como useMiningLogic ---
-    if (isLoadingAuth) {
-        return <div className="flex items-center justify-center h-full"><Loader text="Conectando..." /></div>;
-    }
-
-    // --- GUARDIA DE AUTENTICACIÓN: Si algo falla, se muestra un error claro ---
-    if (!isAuthenticated || !user) {
-        return <AuthErrorScreen message="Error de autenticación. Por favor, reinicia." />;
-    }
     
-    // --- Renderizado principal, ahora seguro ---
+    // El renderizado principal es ahora mucho más limpio.
     return (
         <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
             <div className="px-4 pt-4 space-y-4">
