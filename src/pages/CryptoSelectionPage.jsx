@@ -1,7 +1,7 @@
-// frontend/src/pages/CryptoSelectionPage.jsx (UI PULIDA v21.17)
+// frontend/src/pages/CryptoSelectionPage.jsx (RECONSTRUCCIÓN DE LAYOUT v24.0)
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion'; // Se importa motion
 import api from '../api/axiosConfig'; 
 import toast from 'react-hot-toast';
 import Loader from '../components/common/Loader';
@@ -15,8 +15,11 @@ const SUPPORTED_CURRENCIES = [
   { name: 'BNB', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png', chain: 'BSC', currency: 'BNB' },
 ];
 
+const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
+
 const CurrencyItem = ({ currency, onSelect, disabled }) => (
-  <button
+  <motion.button
+    variants={itemVariants}
     onClick={() => onSelect(currency)}
     disabled={disabled}
     className="w-full flex items-center p-4 bg-dark-tertiary/50 rounded-lg hover:bg-dark-tertiary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -24,7 +27,7 @@ const CurrencyItem = ({ currency, onSelect, disabled }) => (
     <img src={currency.logo} alt={currency.name} className="w-10 h-10 rounded-full mr-4" />
     <span className="font-bold text-white text-lg">{currency.name}</span>
     <HiChevronRight className="w-6 h-6 text-text-secondary ml-auto" />
-  </button>
+  </motion.button>
 );
 
 const CryptoSelectionPage = () => {
@@ -37,8 +40,9 @@ const CryptoSelectionPage = () => {
   const [paymentInfo, setPaymentInfo] = useState(null);
 
   if (!hasValidState) {
+    // Esta pantalla de error es correcta y se mantiene.
     return (
-        <div className="min-h-screen p-4 flex flex-col items-center justify-center text-center">
+        <div className="flex flex-col h-full items-center justify-center text-center p-4">
             <h1 className="text-xl text-red-400 font-bold mb-2">Error de Flujo de Pago</h1>
             <p className="text-text-secondary mb-4">No se recibieron los datos necesarios. Por favor, inicia el proceso de compra de nuevo.</p>
             <button onClick={() => navigate('/tools')} className="mt-4 px-4 py-2 bg-accent-start rounded-lg font-semibold text-white">Volver a Herramientas</button>
@@ -69,33 +73,47 @@ const CryptoSelectionPage = () => {
         setIsLoading(false);
     }
   };
-
+  
+  // =======================================================================
+  // === INICIO DE LA CORRECCIÓN DE LAYOUT (OPERACIÓN ESTABILIDAD TOTAL) ===
+  //
+  // JUSTIFICACIÓN: Se adopta la misma estructura de contenedor que 'TeamPage.jsx'
+  // y otras páginas principales. Se usa 'flex flex-col h-full' para asegurar que
+  // la página ocupe toda la altura y herede el fondo del layout padre.
+  // Se añade 'motion.div' para una animación de entrada consistente.
+  //
   return (
-    // --- INICIO DE LA CORRECCIÓN DE UI ---
-    // 1. Se elimina la clase de fondo del div principal para que herede el del layout.
-    // 2. Se asegura que el color de texto por defecto sea blanco.
-    <div className="p-4 text-white">
-      <header className="flex items-center mb-6">
-        <button onClick={() => navigate(-1)} className="mr-4 p-2 rounded-full hover:bg-white/10">
-          <HiArrowLeft className="w-6 h-6" />
-        </button>
-        {/* 3. Se añade 'text-white' al h1 para corregir el color del texto. */}
-        <h1 className="text-xl font-bold text-white">Recargar Seleccionar</h1>
-      </header>
+    <>
+      <div className="flex flex-col h-full overflow-y-auto pb-32 p-4">
+        <motion.div 
+            key="content" 
+            initial="hidden" 
+            animate="visible" 
+            variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
+            className="flex flex-col space-y-6"
+        >
+            <motion.header variants={itemVariants} className="flex items-center">
+                <button onClick={() => navigate(-1)} className="mr-4 p-2 -ml-2 rounded-full hover:bg-white/10">
+                    <HiArrowLeft className="w-6 h-6 text-white" />
+                </button>
+                <h1 className="text-xl font-bold text-white">Seleccionar Criptomoneda</h1>
+            </motion.header>
 
-      <main className="space-y-3">
-        {isLoading 
-          ? <div className="flex justify-center pt-10"><Loader text="Generando dirección..." /></div>
-          : SUPPORTED_CURRENCIES.map((currency) => (
-              <CurrencyItem 
-                key={currency.name} 
-                currency={currency} 
-                onSelect={handleCurrencySelected}
-                disabled={isLoading}
-              />
-          ))
-        }
-      </main>
+            <main className="space-y-3">
+                {isLoading 
+                ? <div className="flex justify-center pt-10"><Loader text="Generando dirección..." /></div>
+                : SUPPORTED_CURRENCIES.map((currency) => (
+                    <CurrencyItem 
+                        key={currency.name} 
+                        currency={currency} 
+                        onSelect={handleCurrencySelected}
+                        disabled={isLoading}
+                    />
+                ))
+                }
+            </main>
+        </motion.div>
+      </div>
       
       <AnimatePresence>
         {paymentInfo && (
@@ -105,8 +123,10 @@ const CryptoSelectionPage = () => {
           />
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
+  // === FIN DE LA CORRECCIÓN DE LAYOUT ===
+  // =======================================================================
 };
 
 export default CryptoSelectionPage;
