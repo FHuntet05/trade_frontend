@@ -35,32 +35,36 @@ const useUserStore = create(
       isLoadingAuth: true,
       settings: null,
 
+      // === LÓGICA DE SINCRONIZACIÓN RECONSTRUIDA ===
       syncUserWithBackend: async (telegramUser, refCode) => {
         set({ isLoadingAuth: true });
         try {
-          const response = await api.post('/auth/sync', { user: telegramUser, refCode });
-          const { token, user, settings } = response.data;
-          set({ user, token, isAuthenticated: true, settings, isLoadingAuth: false });
+          // PASO 1: Validar/Crear usuario y obtener token
+          const validateResponse = await api.post('/auth/validate', { user: telegramUser });
+          const { token, user, settings, isNewUser } = validateResponse.data;
+          
+          // Actualizamos el estado inmediatamente con el token para la siguiente llamada
+          set({ token, user, settings, isAuthenticated: true });
+
+          // PASO 2: Si es un usuario nuevo y hay un código de referido, procesarlo.
+          if (isNewUser && refCode) {
+            console.log(`[Store] Usuario nuevo con referido. Procesando refCode: ${refCode}`);
+            // La llamada a /referrals/process usará automáticamente el token que acabamos de guardar.
+            const processResponse = await api.post('/referrals/process', { refCode });
+            // Actualizamos el estado del usuario con la información del referente
+            set({ user: processResponse.data });
+          }
+
         } catch (error) {
-          console.error('Error al sincronizar usuario:', error);
-          set({ user: null, token: null, isAuthenticated: false, isLoadingAuth: false });
+          console.error('Error en el flujo de autenticación/referido:', error);
+          set({ user: null, token: null, isAuthenticated: false });
+        } finally {
+          set({ isLoadingAuth: false });
         }
       },
       
-      // ======================= INICIO DE LA NUEVA FUNCIÓN =======================
-      // Esta es la función que faltaba en PurchaseModal.jsx.
-      // Simplemente actualiza el objeto de usuario en el estado.
-      updateUser: (newUserObject) => {
-        set((state) => ({
-          ...state,
-          user: newUserObject,
-        }));
-      },
-      // ======================== FIN DE LA NUEVA FUNCIÓN =========================
-
-      logout: () => {
-        set({ user: null, token: null, isAuthenticated: false, isLoadingAuth: false });
-      },
+      updateUser: (newUserObject) => set((state) => ({ ...state, user: newUserObject })),
+      logout: () => set({ user: null, token: null, isAuthenticated: false, isLoadingAuth: false }),
     }),
     {
       name: 'neuro-link-storage',
@@ -69,5 +73,4 @@ const useUserStore = create(
     }
   )
 );
-
 export default useUserStore;
