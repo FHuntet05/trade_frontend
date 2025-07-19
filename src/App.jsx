@@ -1,17 +1,12 @@
-// frontend/src/App.jsx (VERSIÓN CON REFERIDOS BLINDADOS v24.0)
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+// frontend/src/App.jsx (VERSIÓN TRASPLANTE DEFINITIVA v25.0)
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import useUserStore from './store/userStore';
 
-// ... (resto de imports de Layouts, Componentes y Páginas sin cambios)
-// Layouts y Componentes
+// Layouts
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
-import Loader from './components/common/Loader';
-import AuthErrorScreen from './components/AuthErrorScreen';
-import MaintenanceScreen from './components/MaintenanceScreen';
 
 // Páginas App de Usuario
 import HomePage from './pages/HomePage';
@@ -43,68 +38,72 @@ import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 
+// ======================= INICIO DEL TRASPLANTE ARQUITECTÓNICO =======================
+// Componente "puente" que captura el parámetro de referido y redirige.
+function RootRedirector() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const refCode = searchParams.get('startapp');
 
-function UserAppShell() {
-  const { user, isAuthenticated, isLoadingAuth, settings } = useUserStore((state) => ({
-    user: state.user, isAuthenticated: state.isAuthenticated,
-    isLoadingAuth: state.isLoadingAuth, settings: state.settings,
-  }));
-  if (isLoadingAuth) { return (<div className="w-full min-h-screen flex items-center justify-center bg-dark-primary"><Loader text="Conectando..." /></div>); }
-  if (!isAuthenticated) { return <AuthErrorScreen message={"No se pudo conectar. Por favor, reinicia la Mini App desde Telegram."} />; }
-  if (user?.role === 'admin') { return <Navigate to="/admin/dashboard" replace />; }
-  if (settings?.maintenanceMode) { return <MaintenanceScreen message={settings.maintenanceMessage} />; }
-  return (
-    <Routes>
-      <Route path="/" element={<Layout />}><Route index element={<Navigate to="/home" replace />} /><Route path="home" element={<HomePage />} /><Route path="tools" element={<ToolsPage />} /><Route path="ranking" element={<RankingPage />} /><Route path="team" element={<TeamPage />} /><Route path="profile" element={<ProfilePage />} /></Route>
-      <Route path="/language" element={<LanguagePage />} /><Route path="/faq" element={<FaqPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/support" element={<SupportPage />} /><Route path="/history" element={<FinancialHistoryPage />} /><Route path="/crypto-selection" element={<CryptoSelectionPage />} /><Route path="*" element={<NotFoundPage />} />
-    </Routes>
-  );
-}
-
-// ======================= INICIO CORRECCIÓN ARQUITECTURAL DE REFERIDOS =======================
-function AuthInitializer() {
-  const syncUser = useUserStore((state) => state.syncUserWithBackend);
-  const logout = useUserStore((state) => state.logout);
-
-  useEffect(() => {
-    const tg = window.Telegram?.WebApp;
-    if (tg && tg.initData) {
-      tg.ready();
-      tg.expand();
-      
-      // CORRECCIÓN: La única fuente de verdad para el código de referido es `start_param`.
-      const refCode = tg.initDataUnsafe?.start_param || null;
-
-      if (refCode) {
-        console.log(`[Auth] Código de referido oficial (start_param) detectado: ${refCode}`);
-      }
-
-      // Pasamos el objeto de usuario completo y el código de referido.
-      syncUser(tg.initDataUnsafe.user, refCode);
-
-    } else {
-      console.error("Telegram WebApp no está disponible. Entorno no válido.");
-      logout();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return null;
+  // Si hay un refCode, lo pasamos a /home. Si no, redirigimos a /home sin él.
+  const destination = refCode ? `/home?refCode=${refCode}` : '/home';
+  
+  // Usamos replace para que esta página de redirección no quede en el historial.
+  return <Navigate to={destination} replace />;
 }
 
 function App() {
   return (
     <Router>
-      <AuthInitializer />
       <Toaster position="top-center" reverseOrder={false} />
       <Routes>
+        {/* La ruta raíz (/) ahora usa nuestro interceptor. */}
+        <Route path="/" element={<RootRedirector />} />
+        
+        {/* Rutas de Usuario envueltas en el Layout principal */}
+        <Route element={<Layout />}>
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/tools" element={<ToolsPage />} />
+            <Route path="/ranking" element={<RankingPage />} />
+            <Route path="/team" element={<TeamPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/history" element={<FinancialHistoryPage />} />
+        </Route>
+
+        {/* Rutas que no usan el Layout principal */}
+        <Route path="/language" element={<LanguagePage />} />
+        <Route path="/faq" element={<FaqPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/support" element={<SupportPage />} />
+        <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
+        
+        {/* Rutas de Administración */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
-        <Route element={<AdminProtectedRoute />}><Route element={<AdminLayout />}><Route path="/admin/dashboard" element={<AdminDashboardPage />} /><Route path="/admin/users" element={<AdminUsersPage />} /><Route path="/admin/users/:id/details" element={<AdminUserDetailPage />} /><Route path="/admin/transactions" element={<AdminTransactionsPage />} /><Route path="/admin/withdrawals" element={<AdminWithdrawalsPage />} /><Route path="/admin/tools" element={<AdminToolsPage />} /><Route path="/admin/security" element={<AdminSecurityPage />} /><Route path="/admin/settings" element={<AdminSettingsPage />} /><Route path="/admin/treasury" element={<AdminTreasuryPage />} /><Route path="/admin/notifications" element={<AdminNotificationsPage />} /><Route path="/admin/sweep-control" element={<SweepControlPage />} /><Route path="/admin/gas-dispenser" element={<GasDispenserPage />} /><Route path="/admin/blockchain-monitor" element={<AdminBlockchainMonitorPage />} /><Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} /></Route></Route>
-        <Route path="/*" element={<UserAppShell />} />
+        <Route element={<AdminProtectedRoute />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/users/:id/details" element={<AdminUserDetailPage />} />
+            <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
+            <Route path="/admin/withdrawals" element={<AdminWithdrawalsPage />} />
+            <Route path="/admin/tools" element={<AdminToolsPage />} />
+            <Route path="/admin/security" element={<AdminSecurityPage />} />
+            <Route path="/admin/settings" element={<AdminSettingsPage />} />
+            <Route path="/admin/treasury" element={<AdminTreasuryPage />} />
+            <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
+            <Route path="/admin/sweep-control" element={<SweepControlPage />} />
+            <Route path="/admin/gas-dispenser" element={<GasDispenserPage />} />
+            <Route path="/admin/blockchain-monitor" element={<AdminBlockchainMonitorPage />} />
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          </Route>
+        </Route>
+        
+        {/* Ruta para capturar cualquier otra URL no definida */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
   );
 }
-// ======================== FIN CORRECCIÓN ARQUITECTURAL DE REFERIDOS =========================
+// ======================== FIN DEL TRASPLANTE ARQUITECTÓNICO =========================
 
 export default App;

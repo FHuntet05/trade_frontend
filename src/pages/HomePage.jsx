@@ -1,107 +1,90 @@
-// src/pages/HomePage.jsx
-import React from 'react';
-import toast from 'react-hot-toast';
+// frontend/pages/HomePage.jsx (VERSIÓN TRASPLANTE DEFINITIVA v25.0)
+import React, { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import useUserStore from '../store/userStore';
-import api from '../api/axiosConfig';
 
+// Componentes de nuestra aplicación
 import UserInfoHeader from '../components/home/UserInfoHeader';
-import RealTimeClock from '../components/home/RealTimeClock';
-import AnimatedCounter from '../components/home/AnimatedCounter';
-import TaskCenter from '../components/home/TaskCenter';
-import NotificationFeed from '../components/home/NotificationFeed';
-import { useMiningLogic } from '../hooks/useMiningLogic';
+import MiningStats from '../components/home/MiningStats';
+import MainActions from '../components/home/MainActions';
+import ClaimButton from '../components/home/ClaimButton';
+import Loader from '../components/common/Loader';
+import AuthErrorScreen from '../components/AuthErrorScreen';
+import MaintenanceScreen from '../components/MaintenanceScreen';
 
 const HomePage = () => {
-  const { user, updateUser } = useUserStore();
+    // Obtenemos los estados y acciones de nuestro userStore
+    const { 
+        user, 
+        isAuthenticated, 
+        isLoadingAuth, 
+        settings,
+        syncUserWithBackend, 
+        logout 
+    } = useUserStore();
 
-  const lastClaim = user?.lastMiningClaim;
-  const miningRate = user?.effectiveMiningRate ?? 0;
-  const miningStatus = user?.miningStatus ?? 'IDLE'; 
-  
-  const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
-    lastClaim,
-    miningRate,
-    miningStatus
-  );
+    const location = useLocation();
+    // Usamos una referencia para asegurarnos de que la lógica de sincronización se ejecute solo una vez.
+    const hasSynced = useRef(false);
 
-  const handleStartMining = async () => {
-    toast.loading('Iniciando ciclo...', { id: 'mining_control' });
-    try {
-      const response = await api.post('/wallet/start-mining');
-      updateUser(response.data.user);
-      toast.success('¡Ciclo de minado iniciado!', { id: 'mining_control' });
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error al iniciar el ciclo.';
-      toast.error(errorMessage, { id: 'mining_control' });
+    // ======================= INICIO DEL TRASPLANTE DE LÓGICA DE AUTENTICACIÓN =======================
+    useEffect(() => {
+        // Si ya hemos sincronizado o estamos en proceso, no hacemos nada.
+        if (hasSynced.current || isLoadingAuth) {
+            return;
+        }
+        hasSynced.current = true; // Marcamos que el intento de sincronización ha comenzado.
+
+        const tg = window.Telegram?.WebApp;
+
+        if (tg && tg.initData) {
+            tg.ready();
+            tg.expand();
+
+            const searchParams = new URLSearchParams(location.search);
+            const refCode = searchParams.get('refCode'); // Leemos el refCode que nos pasó el RootRedirector
+
+            console.log(`[HomePage] Iniciando sincronización. RefCode de URL: ${refCode}`);
+            
+            // Llamamos a la acción del store que se encarga de la comunicación con el backend.
+            syncUserWithBackend(tg.initDataUnsafe.user, refCode);
+        } else {
+            console.error("Entorno de Telegram no detectado en HomePage.");
+            logout(); // Si no estamos en Telegram, deslogueamos.
+        }
+    }, [location.search, syncUserWithBackend, logout, isLoadingAuth]); // Dependencias del efecto.
+    // ======================== FIN DEL TRASPLANTE DE LÓGICA DE AUTENTICACIÓN =========================
+
+    // --- RENDERIZADO CONDICIONAL BASADO EN EL ESTADO DE AUTENTICACIÓN ---
+
+    // 1. Estado de Carga: Mientras el store está autenticando.
+    if (isLoadingAuth) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full">
+                <Loader text="Conectando..." />
+            </div>
+        );
     }
-  };
 
-  const handleClaim = async () => {
-    toast.loading('Reclamando...', { id: 'mining_control' });
-    try {
-      const response = await api.post('/wallet/claim');
-      updateUser(response.data.user);
-      toast.success(response.data.message, { id: 'mining_control' });
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error al reclamar.';
-      toast.error(errorMessage, { id: 'mining_control' });
+    // 2. Estado de Error de Autenticación: Si el store falló y no estamos autenticados.
+    if (!isAuthenticated) {
+        return <AuthErrorScreen message="No se pudo conectar. Por favor, reinicia la Mini App." />;
     }
-  };
 
-  const renderControlButton = () => {
-    switch (buttonState) {
-      case 'SHOW_START':
-        return <button onClick={handleStartMining} className="w-full py-4 bg-blue-500 text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">INICIAR</button>;
-      case 'SHOW_CLAIM':
-        return <button onClick={handleClaim} className="w-full py-4 bg-gradient-to-r from-accent-start to-accent-end text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">RECLAMAR GANANCIAS</button>;
-      case 'HIDDEN':
-      default:
-        return null; 
+    // 3. Estado de Mantenimiento (Verificado después de la autenticación).
+    if (settings?.maintenanceMode) {
+        return <MaintenanceScreen message={settings.maintenanceMessage} />;
     }
-  };
-  
-  const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
 
-  return (
-    <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
-      <div className="px-4 pt-4 space-y-4">
-        <UserInfoHeader />
-        <RealTimeClock />
-      </div>
-
-      <div className="flex flex-col items-center justify-center text-center px-4">
-        <video src="/assets/mining-animation.webm" autoPlay loop muted playsInline className="w-48 h-48 sm:w-52 sm:h-52 mx-auto" />
-        <AnimatedCounter value={parseFloat(accumulatedNtx.toFixed(2))} />
-        
-        {/* --- INICIO DE LA MODIFICACIÓN FINAL DE LA BARRA DE PROGRESO --- */}
-        <div className="w-full max-w-xs mx-auto mt-4 space-y-3">
-          {/* Contenedor más grueso */}
-          <div className="w-full bg-dark-secondary rounded-full h-6 shadow-inner overflow-hidden">
-            {/* Barra interna ahora llena completamente la altura */}
-            <div 
-              className="bg-gradient-to-r from-accent-start to-accent-end h-6 rounded-full transition-all duration-1000" 
-              style={{width: `${progress}%`}}
-            />
-          </div>
-          <p className="text-text-secondary text-base font-mono">{countdown}</p>
+    // 4. Estado de Éxito: Si todo ha ido bien, mostramos el contenido principal de la página.
+    return (
+        <div className="flex flex-col h-full overflow-y-auto pb-24 p-4 space-y-6">
+            <UserInfoHeader />
+            <MiningStats />
+            <MainActions />
+            <ClaimButton />
         </div>
-        {/* --- FIN DE LA MODIFICACIÓN FINAL DE LA BARRA DE PROGRESO --- */}
-
-      </div>
-      
-      <div className="flex-grow flex flex-col px-4 space-y-4">
-        <div className="w-full h-16 flex items-center justify-center">
-          {renderControlButton()}
-        </div>
-      
-        <div className={!shouldShowButton ? 'flex-grow' : ''}>
-          <TaskCenter />
-        </div>
-        
-        <NotificationFeed />
-      </div>
-    </div>
-  );
+    );
 };
 
 export default HomePage;
