@@ -1,15 +1,10 @@
-// frontend/src/store/userStore.js (VERSIÓN CORREGIDA v24.0)
+// frontend/src/store/userStore.js (VERSIÓN CORREGIDA FINAL v24.0)
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
-// ======================= INICIO DE LA CORRECCIÓN ARQUITECTURAL =======================
-// Configuración del interceptor de peticiones AQUÍ, después de que 'api' se haya importado.
-// Esto rompe la dependencia circular. 'api' se crea sin conocer el 'store',
-// y el 'store' configura 'api' una vez que existe.
 api.interceptors.request.use(
   (config) => {
-    // Obtenemos el token directamente del estado de zustand en cada petición.
     const token = useUserStore.getState().token;
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
@@ -18,21 +13,31 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-// ======================== FIN DE LA CORRECCIÓN ARQUITECTURAL =========================
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response && error.response.status === 401) {
+      console.warn('[Axios Interceptor] Error 401. Deslogueando usuario.');
+      const useUserStore = (await import('../store/userStore')).default;
+      useUserStore.getState().logout();
+    }
+    return Promise.reject(error);
+  }
+);
 
 const useUserStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       isAuthenticated: false,
-      isLoadingAuth: true, // Empieza cargando por defecto
+      isLoadingAuth: true,
       settings: null,
 
       syncUserWithBackend: async (telegramUser, refCode) => {
-        set({ isLoadingAuth: true }); // Asegurarse de mostrar el loader
+        set({ isLoadingAuth: true });
         try {
-          // La llamada a la API ahora usará automáticamente el interceptor si hay un token
           const response = await api.post('/auth/sync', { user: telegramUser, refCode });
           const { token, user, settings } = response.data;
           set({ user, token, isAuthenticated: true, settings, isLoadingAuth: false });
@@ -41,6 +46,17 @@ const useUserStore = create(
           set({ user: null, token: null, isAuthenticated: false, isLoadingAuth: false });
         }
       },
+      
+      // ======================= INICIO DE LA NUEVA FUNCIÓN =======================
+      // Esta es la función que faltaba en PurchaseModal.jsx.
+      // Simplemente actualiza el objeto de usuario en el estado.
+      updateUser: (newUserObject) => {
+        set((state) => ({
+          ...state,
+          user: newUserObject,
+        }));
+      },
+      // ======================== FIN DE LA NUEVA FUNCIÓN =========================
 
       logout: () => {
         set({ user: null, token: null, isAuthenticated: false, isLoadingAuth: false });
@@ -49,7 +65,6 @@ const useUserStore = create(
     {
       name: 'neuro-link-storage',
       storage: createJSONStorage(() => localStorage),
-      // Solo persistimos el token. El resto del estado se recupera al sincronizar.
       partialize: (state) => ({ token: state.token }),
     }
   )
