@@ -1,44 +1,40 @@
-// frontend/src/store/userStore.js (CÓDIGO VALIDADO - NO REQUIERE CAMBIOS)
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+// CAMBIO 1: Importa nuestra instancia 'api' en lugar de 'axios' genérico.
 import api from '../api/axiosConfig';
 
 const useUserStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       isAuthenticated: false,
-      isLoadingAuth: true, // Inicia como true por defecto en la primera carga.
+      isLoadingAuth: true,
       settings: null,
       
       syncUserWithBackend: async (telegramUser, refCode) => {
-        console.log('[Store] -> syncUserWithBackend: INICIADO.');
         set({ isLoadingAuth: true });
-
         try {
           if (!telegramUser) { throw new Error("Datos de usuario de Telegram no encontrados."); }
           
-          console.log('[Store] -> syncUserWithBackend: Enviando POST a /api/auth/sync con:', { user: telegramUser, refCode });
+          console.log('[Store] -> syncUserWithBackend: Enviando petición POST a /auth/sync');
+          // CAMBIO 2: Usa 'api.post' en lugar de 'axios.post'.
+          // La URL ahora es relativa ('/auth/sync') porque la base ya está en axiosConfig.
           const response = await api.post('/auth/sync', { user: telegramUser, refCode });
           
+          console.log('[Store] -> syncUserWithBackend: Petición exitosa.');
           const { token, user, settings } = response.data;
-          console.log('[Store] -> syncUserWithBackend: Sincronización exitosa. Usuario:', user.username);
-          
           set({ user, token, isAuthenticated: true, settings });
           
         } catch (error) {
           console.error('[Store] -> syncUserWithBackend: CATCH - Error en la petición API.', error.response || error);
-          // Limpia el estado en caso de un fallo de sincronización
-          set({ user: null, token: null, isAuthenticated: false, settings: null });
+          set({ user: null, token: null, isAuthenticated: false });
         } finally {
-          console.log('[Store] -> syncUserWithBackend: FINALLY - Sincronización finalizada.');
           set({ isLoadingAuth: false });
         }
       },
 
       logout: () => {
-        console.log('[Store] -> logout: Limpiando sesión.');
         set({ user: null, token: null, isAuthenticated: false, isLoadingAuth: false, settings: null });
       },
       
@@ -49,13 +45,10 @@ const useUserStore = create(
       },
     }),
     {
-      name: 'neuro-link-storage', // Nombre para el localStorage
+      name: 'neuro-link-storage',
       storage: createJSONStorage(() => localStorage),
-      // Solo persistimos el token. El resto del estado se obtiene en cada carga
-      // para asegurar que los datos estén frescos.
-      partialize: (state) => ({ token: state.token }), 
+      partialize: (state) => ({ token: state.token }),
     }
   )
 );
-
 export default useUserStore;
