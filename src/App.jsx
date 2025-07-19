@@ -1,14 +1,11 @@
-// frontend/src/App.jsx (VERSIÓN ESTABILIZACIÓN TOTAL Y DEFINITIVA v25.2)
+// frontend/src/App.jsx (VERSIÓN RESTAURACIÓN FINAL v26.0)
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
-// Layouts
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
-
-// Páginas App de Usuario
 import HomePage from './pages/HomePage';
 import ToolsPage from './pages/ToolsPage';
 import RankingPage from './pages/RankingPage';
@@ -21,8 +18,6 @@ import AboutPage from './pages/AboutPage';
 import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 import CryptoSelectionPage from './pages/CryptoSelectionPage';
-
-// Páginas Panel de Administración
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
@@ -38,7 +33,6 @@ import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 
-// Componente "puente" que captura el parámetro de referido y redirige.
 function RootRedirector() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -52,12 +46,7 @@ function App() {
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
       <Routes>
-        {/* ======================= INICIO DE LA ESTRUCTURA DE RUTAS FINAL ======================= */}
-
-        {/* 1. La ruta raíz (/) ahora usa nuestro interceptor. Es el único punto de entrada. */}
         <Route path="/" element={<RootRedirector />} />
-        
-        {/* 2. Rutas de Usuario envueltas en el Layout principal (con barra de navegación inferior) */}
         <Route element={<Layout />}>
             <Route path="/home" element={<HomePage />} />
             <Route path="/tools" element={<ToolsPage />} />
@@ -65,16 +54,12 @@ function App() {
             <Route path="/team" element={<TeamPage />} />
             <Route path="/profile" element={<ProfilePage />} />
         </Route>
-
-        {/* 3. Rutas de Usuario que son páginas completas y no usan el Layout principal. */}
         <Route path="/language" element={<LanguagePage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/history" element={<FinancialHistoryPage />} />
         <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
-        
-        {/* 4. Rutas de Administración */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>
@@ -91,15 +76,10 @@ function App() {
             <Route path="/admin/sweep-control" element={<SweepControlPage />} />
             <Route path="/admin/gas-dispenser" element={<GasDispenserPage />} />
             <Route path="/admin/blockchain-monitor" element={<AdminBlockchainMonitorPage />} />
-            {/* Ruta por defecto para /admin */}
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
         </Route>
-        
-        {/* 5. Ruta para capturar cualquier otra URL no definida */}
         <Route path="*" element={<NotFoundPage />} />
-
-        {/* ======================== FIN DE LA ESTRUCTURA DE RUTAS FINAL ========================= */}
       </Routes>
     </Router>
   );
