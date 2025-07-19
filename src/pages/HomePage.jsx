@@ -1,4 +1,4 @@
-// frontend/src/pages/HomePage.jsx (CÓDIGO COMPLETO CON LOGGING)
+// frontend/src/pages/HomePage.jsx (CÓDIGO RECONSTRUIDO PARA ELIMINAR BUCLES)
 import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -16,59 +16,64 @@ import Loader from '../components/common/Loader';
 const HomePage = () => {
   const { user, updateUser, syncUserWithBackend, isAuthenticated, isLoadingAuth } = useUserStore();
   const location = useLocation();
+  // useRef es la clave para evitar ejecuciones múltiples. Es el "blindaje".
   const hasInitialized = useRef(false);
 
+  // =======================================================================
+  // === EL EFECTO DE SINCRONIZACIÓN ÚNICA (SOLUCIÓN AL BUCLE INFINITO) ===
+  // =======================================================================
   useEffect(() => {
-    // === LOG: RASTREO DE EJECUCIÓN DEL useEffect ===
-    console.log(`[HomePage] useEffect disparado. ¿Ya inicializado? -> ${hasInitialized.current}`);
-
+    // Si ya se inicializó, no hacer nada. Esto previene el bucle.
     if (hasInitialized.current) {
-      console.log("[HomePage] Inicialización ya realizada. Saltando.");
+      console.log("[HomePage] Inicialización ya realizada. Saltando ejecución de useEffect.");
       return;
     }
-    hasInitialized.current = true;
+    hasInitialized.current = true; // Marcar como inicializado inmediatamente.
 
-    const initialize = async () => {
+    const initializeUserSession = async () => {
+      console.log("[HomePage] Iniciando sesión de usuario...");
       const tg = window.Telegram?.WebApp;
+
       if (!tg || !tg.initDataUnsafe?.user) {
-        console.error("[HomePage] FATAL: Contexto de Telegram no encontrado.");
+        console.error("[HomePage] FATAL: El objeto de Telegram (WebApp) no está disponible. No se puede sincronizar.");
+        // Opcionalmente, podrías forzar un logout o un estado de error aquí.
+        // useUserStore.getState().logout(); 
         return;
       }
+
       const telegramUser = tg.initDataUnsafe.user;
-
       const searchParams = new URLSearchParams(location.search);
-      const refCode = searchParams.get('ref');
+      const refCode = searchParams.get('ref'); // Lee el parámetro 'ref' que nos pasó el Interceptor.
 
-      // === LOG: DATOS A PUNTO DE SER ENVIADOS ===
-      console.log(`[HomePage] Preparando para llamar a syncUserWithBackend. Usuario: ${telegramUser.id}, RefCode: ${refCode}`);
+      console.log(`[HomePage] Datos para sincronización: Usuario TG ID: ${telegramUser.id}, Código de Referido: ${refCode}`);
       await syncUserWithBackend(telegramUser, refCode);
     };
 
-    initialize();
-  }, [syncUserWithBackend, location.search]);
+    initializeUserSession();
+    
+  }, [syncUserWithBackend, location.search]); // Dependencias correctas
 
-  // Se mantiene la lógica de renderizado condicional
-  if (isLoadingAuth || !isAuthenticated) {
-    // Si isLoadingAuth es true, muestra el loader.
-    // Si después de la carga, isAuthenticated es false, UserAppShell lo manejará.
-    // Este componente no debería renderizar su contenido principal hasta que la auth esté completa.
-    // El UserAppShell ya se encarga de esto, pero mantenemos un loader local por si acaso.
-     return (
-          <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
-              <Loader text="Sincronizando..." />
-          </div>
-      );
+  // Mientras isLoadingAuth es true, UserAppShell ya muestra un loader.
+  // Este es un fallback por si HomePage se renderiza antes del shell.
+  // La condición principal es !isAuthenticated. Si después de cargar, no está autenticado,
+  // el UserAppShell mostrará la pantalla de error. Por tanto, aquí no es necesario
+  // renderizar nada si !isAuthenticated.
+  if (!user || !isAuthenticated) {
+     // El UserAppShell ya maneja el estado de carga y error. 
+     // Devolver null aquí es seguro, ya que el Shell mostrará el Loader o el AuthErrorScreen.
+    return null; 
   }
 
-  // A partir de aquí, el código asume que 'user' existe y es válido.
-  const lastClaim = user?.lastMiningClaim;
-  const miningRate = user?.effectiveMiningRate ?? 0;
-  const miningStatus = user?.miningStatus ?? 'IDLE'; 
-  
-  const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
-    lastClaim,
-    miningRate,
-    miningStatus
+  // A partir de aquí, el CÓDIGO ES SEGURO. 'user' existe y es válido.
+  const { 
+    accumulatedNtx, 
+    countdown, 
+    progress, 
+    buttonState 
+  } = useMiningLogic(
+    user.lastMiningClaim,
+    user.effectiveMiningRate,
+    user.miningStatus
   );
 
   const handleStartMining = async () => {
@@ -101,13 +106,12 @@ const HomePage = () => {
         return <button onClick={handleStartMining} className="w-full py-4 bg-blue-500 text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">INICIAR</button>;
       case 'SHOW_CLAIM':
         return <button onClick={handleClaim} className="w-full py-4 bg-gradient-to-r from-accent-start to-accent-end text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">RECLAMAR GANANCIAS</button>;
-      case 'HIDDEN':
       default:
         return null; 
     }
   };
   
-  const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
+  const shouldShowButton = buttonState !== 'HIDDEN';
 
   return (
     <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
