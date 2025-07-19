@@ -1,37 +1,37 @@
-// frontend/src/pages/HomePage.jsx (CÓDIGO COMPLETO CON BLINDAJE ANTI-BUCLE)
-import React, { useEffect, useRef } from 'react'; // Importamos useRef
+// frontend/src/pages/HomePage.jsx (CÓDIGO COMPLETO CON LOGGING)
+import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
 import api from '../api/axiosConfig';
 
-// Mantenemos las importaciones de componentes
 import UserInfoHeader from '../components/home/UserInfoHeader';
 import RealTimeClock from '../components/home/RealTimeClock';
 import AnimatedCounter from '../components/home/AnimatedCounter';
 import TaskCenter from '../components/home/TaskCenter';
 import NotificationFeed from '../components/home/NotificationFeed';
 import { useMiningLogic } from '../hooks/useMiningLogic';
-import Loader from '../components/common/Loader'; // Importamos el Loader para el estado de carga
+import Loader from '../components/common/Loader';
 
 const HomePage = () => {
-  // Obtenemos los estados y acciones del store
   const { user, updateUser, syncUserWithBackend, isAuthenticated, isLoadingAuth } = useUserStore();
   const location = useLocation();
-  // Usamos useRef para garantizar una única ejecución de la inicialización
   const hasInitialized = useRef(false);
 
-  // === INICIO DEL BLINDAJE DE SINCRONIZACIÓN ===
   useEffect(() => {
-    // Cláusula de guarda: si ya hemos inicializado, no hacemos nada más.
+    // === LOG: RASTREO DE EJECUCIÓN DEL useEffect ===
+    console.log(`[HomePage] useEffect disparado. ¿Ya inicializado? -> ${hasInitialized.current}`);
+
     if (hasInitialized.current) {
+      console.log("[HomePage] Inicialización ya realizada. Saltando.");
       return;
     }
+    hasInitialized.current = true;
 
     const initialize = async () => {
       const tg = window.Telegram?.WebApp;
       if (!tg || !tg.initDataUnsafe?.user) {
-        console.error("Contexto de Telegram no disponible. No se puede sincronizar.");
+        console.error("[HomePage] FATAL: Contexto de Telegram no encontrado.");
         return;
       }
       const telegramUser = tg.initDataUnsafe.user;
@@ -39,33 +39,25 @@ const HomePage = () => {
       const searchParams = new URLSearchParams(location.search);
       const refCode = searchParams.get('ref');
 
-      console.log(`[HomePage] Intentando sincronización para ${telegramUser.id} con refCode: ${refCode}`);
+      // === LOG: DATOS A PUNTO DE SER ENVIADOS ===
+      console.log(`[HomePage] Preparando para llamar a syncUserWithBackend. Usuario: ${telegramUser.id}, RefCode: ${refCode}`);
       await syncUserWithBackend(telegramUser, refCode);
     };
 
-    // Marcamos que la inicialización ha comenzado para evitar que se repita.
-    hasInitialized.current = true;
     initialize();
-    
   }, [syncUserWithBackend, location.search]);
-  // === FIN DEL BLINDAJE DE SINCRONIZACIÓN ===
 
-  // Lógica para el estado de carga y error (ahora dentro de HomePage)
-  if (isLoadingAuth) {
-      return (
+  // Se mantiene la lógica de renderizado condicional
+  if (isLoadingAuth || !isAuthenticated) {
+    // Si isLoadingAuth es true, muestra el loader.
+    // Si después de la carga, isAuthenticated es false, UserAppShell lo manejará.
+    // Este componente no debería renderizar su contenido principal hasta que la auth esté completa.
+    // El UserAppShell ya se encarga de esto, pero mantenemos un loader local por si acaso.
+     return (
           <div className="w-full min-h-screen flex items-center justify-center bg-dark-primary">
-              <Loader text="Conectando..." />
+              <Loader text="Sincronizando..." />
           </div>
       );
-  }
-
-  // Si después de la carga no estamos autenticados, algo salió mal.
-  // Esto reemplaza la necesidad del UserAppShell para este caso.
-  if (!isAuthenticated) {
-      // Podríamos mostrar una pantalla de error aquí, pero por ahora,
-      // el loader infinito es el síntoma que estamos resolviendo.
-      // Un return null es más seguro que un crash.
-      return null; 
   }
 
   // A partir de aquí, el código asume que 'user' existe y es válido.
