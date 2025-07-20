@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/axiosConfig';
 import TransactionItem from '../components/history/TransactionItem'; // <-- Asegúrate de que esta ruta sea correcta
 import Loader from '../components/common/Loader';
+import StaticPageLayout from '../components/layout/StaticPageLayout';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -39,43 +40,36 @@ const FinancialHistoryPage = () => {
   }, []);
 
   return (
-    <div className="flex flex-col h-full space-y-6 animate-fade-in">
-      <header className="flex items-center justify-between text-white">
-        <button onClick={() => navigate(-1)} className="p-1">
-          <HiChevronLeft size={28} />
-        </button>
-        <h1 className="text-xl font-bold">Historial de Registros</h1>
-        <div className="w-8"></div>
-      </header>
-      
-      <main className="flex-grow">
-        <AnimatePresence mode="wait">
-          {loading ? (
-            <motion.div key="loader" className="flex justify-center items-center h-full">
-              <Loader text="Cargando historial..." />
-            </motion.div>
-          ) : error ? (
-            <motion.div key="error" className="text-center text-red-400 pt-16">{error}</motion.div>
-          ) : transactions.length === 0 ? (
-            <motion.div key="empty" className="text-center text-text-secondary pt-16">
-              No tienes transacciones todavía.
-            </motion.div>
-          ) : (
-            <motion.div
-              key="list"
-              className="space-y-3"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {transactions.map((tx) => (
-                <TransactionItem key={tx._id} transaction={tx} />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
-    </div>
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Envolvemos todo el contenido con StaticPageLayout, pasándole el título.
+    <StaticPageLayout title="Historial de Registros">
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <motion.div key="loader" className="flex justify-center items-center h-full">
+            <Loader text="Cargando historial..." />
+          </motion.div>
+        ) : error ? (
+          <motion.div key="error" className="text-center text-red-400 pt-16">{error}</motion.div>
+        ) : transactions.length === 0 ? (
+          <motion.div key="empty" className="text-center text-text-secondary pt-16">
+            No tienes transacciones todavía.
+          </motion.div>
+        ) : (
+          <motion.div
+            key="list"
+            className="space-y-3"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {transactions.map((tx) => (
+              <TransactionItem key={tx._id} transaction={tx} />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </StaticPageLayout>
+    // --- FIN DE LA MODIFICACIÓN ---
   );
 };
 

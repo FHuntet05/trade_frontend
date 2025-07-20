@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import Loader from '../components/common/Loader';
 import DirectDepositModal from '../components/modals/DirectDepositModal';
 import { HiArrowLeft, HiChevronRight } from 'react-icons/hi2';
-
+import StaticPageLayout from '../components/layout/StaticPageLayout';
 const SUPPORTED_CURRENCIES = [
   { name: 'BEP20-USDT', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png', chain: 'BSC', currency: 'USDT' },
   { name: 'TRC20-USDT', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png', chain: 'TRON', currency: 'USDT' },
@@ -84,36 +84,28 @@ const CryptoSelectionPage = () => {
   //
   return (
     <>
-      <div className="flex flex-col h-full overflow-y-auto pb-32 p-4">
-        <motion.div 
-            key="content" 
-            initial="hidden" 
-            animate="visible" 
-            variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
-            className="flex flex-col space-y-6"
-        >
-            <motion.header variants={itemVariants} className="flex items-center">
-                <button onClick={() => navigate(-1)} className="mr-4 p-2 -ml-2 rounded-full hover:bg-white/10">
-                    <HiArrowLeft className="w-6 h-6 text-white" />
-                </button>
-                <h1 className="text-xl font-bold text-white">Seleccionar Criptomoneda</h1>
-            </motion.header>
-
-            <main className="space-y-3">
-                {isLoading 
-                ? <div className="flex justify-center pt-10"><Loader text="Generando dirección..." /></div>
-                : SUPPORTED_CURRENCIES.map((currency) => (
-                    <CurrencyItem 
-                        key={currency.name} 
-                        currency={currency} 
-                        onSelect={handleCurrencySelected}
-                        disabled={isLoading}
-                    />
-                ))
-                }
-            </main>
-        </motion.div>
-      </div>
+      <StaticPageLayout title="Seleccionar Criptomoneda">
+          <motion.div 
+              key="content" 
+              initial="hidden" 
+              animate="visible" 
+              variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
+              className="space-y-3"
+          >
+              {isLoading 
+              ? <div className="flex justify-center pt-10"><Loader text="Generando dirección..." /></div>
+              : SUPPORTED_CURRENCIES.map((currency) => (
+                  <CurrencyItem 
+                      key={currency.name} 
+                      currency={currency} 
+                      onSelect={handleCurrencySelected}
+                      disabled={isLoading}
+                  />
+              ))
+              }
+          </motion.div>
+      </StaticPageLayout>
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
       
       <AnimatePresence>
         {paymentInfo && (

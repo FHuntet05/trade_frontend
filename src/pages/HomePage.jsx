@@ -1,58 +1,37 @@
-// frontend/pages/HomePage.jsx (VERSIÓN FINAL v32.0 - SIMPLE Y COMPLETA)
+// frontend/pages/HomePage.jsx (VERSIÓN RESTAURACIÓN TOTAL v33.0)
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
 import api from '../api/axiosConfig';
 
-// --- IMPORTS DE COMPONENTES DE UI ---
+// --- IMPORTS COMPLETOS DE COMPONENTES DE UI ---
 import UserInfoHeader from '../components/home/UserInfoHeader';
 import RealTimeClock from '../components/home/RealTimeClock';
 import AnimatedCounter from '../components/home/AnimatedCounter';
 import TaskCenter from '../components/home/TaskCenter';
 import NotificationFeed from '../components/home/NotificationFeed';
 import { useMiningLogic } from '../hooks/useMiningLogic';
-import Loader from '../components/common/Loader';
 import AuthErrorScreen from '../components/AuthErrorScreen';
 
 const HomePage = () => {
-    // --- OBTENCIÓN DE ESTADO Y FUNCIONES DEL STORE ---
-    const { user, updateUser, syncUserWithBackend, isLoadingAuth } = useUserStore();
+    // Obtenemos el usuario del store. Ya no nos preocupamos por `isLoadingAuth`.
+    // El componente `UserGatekeeper` en App.jsx ya ha manejado el estado de carga.
+    const { user, updateUser } = useUserStore();
+
+    // Medida de seguridad: Si por alguna razón extrema este componente se renderiza
+    // sin un usuario (ej. un error de lógica en App.jsx), mostramos un error.
+    if (!user) {
+        return <AuthErrorScreen message="Error: No se pudo obtener la información del usuario. Intente reiniciar la aplicación." />;
+    }
     
-    // `useRef` para prevenir la doble ejecución del `useEffect` en desarrollo.
-    const hasInitialized = useRef(false);
-
-    // --- EFECTO DE INICIALIZACIÓN ---
-    useEffect(() => {
-        if (hasInitialized.current) return;
-        hasInitialized.current = true;
-
-        const initializeApp = () => {
-            console.log('[HomePage] Iniciando la aplicación...');
-            const tg = window.Telegram?.WebApp;
-            
-            if (!tg?.initDataUnsafe?.user?.id) {
-                console.error("[HomePage] Entorno de Telegram no detectado. No se puede inicializar.");
-                // Opcional: podrías llamar a una función del store para marcar un error permanente.
-                return;
-            }
-            
-            tg.ready();
-            tg.expand();
-            
-            // Llamamos a la función del store. NO se pasa ningún código de referido.
-            console.log('[HomePage] Llamando a syncUserWithBackend...');
-            syncUserWithBackend(tg.initDataUnsafe.user);
-        };
-
-        initializeApp();
-    }, [syncUserWithBackend]);
-
-    // --- LÓGICA DE MINERÍA (SIN CAMBIOS) ---
+    // --- LÓGICA DE MINERÍA Y UI (SIN CAMBIOS) ---
+    // Esta lógica ahora es 100% segura porque la guarda de arriba previene
+    // que se ejecute si `user` es nulo.
     const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
-        user?.lastMiningClaim,
-        user?.effectiveMiningRate ?? 0,
-        user?.miningStatus ?? 'IDLE'
+        user.lastMiningClaim,
+        user.effectiveMiningRate ?? 0,
+        user.miningStatus ?? 'IDLE'
     );
 
     const handleStartMining = async () => {
@@ -79,20 +58,13 @@ const HomePage = () => {
         }
     };
     const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
-
-    // --- RENDERIZADO CONDICIONAL DE LA PÁGINA ---
-    if (isLoadingAuth) {
-        return <div className="w-full h-full flex items-center justify-center"><Loader text="Sincronizando..." /></div>;
-    }
-
-    if (!user) {
-        return <div className="w-full h-full flex items-center justify-center p-4"><AuthErrorScreen message="No se pudo cargar la información. Por favor, reinicia la aplicación desde Telegram." /></div>;
-    }
     
-    // --- RENDERIZADO DE LA UI PRINCIPAL ---
+    // --- RENDERIZADO DE LA UI PRINCIPAL (SIN CAMBIOS) ---
+    // Este JSX se renderiza dentro del <Layout> proporcionado por App.jsx
     return (
         <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
             <div className="px-4 pt-4 space-y-4">
+                {/* UserInfoHeader ahora podrá leer `user.referredBy.fullName` si existe */}
                 <UserInfoHeader />
                 <RealTimeClock />
             </div>

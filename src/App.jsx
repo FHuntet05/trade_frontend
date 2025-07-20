@@ -1,12 +1,14 @@
-// frontend/src/App.jsx (VERSIÓN FINAL v32.0 - ESTABLE Y SIMPLE)
-import React from 'react';
+// frontend/src/App.jsx (VERSIÓN RESTAURACIÓN TOTAL v33.0)
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import useUserStore from './store/userStore';
 
-// --- IMPORTS DE COMPONENTES Y PÁGINAS ---
+// --- IMPORTS COMPLETOS DE COMPONENTES Y PÁGINAS ---
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
+import Loader from './components/common/Loader'; // Asumiendo que existe en esta ruta
 import HomePage from './pages/HomePage';
 import ToolsPage from './pages/ToolsPage';
 import RankingPage from './pages/RankingPage';
@@ -34,32 +36,72 @@ import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 
+// --- COMPONENTE 1: INICIALIZADOR GLOBAL SILENCIOSO ---
+// Su única misión es detonar la sincronización si no estamos autenticados.
+// Se ejecuta en todas las rutas de usuario, pero no en las de admin.
+const AppInitializer = () => {
+    const { isAuthenticated, syncUserWithBackend } = useUserStore();
+    
+    useEffect(() => {
+        // Si ya estamos autenticados (gracias al token persistente), no hacemos nada.
+        if (isAuthenticated) return;
+        
+        const tg = window.Telegram?.WebApp;
+        if (tg?.initDataUnsafe?.user?.id) {
+            console.log('[AppInitializer] No autenticado, iniciando sincronización...');
+            // Llama a la función del store que ya no maneja refCode.
+            syncUserWithBackend(tg.initDataUnsafe.user);
+        }
+    }, [isAuthenticated, syncUserWithBackend]);
+
+    return null; // Es invisible, no renderiza nada.
+};
+
+// --- COMPONENTE 2: GUARDIÁN DE RUTAS Y PANTALLA DE CARGA ---
+// Este componente decide qué mostrar: un loader, un error, o las páginas de usuario.
+// También redirige a los administradores al panel correcto.
+const UserGatekeeper = ({ children }) => {
+    const { user, isAuthenticated, isLoadingAuth } = useUserStore();
+
+    // Prioridad 1: Mostrar loader a pantalla completa mientras se autentica.
+    if (isLoadingAuth) {
+        return (
+            <div className="w-full h-screen flex items-center justify-center bg-dark-primary" style={{
+                // Asumiendo que el fondo de TeamPage es un degradado o imagen
+                background: 'var(--background-main)' // Asegúrate de que esta variable CSS esté definida globalmente
+            }}>
+                <Loader text="Autenticando..." />
+            </div>
+        );
+    }
+
+    // Prioridad 2: Si no estamos autenticados después de la carga, es un error.
+    if (!isAuthenticated) {
+        return (
+            <div className="w-full h-screen flex items-center justify-center p-4 bg-dark-primary">
+                Error de autenticación. Por favor, reinicia la app desde Telegram.
+            </div>
+        );
+    }
+    
+    // Prioridad 3: Si el usuario es admin, redirigir al dashboard.
+    // Esto se verifica DESPUÉS de la carga para asegurar que el rol del usuario está disponible.
+    if (user && user.role === 'admin') {
+        return <Navigate to="/admin/dashboard" replace />;
+    }
+
+    // Si todo está bien y el usuario es normal, renderiza los hijos (el Layout con las páginas).
+    return children;
+};
+
 function App() {
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
+      {/* El inicializador ahora envuelve a las rutas de usuario para ejecutarse en el contexto correcto */}
+      
       <Routes>
-        {/* La ruta raíz redirige a /home para tener un punto de entrada único y predecible. */}
-        <Route path="/" element={<Navigate to="/home" replace />} />
-
-        {/* Todas las páginas de usuario viven dentro de un Layout común para consistencia. */}
-        <Route element={<Layout />}>
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/tools" element={<ToolsPage />} />
-          <Route path="/ranking" element={<RankingPage />} />
-          <Route path="/team" element={<TeamPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-        </Route>
-
-        {/* Rutas que no usan el Layout principal */}
-        <Route path="/language" element={<LanguagePage />} />
-        <Route path="/faq" element={<FaqPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/support" element={<SupportPage />} />
-        <Route path="/history" element={<FinancialHistoryPage />} />
-        <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
-        
-        {/* Las rutas de admin se mantienen separadas y protegidas */}
+        {/* Las rutas de admin no tienen el inicializador de usuario */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>
@@ -79,8 +121,37 @@ function App() {
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
         </Route>
-        
-        <Route path="*" element={<NotFoundPage />} />
+
+        {/* Todas las demás rutas son de usuario y necesitan inicialización y protección */}
+        <Route path="/*" element={
+          <>
+            <AppInitializer />
+            <UserGatekeeper>
+              <Routes>
+                <Route path="/" element={<Navigate to="/home" replace />} />
+                {/* Todas las páginas de usuario viven dentro del Layout para consistencia de UI */}
+                <Route element={<Layout />}>
+                  <Route path="/home" element={<HomePage />} />
+                  <Route path="/tools" element={<ToolsPage />} />
+                  <Route path="/ranking" element={<RankingPage />} />
+                  <Route path="/team" element={<TeamPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  {/* CORRECCIÓN DE UI: Páginas ahora dentro del Layout */}
+                  <Route path="/history" element={<FinancialHistoryPage />} />
+                  <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
+                </Route>
+                
+                {/* Rutas independientes sin el Layout principal */}
+                <Route path="/language" element={<LanguagePage />} />
+                <Route path="/faq" element={<FaqPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/support" element={<SupportPage />} />
+                
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </UserGatekeeper>
+          </>
+        } />
       </Routes>
     </Router>
   );
