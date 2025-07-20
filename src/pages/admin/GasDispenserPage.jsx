@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (MODAL MANUAL v35.14 - CON RECARGA MANUAL DIRIGIDA)
+// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (VERIFICACIÓN FINAL DE INTEGRIDAD v35.14 - CON RECARGA MANUAL DIRIGIDA)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
@@ -9,6 +9,7 @@ import Modal from '../../components/common/Modal'; // Asume que tienes un compon
 
 const GasDispenserPage = () => {
     const [activeChain, setActiveChain] = useState('BSC');
+    // data.walletsNeedingGas ahora contendrá gasBalance y requiredGas como floats precisos
     const [data, setData] = useState({ centralWalletBalance: 0, walletsNeedingGas: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [dispensingStatus, setDispensingStatus] = useState({});
@@ -80,7 +81,8 @@ const GasDispenserPage = () => {
     };
 
     // --- Lógica para la dispensación manual ---
-    const handleManualDispatchConfirm = async () => {
+    // ESTA FUNCIÓN ES LA QUE ESTABA DANDO EL ERROR DE UNDEFINED
+    const handleManualDispenseConfirm = async () => {
         if (!selectedWalletForManualDispense || !manualAmountToDispense || parseFloat(manualAmountToDispense) <= 0) {
             toast.error('Por favor, selecciona una wallet e ingresa una cantidad válida.');
             return;
@@ -170,6 +172,7 @@ const GasDispenserPage = () => {
                 </div>
             </div>
 
+            {/* Botón para abrir el modal de dispensación manual */}
             <button 
                 onClick={() => setIsManualDispenseModalOpen(true)}
                 className="px-4 py-2 text-sm font-bold bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
@@ -243,7 +246,8 @@ const GasDispenserPage = () => {
                             onChange={(e) => {
                                 const wallet = allWalletsForManualDispense.find(w => w.address === e.target.value);
                                 setSelectedWalletForManualDispense(wallet);
-                                setManualAmountToDispense(wallet && wallet.estimatedRequiredGas ? wallet.estimatedRequiredGas.toFixed(8) : '');
+                                // Pre-rellena la cantidad a dispensar con el gas faltante estimado
+                                setManualAmountToDispense(wallet ? Math.max(0, wallet.estimatedRequiredGas - wallet.gasBalance).toFixed(8) : '');
                             }}
                         >
                             <option value="">-- Selecciona una wallet --</option>
@@ -274,11 +278,11 @@ const GasDispenserPage = () => {
                             type="number"
                             id="manual-amount"
                             className="w-full p-2 rounded-md bg-dark-input text-white border border-gray-700 focus:border-accent-start focus:ring focus:ring-accent-start focus:ring-opacity-50"
-                            placeholder={`Ej: ${selectedWalletForManualDispense && Math.max(0, selectedWalletForManualDispense.estimatedRequiredGas - selectedWalletForManualDispense.gasBalance).toFixed(8) || '0.00006'}`}
+                            placeholder={`Ej: ${selectedWalletForManualDispense ? Math.max(0, selectedWalletForManualDispense.estimatedRequiredGas - selectedWalletForManualDispense.gasBalance).toFixed(8) : '0.00006'}`}
                             step="0.00000001" // Permite input con muchas decimales
                             value={manualAmountToDispense}
                             onChange={(e) => setManualAmountToDispense(e.target.value)}
-                            disabled={!selectedWalletForManualDispense}
+                            disabled={manualDispenseLoading || !selectedWalletForManualDispense}
                         />
                     </div>
 
@@ -291,7 +295,7 @@ const GasDispenserPage = () => {
                             Cancelar
                         </button>
                         <button
-                            onClick={handleManualDispenseConfirm}
+                            onClick={handleManualDispenseConfirm} // <<< ESTA ES LA FUNCIÓN REFERENCIADA
                             className="px-4 py-2 bg-accent-start text-white rounded-md hover:bg-accent-end transition-colors disabled:opacity-50"
                             disabled={manualDispenseLoading || !selectedWalletForManualDispense || parseFloat(manualAmountToDispense) <= 0}
                         >
