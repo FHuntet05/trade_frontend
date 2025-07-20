@@ -1,11 +1,11 @@
-// frontend/src/App.jsx (VERSIÓN TRASPLANTE v26.0)
+// frontend/src/App.jsx (VERSIÓN DEFINITIVA v27.0 - ENLACE INQUEBRANTABLE)
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 
-// Componentes y Páginas
-import Layout from './components/layout/Layout'; // Asumimos que Layout maneja la estructura principal
+// Componentes y Páginas (SIN CAMBIOS)
+import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
 import HomePage from './pages/HomePage';
@@ -35,37 +35,41 @@ import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 
-// --- ANÁLISIS Y CAMBIOS v26.0 ---
-// Se crea un componente simple que redirige a los administradores si están logueados
-// y renderiza el Layout normal para los usuarios. Esto protege las rutas de usuario.
-const UserRedirector = () => {
-    const { user, isAuthenticated } = useUserStore();
+// ======================= INICIO DE LA ARQUITECTURA DEFINITIVA =======================
 
-    // Si el usuario está autenticado y es admin, lo sacamos de las rutas de usuario
-    // y lo mandamos al dashboard de admin.
+// --- ANÁLISIS Y CAMBIOS v27.0 ---
+// 1. EL NUEVO REDIRECTOR INTELIGENTE
+// Este componente reemplaza al redirector defectuoso. Su única misión es
+// redirigir de "/" a "/home" PERO CONSERVANDO CUALQUIER PARÁMETRO DE LA URL.
+function RootParameterPreservingRedirector() {
+  const location = useLocation();
+  // location.search contiene la parte de los parámetros de la URL, ej: "?startapp=CODIGO123"
+  const destination = `/home${location.search}`;
+  console.log(`[v27.0 Redirector] Preservando parámetros. Redirigiendo a: ${destination}`);
+  return <Navigate to={destination} replace />;
+}
+
+// 2. EL GUARDIÁN DE RUTAS DE USUARIO
+// Este componente se mantiene para la lógica del admin, es correcto.
+const UserRouteGuard = () => {
+    const { user, isAuthenticated } = useUserStore();
     if (isAuthenticated && user?.role === 'admin') {
         return <Navigate to="/admin/dashboard" replace />;
     }
-    
-    // Si es un usuario normal, renderiza el Layout que contiene las páginas.
     return <Layout />;
 };
 
-
 function App() {
-  // La lógica de inicialización global ha sido eliminada.
-  // App.jsx ahora es un simple definidor de rutas.
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
 
       <Routes>
-        {/* Ruta raíz redirige a /home para mantener consistencia */}
-        <Route path="/" element={<Navigate to="/home" replace />} />
-
-        {/* Todas las rutas de usuario están ahora anidadas bajo un Layout */}
-        {/* El UserRedirector decide si mostrar el Layout o redirigir al admin */}
-        <Route element={<UserRedirector />}>
+        {/* LA LÍNEA CORREGIDA: La ruta raíz ahora usa el redirector inteligente */}
+        <Route path="/" element={<RootParameterPreservingRedirector />} />
+        
+        {/* Las rutas de usuario están protegidas por el guardián de rol */}
+        <Route element={<UserRouteGuard />}>
             <Route path="/home" element={<HomePage />} />
             <Route path="/tools" element={<ToolsPage />} />
             <Route path="/ranking" element={<RankingPage />} />
@@ -73,7 +77,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
         </Route>
         
-        {/* Rutas sin el layout principal (ej. selector de idioma en un modal) */}
+        {/* Rutas sin el layout principal */}
         <Route path="/language" element={<LanguagePage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/about" element={<AboutPage />} />
@@ -81,7 +85,7 @@ function App() {
         <Route path="/history" element={<FinancialHistoryPage />} />
         <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
         
-        {/* El flujo de admin se mantiene intacto y separado */}
+        {/* El flujo de admin se mantiene intacto */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>
