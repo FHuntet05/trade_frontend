@@ -1,18 +1,26 @@
-// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (VERSIÓN FINALIZADA v35.13 - DISPENSADOR INTELIGENTE)
+// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (MODAL MANUAL v35.14 - CON RECARGA MANUAL DIRIGIDA)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import api from '../../api/axiosConfig';
 import Loader from '../../components/common/Loader';
 import { HiOutlineFunnel, HiCheckCircle, HiXCircle, HiOutlineArrowPath } from 'react-icons/hi2';
+import Modal from '../../components/common/Modal'; // Asume que tienes un componente Modal genérico
 
 const GasDispenserPage = () => {
     const [activeChain, setActiveChain] = useState('BSC');
-    // data.walletsNeedingGas ahora contiene gasBalance y requiredGas como floats precisos
     const [data, setData] = useState({ centralWalletBalance: 0, walletsNeedingGas: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [dispensingStatus, setDispensingStatus] = useState({});
     const [report, setReport] = useState(null);
+
+    // Estado para el modal de dispensación manual
+    const [isManualDispenseModalOpen, setIsManualDispenseModalOpen] = useState(false);
+    const [allWalletsForManualDispense, setAllWalletsForManualDispense] = useState([]);
+    const [selectedWalletForManualDispense, setSelectedWalletForManualDispense] = useState(null);
+    const [manualAmountToDispense, setManualAmountToDispense] = useState('');
+    const [manualDispenseLoading, setManualDispenseLoading] = useState(false);
+
 
     const analyzeGas = useCallback(async () => {
         setIsLoading(true);
@@ -21,9 +29,15 @@ const GasDispenserPage = () => {
         try {
             const response = await api.post('/admin/gas-dispenser/analyze', { chain: activeChain });
             setData(response.data);
+
+            // También carga todas las wallets para el modal manual aquí para eficiencia
+            const { data: allWalletsData } = await api.get('/admin/treasury/wallets-list');
+            setAllWalletsForManualDispense(allWalletsData);
+
         } catch (error) {
             toast.error(error.response?.data?.message || 'Error al analizar las wallets.');
             setData({ centralWalletBalance: 0, walletsNeedingGas: [] });
+            setAllWalletsForManualDispense([]); // Resetear en caso de error
         } finally {
             setIsLoading(false);
         }
@@ -31,18 +45,14 @@ const GasDispenserPage = () => {
 
     useEffect(() => {
         analyzeGas();
-        // Refrescar análisis cada 30 segundos para precios de gas actualizados
         const intervalId = setInterval(analyzeGas, 30000); 
-        return () => clearInterval(intervalId); // Limpiar el intervalo al desmontar
+        return () => clearInterval(intervalId);
     }, [analyzeGas]);
 
     const handleSingleDispatch = async (wallet) => {
         const { address, requiredGas, gasBalance } = wallet;
-        // Calcular la cantidad a dispensar: Si ya tiene algo de gas, envía solo la diferencia.
-        // Si no tiene nada o la cantidad es muy pequeña, envía el total requerido.
         const amountToDispense = Math.max(0, requiredGas - gasBalance);
         
-        // Pequeña tolerancia para números flotantes (si la diferencia es mínima y ya tiene suficiente)
         if (amountToDispense < 0.00000001 && gasBalance >= requiredGas) { 
             toast.success(`La wallet ${address.substring(0,8)}... ya tiene suficiente gas.`);
             setDispensingStatus(prev => ({ ...prev, [address]: 'success' }));
@@ -52,14 +62,14 @@ const GasDispenserPage = () => {
         setDispensingStatus(prev => ({ ...prev, [address]: 'loading' }));
         const dispatchPromise = api.post('/admin/gas-dispenser/dispatch', { 
             chain: activeChain, 
-            targets: [{ address, amount: amountToDispense }] // Envía solo la cantidad necesaria
+            targets: [{ address, amount: amountToDispense }] 
         });
         toast.promise(dispatchPromise, {
             loading: `Dispensando ${amountToDispense.toFixed(6)} ${currency} a ${address.substring(0, 8)}...`,
             success: (res) => {
                 setDispensingStatus(prev => ({ ...prev, [address]: 'success' }));
                 setReport(res.data);
-                analyzeGas(); // Re-analizar después de dispensar para actualizar saldos
+                analyzeGas(); 
                 return `Gas dispensado exitosamente.`;
             },
             error: (err) => {
@@ -69,13 +79,51 @@ const GasDispenserPage = () => {
         });
     };
 
+    // --- Lógica para la dispensación manual ---
+    const handleManualDispatchConfirm = async () => {
+        if (!selectedWalletForManualDispense || !manualAmountToDispense || parseFloat(manualAmountToDispense) <= 0) {
+            toast.error('Por favor, selecciona una wallet e ingresa una cantidad válida.');
+            return;
+        }
+        const amount = parseFloat(manualAmountToDispense);
+        const { address, chain } = selectedWalletForManualDispense;
+
+        if (data.centralWalletBalance < amount) {
+            toast.error(`Saldo insuficiente en la billetera central (${data.centralWalletBalance.toFixed(6)} ${currency}). Necesitas ${amount.toFixed(6)} ${currency}.`);
+            return;
+        }
+
+        setManualDispenseLoading(true);
+        try {
+            const dispatchPromise = api.post('/admin/gas-dispenser/dispatch', {
+                chain,
+                targets: [{ address, amount }]
+            });
+            const res = await toast.promise(dispatchPromise, {
+                loading: `Dispensando ${amount.toFixed(6)} ${chain === 'BSC' ? 'BNB' : 'TRX'} a ${address.substring(0, 8)}...`,
+                success: `Gas dispensado manualmente exitosamente.`,
+                error: (err) => err.response?.data?.message || 'Error crítico al dispensar gas manualmente.',
+            });
+            setReport(res.data);
+            setIsManualDispenseModalOpen(false);
+            setManualAmountToDispense('');
+            setSelectedWalletForManualDispense(null);
+            analyzeGas(); // Refrescar toda la página
+        } catch (error) {
+            // El toast.promise ya maneja el error, solo limpiamos el estado de carga
+        } finally {
+            setManualDispenseLoading(false);
+        }
+    };
+    // --- Fin lógica para la dispensación manual ---
+
+
     const currency = activeChain === 'BSC' ? 'BNB' : 'TRX';
 
     const renderActionButton = (wallet) => {
         const status = dispensingStatus[wallet.address];
         const amountToDispense = Math.max(0, wallet.requiredGas - wallet.gasBalance);
-        // Deshabilitar si ya tiene suficiente gas o si la cantidad a dispensar es negativa/mínima
-        const alreadyHasEnough = wallet.gasBalance >= wallet.requiredGas - 0.00000001; // Pequeña tolerancia
+        const alreadyHasEnough = wallet.gasBalance >= wallet.requiredGas - 0.00000001; 
         const canAfford = data.centralWalletBalance >= amountToDispense;
 
         if (status === 'loading') {
@@ -88,12 +136,10 @@ const GasDispenserPage = () => {
             return <HiXCircle className="w-6 h-6 text-red-500" />;
         }
 
-        // Si ya tiene suficiente, muestra el estado
         if (alreadyHasEnough) {
             return <span className="text-green-500 text-sm">✅ Suficiente</span>;
         }
 
-        // Si no tiene suficiente, muestra el botón para dispensar
         return (
             <button 
                 onClick={() => handleSingleDispatch(wallet)}
@@ -124,6 +170,13 @@ const GasDispenserPage = () => {
                 </div>
             </div>
 
+            <button 
+                onClick={() => setIsManualDispenseModalOpen(true)}
+                className="px-4 py-2 text-sm font-bold bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+            >
+                Dispensar Gas Manualmente
+            </button>
+
             {isLoading ? <Loader text={`Analizando wallets en la red ${activeChain}...`} /> : (
                 <div className="space-y-6">
                     <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
@@ -136,7 +189,7 @@ const GasDispenserPage = () => {
                                         <th className="p-3 text-right">Saldo USDT</th>
                                         <th className="p-3 text-right">Gas Actual ({currency})</th>
                                         <th className="p-3 text-right">Gas Requerido (Est.)</th>
-                                        <th className="p-3 text-right">Gas a Dispensar</th> {/* NUEVA COLUMNA */}
+                                        <th className="p-3 text-right">Gas a Dispensar</th>
                                         <th className="p-3 text-center">Acción</th>
                                     </tr>
                                 </thead>
@@ -145,10 +198,10 @@ const GasDispenserPage = () => {
                                         <tr key={wallet.address} className="hover:bg-dark-tertiary">
                                             <td className="p-3 font-mono text-sm">{wallet.address}</td>
                                             <td className="p-3 text-right font-mono text-green-400">{wallet.usdtBalance.toFixed(4)}</td>
-                                            <td className="p-3 text-right font-mono text-red-400">{wallet.gasBalance.toFixed(8)}</td> {/* Mostrar con más decimales para precisión */}
-                                            <td className="p-3 text-right font-mono text-yellow-400">{wallet.requiredGas.toFixed(8)}</td> {/* Mostrar con más decimales para precisión */}
+                                            <td className="p-3 text-right font-mono text-red-400">{wallet.gasBalance.toFixed(8)}</td>
+                                            <td className="p-3 text-right font-mono text-yellow-400">{wallet.requiredGas.toFixed(8)}</td>
                                             <td className="p-3 text-right font-mono text-blue-400">
-                                                {Math.max(0, wallet.requiredGas - wallet.gasBalance).toFixed(8)} {currency} {/* Cálculo de lo que falta */}
+                                                {Math.max(0, wallet.requiredGas - wallet.gasBalance).toFixed(8)} {currency}
                                             </td>
                                             <td className="p-3 text-center">{renderActionButton(wallet)}</td>
                                         </tr>
@@ -172,6 +225,81 @@ const GasDispenserPage = () => {
                     )}
                 </div>
             )}
+
+            {/* Modal de Dispensación Manual */}
+            <Modal isOpen={isManualDispenseModalOpen} onClose={() => setIsManualDispenseModalOpen(false)} title="Dispensar Gas Manualmente">
+                <div className="p-4 space-y-4">
+                    <div className="bg-dark-tertiary p-3 rounded-lg text-right">
+                        <p className="text-sm text-text-secondary">Balance Wallet Central</p>
+                        <p className="text-xl font-bold font-mono">{data.centralWalletBalance.toFixed(6)} {currency}</p>
+                    </div>
+
+                    <div>
+                        <label htmlFor="wallet-select" className="block text-sm font-medium text-text-secondary mb-2">Seleccionar Wallet de Destino:</label>
+                        <select
+                            id="wallet-select"
+                            className="w-full p-2 rounded-md bg-dark-input text-white border border-gray-700 focus:border-accent-start focus:ring focus:ring-accent-start focus:ring-opacity-50"
+                            value={selectedWalletForManualDispense ? selectedWalletForManualDispense.address : ''}
+                            onChange={(e) => {
+                                const wallet = allWalletsForManualDispense.find(w => w.address === e.target.value);
+                                setSelectedWalletForManualDispense(wallet);
+                                setManualAmountToDispense(wallet && wallet.estimatedRequiredGas ? wallet.estimatedRequiredGas.toFixed(8) : '');
+                            }}
+                        >
+                            <option value="">-- Selecciona una wallet --</option>
+                            {allWalletsForManualDispense
+                                .filter(w => w.chain === activeChain) // Filtra por la cadena activa
+                                .map(wallet => (
+                                <option key={wallet.address} value={wallet.address}>
+                                    {wallet.user?.username || 'Usuario Desconocido'} - {wallet.address.substring(0, 10)}... ({wallet.chain})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {selectedWalletForManualDispense && (
+                        <div className="bg-dark-tertiary p-3 rounded-lg space-y-2">
+                            <p className="text-sm text-text-secondary">Wallet Seleccionada:</p>
+                            <p className="font-mono text-sm text-white break-all">{selectedWalletForManualDispense.address}</p>
+                            <p className="text-sm text-text-secondary">Saldo USDT: <span className="font-mono text-green-400">{selectedWalletForManualDispense.usdtBalance.toFixed(4)}</span></p>
+                            <p className="text-sm text-text-secondary">Gas Actual: <span className="font-mono text-red-400">{selectedWalletForManualDispense.gasBalance.toFixed(8)} {currency}</span></p>
+                            <p className="text-sm text-text-secondary">Gas Requerido (Est.): <span className="font-mono text-yellow-400">{selectedWalletForManualDispense.estimatedRequiredGas.toFixed(8)} {currency}</span></p>
+                            <p className="text-sm text-text-secondary">Gas Faltante (Est.): <span className="font-mono text-blue-400">{Math.max(0, selectedWalletForManualDispense.estimatedRequiredGas - selectedWalletForManualDispense.gasBalance).toFixed(8)} {currency}</span></p>
+                        </div>
+                    )}
+
+                    <div>
+                        <label htmlFor="manual-amount" className="block text-sm font-medium text-text-secondary mb-2">Cantidad de Gas a Dispensar ({currency}):</label>
+                        <input
+                            type="number"
+                            id="manual-amount"
+                            className="w-full p-2 rounded-md bg-dark-input text-white border border-gray-700 focus:border-accent-start focus:ring focus:ring-accent-start focus:ring-opacity-50"
+                            placeholder={`Ej: ${selectedWalletForManualDispense && Math.max(0, selectedWalletForManualDispense.estimatedRequiredGas - selectedWalletForManualDispense.gasBalance).toFixed(8) || '0.00006'}`}
+                            step="0.00000001" // Permite input con muchas decimales
+                            value={manualAmountToDispense}
+                            onChange={(e) => setManualAmountToDispense(e.target.value)}
+                            disabled={!selectedWalletForManualDispense}
+                        />
+                    </div>
+
+                    <div className="flex justify-end space-x-4 mt-6">
+                        <button
+                            onClick={() => setIsManualDispenseModalOpen(false)}
+                            className="px-4 py-2 text-text-secondary rounded-md hover:bg-gray-700 transition-colors"
+                            disabled={manualDispenseLoading}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleManualDispenseConfirm}
+                            className="px-4 py-2 bg-accent-start text-white rounded-md hover:bg-accent-end transition-colors disabled:opacity-50"
+                            disabled={manualDispenseLoading || !selectedWalletForManualDispense || parseFloat(manualAmountToDispense) <= 0}
+                        >
+                            {manualDispenseLoading ? 'Dispensando...' : 'Dispensar Ahora'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };
