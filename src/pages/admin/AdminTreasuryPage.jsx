@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN BARRIDO INTELIGENTE)
+// RUTA: frontend/src/pages/admin/AdminTreasuryPage.jsx (ACTUALIZADO v35.12 - TESORERÍA DINÁMICA)
 
 import React, { useState, useEffect, useRef } from 'react';
 import useAdminStore from '../../store/adminStore';
@@ -20,6 +20,7 @@ const SummaryCard = ({ title, amount, currency, icon }) => (
 );
 
 const AdminTreasuryPage = () => {
+    // treasuryData.wallets ahora contendrá estimatedRequiredGas para cada wallet
     const [treasuryData, setTreasuryData] = useState({ summary: { usdt: 0, bnb: 0, trx: 0 }, wallets: [] });
     const [loadingState, setLoadingState] = useState({ list: true, scan: false });
     const [scanStatus, setScanStatus] = useState('');
@@ -36,51 +37,50 @@ const AdminTreasuryPage = () => {
     const [sweepContext, setSweepContext] = useState(null);
     const [sweepReport, setSweepReport] = useState(null);
 
-    // Función de escaneo inicial (sin cambios)
+    // Función de escaneo inicial (MODIFICADA para usar el nuevo endpoint y data)
     useEffect(() => {
         const startScan = async () => {
             if (!isHydrated) { setLoadingState({ list: true, scan: false }); setScanStatus('Sincronizando estado de la sesión...'); return; }
             if (!token) { setLoadingState({ list: false, scan: false }); setScanStatus('Token de administrador no encontrado.'); toast.error("Acceso denegado."); return; }
             setLoadingState({ list: true, scan: false }); setTreasuryData({ summary: { usdt: 0, bnb: 0, trx: 0 }, wallets: [] }); setElapsedTime(0); if (timerRef.current) clearInterval(timerRef.current);
             try {
-                const { data: walletsToScan } = await api.get('/admin/treasury/wallets-list');
-                if (walletsToScan.length === 0) { setLoadingState({ list: false, scan: false }); setScanStatus('No hay wallets registradas.'); return; }
-                setLoadingState({ list: false, scan: true }); timerRef.current = setInterval(() => setElapsedTime(t => t + 1), 1000);
-                let tempSummary = { usdt: 0, bnb: 0, trx: 0 }; let walletsWithBalance = [];
-                for (let i = 0; i < walletsToScan.length; i++) {
-                    const wallet = walletsToScan[i]; setScanStatus(`(${i + 1}/${walletsToScan.length}) Escaneando ${wallet.address}...`);
-                    try {
-                        const { data: balanceData } = await api.post('/admin/treasury/wallet-balance', { address: wallet.address, chain: wallet.chain });
-                        if (balanceData.success) {
-                            const { usdt, bnb, trx } = balanceData.balances;
-                            if (usdt > 0 || bnb > 0 || trx > 0) {
-                                tempSummary.usdt += usdt; tempSummary.bnb += bnb; tempSummary.trx += trx;
-                                walletsWithBalance.push({ ...wallet, balances: balanceData.balances });
-                                setTreasuryData({ summary: { ...tempSummary }, wallets: [...walletsWithBalance] });
-                            }
-                        }
-                    } catch (error) { console.error(`Fallo al escanear ${wallet.address}:`, error.response?.data?.message || error.message); }
-                }
-                clearInterval(timerRef.current); setScanStatus(`Escaneo completado.`);
-            } catch (error) { toast.error(error.response?.data?.message || 'Error al obtener lista de wallets.'); if (timerRef.current) clearInterval(timerRef.current);
-            } finally { setLoadingState({ list: false, scan: false }); }
+                // Llama al nuevo endpoint que ya trae los balances y la estimación de gas
+                const { data: walletsWithDetails } = await api.get('/admin/treasury/wallets-list'); 
+                
+                let tempSummary = { usdt: 0, bnb: 0, trx: 0 };
+                // Filtrar y sumar solo las wallets que tienen algún saldo (USDT o GAS)
+                const filteredWallets = walletsWithDetails.filter(w => w.usdtBalance > 0 || w.gasBalance > 0);
+
+                filteredWallets.forEach(wallet => {
+                    tempSummary.usdt += wallet.usdtBalance || 0;
+                    tempSummary.bnb += wallet.gasBalance && wallet.chain === 'BSC' ? wallet.gasBalance : 0;
+                    tempSummary.trx += wallet.gasBalance && wallet.chain === 'TRON' ? wallet.gasBalance : 0;
+                });
+
+                setTreasuryData({ summary: tempSummary, wallets: filteredWallets });
+                setScanStatus(`Escaneo completado.`);
+
+            } catch (error) { 
+                toast.error(error.response?.data?.message || 'Error al obtener lista de wallets.'); 
+            } finally { 
+                if (timerRef.current) clearInterval(timerRef.current);
+                setLoadingState({ list: false, scan: false }); 
+            }
         };
         startScan();
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
     }, [isHydrated, token]);
 
-    // <-- CAMBIO: Lógica de pre-filtrado
+    // Función modificada para usar el estimatedRequiredGas del backend
     const handleOpenSweepModal = (chain) => {
-        const gasCurrency = chain === 'BSC' ? 'bnb' : 'trx';
-        const minGas = chain === 'BSC' ? 0.0015 : 25;
-
         const walletsCandidatas = treasuryData.wallets.filter(w =>
             w.chain === chain &&
-            w.balances.usdt > 0.000001 &&
-            w.balances[gasCurrency] >= minGas
+            w.usdtBalance > 0.000001 &&
+            // Usamos el estimatedRequiredGas devuelto por el backend
+            w.gasBalance >= w.estimatedRequiredGas 
         );
 
-        const totalUsdtToSweep = walletsCandidatas.reduce((sum, w) => sum + w.balances.usdt, 0);
+        const totalUsdtToSweep = walletsCandidatas.reduce((sum, w) => sum + w.usdtBalance, 0);
 
         setSweepContext({
             chain,
@@ -91,37 +91,34 @@ const AdminTreasuryPage = () => {
         setIsSweepModalOpen(true);
     };
 
-    // <-- CAMBIO: Lógica de actualización de estado SIN RECARGA
+    // Lógica de actualización de estado SIN RECARGA
     const updateStateAfterSweep = (report) => {
         const sweptAddresses = new Set(
             report.details.filter(d => d.status === 'SUCCESS').map(d => d.address)
         );
 
-        if (sweptAddresses.size === 0) return; // No hay cambios que aplicar
+        if (sweptAddresses.size === 0) return;
 
         setTreasuryData(currentData => {
-            // 1. Actualizar la lista de wallets
             const newWallets = currentData.wallets.map(wallet => {
                 if (sweptAddresses.has(wallet.address)) {
-                    // Esta wallet fue barrida, reseteamos sus balances a 0
-                    return { ...wallet, balances: { ...wallet.balances, usdt: 0 } };
+                    return { ...wallet, usdtBalance: 0 }; // Reseteamos USDT a 0 para barridas
                 }
                 return wallet;
             });
             
-            // 2. Recalcular el resumen a partir de la nueva lista de wallets
             const newSummary = newWallets.reduce((acc, wallet) => {
-                acc.usdt += wallet.balances.usdt || 0;
-                acc.bnb += wallet.balances.bnb || 0;
-                acc.trx += wallet.balances.trx || 0;
+                acc.usdt += wallet.usdtBalance || 0;
+                acc.bnb += wallet.gasBalance && wallet.chain === 'BSC' ? wallet.gasBalance : 0;
+                acc.trx += wallet.gasBalance && wallet.chain === 'TRON' ? wallet.gasBalance : 0;
                 return acc;
             }, { usdt: 0, bnb: 0, trx: 0 });
 
-            return { summary: newSummary, wallets: newWallets.filter(w => w.balances.usdt > 0 || w.balances.bnb > 0 || w.balances.trx > 0) };
+            // Filtramos también las wallets que ya no tienen USDT ni GAS ni requieren gas (para mantener la tabla limpia)
+            return { summary: newSummary, wallets: newWallets.filter(w => w.usdtBalance > 0 || w.gasBalance > 0) };
         });
     };
 
-    // <-- CAMBIO: Petición a la API y manejo de respuesta
     const handleSweepConfirm = async (sweepDetails) => {
         setIsSweepModalOpen(false);
         const sweepPromise = api.post('/admin/sweep-funds', sweepDetails);
@@ -131,25 +128,27 @@ const AdminTreasuryPage = () => {
           success: (res) => {
             setSweepReport(res.data);
             setIsReportModalOpen(true);
-            updateStateAfterSweep(res.data); // <-- CAMBIO: Llamamos a la actualización en tiempo real
+            updateStateAfterSweep(res.data); 
             return 'Operación de barrido completada. Revisa el reporte.';
           },
           error: (err) => err.response?.data?.message || 'Error crítico durante el barrido.',
         });
     };
     
-    // El resto del componente (renderizado) no necesita grandes cambios
     const renderGasBalance = (wallet) => {
-        const balance = wallet.chain === 'BSC' ? wallet.balances.bnb : wallet.balances.trx;
+        const balance = wallet.chain === 'BSC' ? wallet.gasBalance : wallet.trx; // Usamos gasBalance directamente que ya es el número
         const currency = wallet.chain === 'BSC' ? 'BNB' : 'TRX';
         return `${parseFloat(balance || 0).toFixed(6)} ${currency}`;
     };
 
+    // Función modificada para usar el estimatedRequiredGas del backend
     const hasFundsOnChain = (chain) => {
         if (!treasuryData || !treasuryData.wallets) return false;
-        const gasCurrency = chain === 'BSC' ? 'bnb' : 'trx';
-        const minGas = chain === 'BSC' ? 0.0015 : 25;
-        return treasuryData.wallets.some(w => w.chain === chain && w.balances.usdt > 0 && w.balances[gasCurrency] >= minGas);
+        return treasuryData.wallets.some(w => 
+            w.chain === chain && 
+            w.usdtBalance > 0.000001 && 
+            w.gasBalance >= w.estimatedRequiredGas // Comparación directa
+        );
     };
 
     return (
@@ -202,6 +201,7 @@ const AdminTreasuryPage = () => {
                                             <th className="p-3">Chain</th>
                                             <th className="p-3 text-right">Saldo USDT</th>
                                             <th className="p-3 text-right">Saldo Gas</th>
+                                            <th className="p-3 text-right">Gas Requerido (Est.)</th> {/* NUEVA COLUMNA */}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/10">
@@ -214,12 +214,13 @@ const AdminTreasuryPage = () => {
                                                     {wallet.chain}
                                                   </span>
                                                 </td>
-                                                <td className="p-3 text-right font-mono">{parseFloat(wallet.balances.usdt).toFixed(6)}</td>
+                                                <td className="p-3 text-right font-mono">{parseFloat(wallet.usdtBalance).toFixed(6)}</td>
                                                 <td className="p-3 text-right font-mono">{renderGasBalance(wallet)}</td>
+                                                <td className="p-3 text-right font-mono">{parseFloat(wallet.estimatedRequiredGas).toFixed(6)} {wallet.chain === 'BSC' ? 'BNB' : 'TRX'}</td> {/* Mostrar gas requerido */}
                                             </tr>
                                         )) : (
                                             <tr>
-                                                <td colSpan="5" className="text-center p-6 text-text-secondary">{scanStatus || 'No se encontraron wallets con saldo.'}</td>
+                                                <td colSpan="6" className="text-center p-6 text-text-secondary">{scanStatus || 'No se encontraron wallets con saldo.'}</td>
                                             </tr>
                                         )}
                                     </tbody>
