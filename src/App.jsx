@@ -1,15 +1,13 @@
-// frontend/src/App.jsx (VERSIÓN RESTAURADA v25.0 - FALLO DE REFERIDOS CORREGIDO)
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom';
+// frontend/src/App.jsx (VERSIÓN TRASPLANTE v26.0)
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 
-// Componentes y Páginas (se mantienen todos sus imports)
-import Layout from './components/layout/Layout';
+// Componentes y Páginas
+import Layout from './components/layout/Layout'; // Asumimos que Layout maneja la estructura principal
 import AdminLayout from './components/layout/AdminLayout';
 import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
-import Loader from './components/common/Loader';
-import AuthErrorScreen from './components/AuthErrorScreen';
 import HomePage from './pages/HomePage';
 import ToolsPage from './pages/ToolsPage';
 import RankingPage from './pages/RankingPage';
@@ -37,87 +35,37 @@ import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 
-// ======================= INICIO DE LA ARQUITECTURA RESTAURADA =======================
+// --- ANÁLISIS Y CAMBIOS v26.0 ---
+// Se crea un componente simple que redirige a los administradores si están logueados
+// y renderiza el Layout normal para los usuarios. Esto protege las rutas de usuario.
+const UserRedirector = () => {
+    const { user, isAuthenticated } = useUserStore();
 
-// --- ANÁLISIS Y CAMBIOS v25.0 ---
-// 1. Redireccionador de Referidos (SIMPLIFICADO)
-// Se elimina la lógica de pasar el refCode por la URL. Esto era la causa de la condición de carrera.
-// Su única responsabilidad ahora es sacar al usuario de la ruta raíz "/" y llevarlo a "/home".
-function RootRedirector() {
-  console.log('[v25.0 RootRedirector] Redirigiendo de / a /home.');
-  return <Navigate to="/home" replace />;
-}
-
-// --- ANÁLISIS Y CAMBIOS v25.0 ---
-// 2. Inicializador Global de Autenticación (CORREGIDO)
-// El fallo de referidos se elimina aquí.
-function AuthInitializer() {
-    const { syncUserWithBackend, logout, isAuthenticated } = useUserStore();
-    const location = useLocation();
-
-    useEffect(() => {
-        // La guarda que protege el flujo de admin se mantiene intacta. ES CRÍTICA.
-        if (isAuthenticated || window.location.pathname.startsWith('/admin')) {
-            return;
-        }
-
-        const tg = window.Telegram?.WebApp;
-        if (tg && tg.initData) {
-            tg.ready();
-            
-            // ======================== CORRECCIÓN DEFINITIVA DEL FALLO DE REFERIDOS ========================
-            // Se elimina la lectura de `location.search`. Es inestable y causa la condición de carrera.
-            // Se lee el `refCode` directamente de `start_param`, la fuente canónica de Telegram.
-            // Esto garantiza que el `refCode` se capture siempre, sin depender de la redirección.
-            const refCode = tg.initDataUnsafe.start_param || null;
-            console.log(`[v25.0 AuthInitializer] Capturado refCode directamente de Telegram: ${refCode}`);
-            // =============================================================================================
-
-            syncUserWithBackend(tg.initDataUnsafe.user, refCode);
-        } else {
-             // La lógica para entornos no-Telegram se mantiene.
-             if (!window.location.pathname.startsWith('/admin')) {
-                console.log('[v25.0 AuthInitializer] Entorno no-Telegram detectado. Ejecutando logout.');
-                logout();
-             }
-        }
-    // La dependencia de `location.search` se ha eliminado para estabilizar el componente.
-    }, [location.pathname, isAuthenticated, syncUserWithBackend, logout]);
-
-    return null;
-}
-
-// --- ANÁLISIS Y CAMBIOS v25.0 ---
-// 3. El Guardián de Roles (SIN CAMBIOS)
-// Este componente funciona correctamente y es crucial para el flujo de admin. Se mantiene intacto.
-function UserGatekeeper() {
-    const { user, isAuthenticated, isLoadingAuth } = useUserStore();
-
-    if (isLoadingAuth) {
-        return <div className="w-full h-screen flex items-center justify-center bg-dark-primary"><Loader text="Autenticando..." /></div>;
-    }
-    if (!isAuthenticated) {
-        return <AuthErrorScreen message="Autenticación requerida. Por favor, reinicia desde Telegram." />;
-    }
-    if (user?.role === 'admin') {
+    // Si el usuario está autenticado y es admin, lo sacamos de las rutas de usuario
+    // y lo mandamos al dashboard de admin.
+    if (isAuthenticated && user?.role === 'admin') {
         return <Navigate to="/admin/dashboard" replace />;
     }
+    
+    // Si es un usuario normal, renderiza el Layout que contiene las páginas.
     return <Layout />;
-}
+};
+
 
 function App() {
+  // La lógica de inicialización global ha sido eliminada.
+  // App.jsx ahora es un simple definidor de rutas.
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
-      {/* El inicializador sigue ejecutándose a nivel global */}
-      <AuthInitializer />
 
       <Routes>
-        {/* La ruta raíz activa el redireccionador simplificado */}
-        <Route path="/" element={<RootRedirector />} />
-        
-        {/* El guardián sigue protegiendo las rutas de usuario */}
-        <Route element={<UserGatekeeper />}>
+        {/* Ruta raíz redirige a /home para mantener consistencia */}
+        <Route path="/" element={<Navigate to="/home" replace />} />
+
+        {/* Todas las rutas de usuario están ahora anidadas bajo un Layout */}
+        {/* El UserRedirector decide si mostrar el Layout o redirigir al admin */}
+        <Route element={<UserRedirector />}>
             <Route path="/home" element={<HomePage />} />
             <Route path="/tools" element={<ToolsPage />} />
             <Route path="/ranking" element={<RankingPage />} />
@@ -125,7 +73,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
         </Route>
         
-        {/* Todas sus demás rutas se mantienen intactas y seguras */}
+        {/* Rutas sin el layout principal (ej. selector de idioma en un modal) */}
         <Route path="/language" element={<LanguagePage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/about" element={<AboutPage />} />
@@ -133,7 +81,7 @@ function App() {
         <Route path="/history" element={<FinancialHistoryPage />} />
         <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
         
-        {/* El flujo de admin no ha sido alterado */}
+        {/* El flujo de admin se mantiene intacto y separado */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>

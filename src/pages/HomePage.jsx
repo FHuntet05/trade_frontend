@@ -1,5 +1,5 @@
-// frontend/pages/HomePage.jsx (VERSIÓN FINAL, SIMPLIFICADA v28.0)
-import React from 'react';
+// frontend/pages/HomePage.jsx (VERSIÓN TRASPLANTE v26.0)
+import React, { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
 import api from '../api/axiosConfig';
@@ -11,20 +11,50 @@ import AnimatedCounter from '../components/home/AnimatedCounter';
 import TaskCenter from '../components/home/TaskCenter';
 import NotificationFeed from '../components/home/NotificationFeed';
 import { useMiningLogic } from '../hooks/useMiningLogic';
+import Loader from '../components/common/Loader';
+import AuthErrorScreen from '../components/AuthErrorScreen';
 
 const HomePage = () => {
-    // La página ya no necesita saber sobre isLoadingAuth o isAuthenticated.
-    // El Guardián (Gatekeeper) se ha encargado de eso.
-    const { user, updateUser } = useUserStore();
+    // --- LÓGICA DE INICIALIZACIÓN TRASPLANTADA ---
+    const { user, updateUser, syncUserWithBackend, isLoadingAuth, error } = useUserStore();
+    const hasFetched = useRef(false);
 
-    // Esta lógica ahora es segura porque la página no se renderizará si 'user' es null.
+    useEffect(() => {
+        // Prevenimos doble ejecución en modo estricto de React
+        if (hasFetched.current) return;
+        hasFetched.current = true;
+
+        const initializeApp = () => {
+            console.log("[v26.0 HomePage] Iniciando secuencia de carga...");
+            const tg = window.Telegram?.WebApp;
+
+            if (!tg || !tg.initDataUnsafe?.user?.id) {
+                console.error("[v26.0 HomePage] Entorno Telegram no válido. Abortando.");
+                // Aquí podrías llamar a una función del store que marque un error permanente.
+                return; 
+            }
+            
+            tg.ready();
+            tg.expand();
+
+            // Leemos el refCode de la URL, que fue construida por el bot.
+            const searchParams = new URLSearchParams(window.location.search);
+            const refCode = searchParams.get('startapp') || null;
+
+            console.log(`[v26.0 HomePage] RefCode extraído de la URL: ${refCode}`);
+            syncUserWithBackend(tg.initDataUnsafe.user, refCode);
+        };
+
+        initializeApp();
+    }, [syncUserWithBackend]); // Dependencia estable que se ejecuta solo una vez.
+
+    // --- LÓGICA DE MINERÍA ---
     const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
         user?.lastMiningClaim,
         user?.effectiveMiningRate ?? 0,
         user?.miningStatus ?? 'IDLE'
     );
 
-    // Las funciones de manejo de acciones se mantienen igual
     const handleStartMining = async () => {
         toast.loading('Iniciando ciclo...', { id: 'mining_control' });
         try {
@@ -41,6 +71,7 @@ const HomePage = () => {
             toast.success(response.data.message, { id: 'mining_control' });
         } catch (error) { toast.error(error.response?.data?.message || 'Error.', { id: 'mining_control' }); }
     };
+
     const renderControlButton = () => {
         switch (buttonState) {
             case 'SHOW_START': return <button onClick={handleStartMining} className="w-full py-4 bg-blue-500 text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">INICIAR</button>;
@@ -49,8 +80,26 @@ const HomePage = () => {
         }
     };
     const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
-    
-    // El renderizado principal es ahora mucho más limpio.
+
+    // --- RENDERIZADO CONDICIONAL BASADO EN EL ESTADO DE CARGA ---
+    if (isLoadingAuth) {
+        return (
+            <div className="w-full h-full flex items-center justify-center">
+                <Loader text="Sincronizando..." />
+            </div>
+        );
+    }
+
+    if (error) {
+        return <AuthErrorScreen message={error} />;
+    }
+
+    if (!user) {
+        // Este caso no debería ocurrir si la lógica es correcta, pero es una buena salvaguarda.
+        return <AuthErrorScreen message="No se pudieron cargar los datos del usuario. Por favor, reinicia la app." />;
+    }
+
+    // --- RENDERIZADO PRINCIPAL (ÉXITO) ---
     return (
         <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
             <div className="px-4 pt-4 space-y-4">
