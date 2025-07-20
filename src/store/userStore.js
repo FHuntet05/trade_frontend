@@ -1,10 +1,10 @@
-// frontend/src/store/userStore.js (VERSIÓN REFERIDO INSTANTÁNEO v30.0)
+// frontend/src/store/userStore.js (VERSIÓN FINAL v32.0 - SIMPLE Y COMPLETA)
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
-// Interceptores para añadir el token a las cabeceras y manejar errores 401 (sin cambios)
+// Interceptores (SIN CAMBIOS)
 api.interceptors.request.use(
   (config) => {
     const token = useUserStore.getState().token;
@@ -26,7 +26,7 @@ api.interceptors.response.use(
 
 const useUserStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       // --- ESTADOS DEL STORE ---
       user: null, 
       token: null, 
@@ -40,16 +40,13 @@ const useUserStore = create(
        * @param {object} telegramUser - El objeto `user` de `window.Telegram.WebApp.initDataUnsafe`.
        */
       syncUserWithBackend: async (telegramUser) => {
-        // Ponemos el estado de carga en `true` para mostrar loaders en la UI.
         set({ isLoadingAuth: true });
         try {
           console.log('[Store] Enviando datos de usuario al backend para sincronizar...');
-          // La llamada a la API ya no necesita `refCode`.
           const response = await api.post('/auth/sync', { telegramUser });
           
           const { token, user, settings } = response.data;
           
-          // Actualizamos el store con la información recibida del backend.
           set({ 
               user, 
               token, 
@@ -60,7 +57,6 @@ const useUserStore = create(
           console.log('[Store] Sincronización completada con éxito.');
 
         } catch (error) {
-          // En caso de error, lo registramos y reseteamos el estado de autenticación.
           console.error('Error fatal al sincronizar usuario:', error);
           set({ 
               user: null, 
@@ -71,15 +67,33 @@ const useUserStore = create(
         }
       },
 
-      // updateUser y logout no se han incluido por brevedad, pero su código anterior es correcto.
-      // Se recomienda mantenerlos si los usa en otras partes de la app.
+      /**
+       * Actualiza parcialmente el estado del usuario.
+       * Útil para operaciones que devuelven un objeto de usuario actualizado,
+       * como reclamar recompensas o comprar mejoras.
+       * @param {object} newUserData - Los nuevos campos para fusionar con el usuario existente.
+       */
+      updateUser: (newUserData) => {
+        set((state) => ({
+          user: state.user ? { ...state.user, ...newUserData } : newUserData,
+        }));
+      },
       
+      /**
+       * Limpia el estado de autenticación del usuario.
+       */
+      logout: () => {
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoadingAuth: false
+        })
+      }
     }),
     {
-      name: 'neuro-link-storage', // Nombre para el almacenamiento local
-      storage: createJSONStorage(() => localStorage), // Usamos localStorage
-      // Solo guardamos el token en el almacenamiento persistente.
-      // El resto de los datos se obtienen frescos en cada carga.
+      name: 'neuro-link-storage',
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token }),
     }
   )

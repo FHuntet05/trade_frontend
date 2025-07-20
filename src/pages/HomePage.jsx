@@ -1,4 +1,4 @@
-// frontend/pages/HomePage.jsx (VERSIÓN REFERIDO INSTANTÁNEO v30.0)
+// frontend/pages/HomePage.jsx (VERSIÓN FINAL v32.0 - SIMPLE Y COMPLETA)
 
 import React, { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
@@ -16,72 +16,80 @@ import Loader from '../components/common/Loader';
 import AuthErrorScreen from '../components/AuthErrorScreen';
 
 const HomePage = () => {
-    // --- ESTADOS Y FUNCIONES DEL STORE ---
-    // Obtenemos todo lo que necesitamos del userStore.
+    // --- OBTENCIÓN DE ESTADO Y FUNCIONES DEL STORE ---
     const { user, updateUser, syncUserWithBackend, isLoadingAuth } = useUserStore();
     
-    // Usamos `useRef` para asegurarnos de que la inicialización se ejecute solo una vez,
-    // previniendo problemas con React.StrictMode que renderiza dos veces en desarrollo.
+    // `useRef` para prevenir la doble ejecución del `useEffect` en desarrollo.
     const hasInitialized = useRef(false);
 
     // --- EFECTO DE INICIALIZACIÓN ---
-    // Este efecto se ejecuta una sola vez cuando el componente se monta.
     useEffect(() => {
-        // Si la bandera `hasInitialized` es true, salimos para evitar re-ejecución.
         if (hasInitialized.current) return;
-        hasInitialized.current = true; // Levantamos la bandera.
+        hasInitialized.current = true;
 
         const initializeApp = () => {
             console.log('[HomePage] Iniciando la aplicación...');
             const tg = window.Telegram?.WebApp;
             
-            // Verificamos si estamos en un entorno de Telegram válido.
             if (!tg?.initDataUnsafe?.user?.id) {
                 console.error("[HomePage] Entorno de Telegram no detectado. No se puede inicializar.");
+                // Opcional: podrías llamar a una función del store para marcar un error permanente.
                 return;
             }
             
-            // Informamos a Telegram que la app está lista y la expandimos.
             tg.ready();
             tg.expand();
             
-            // Llamamos a la función del store para sincronizar al usuario.
-            // Ya no es necesario leer ni pasar ningún `refCode`.
+            // Llamamos a la función del store. NO se pasa ningún código de referido.
             console.log('[HomePage] Llamando a syncUserWithBackend...');
             syncUserWithBackend(tg.initDataUnsafe.user);
         };
 
         initializeApp();
-    }, [syncUserWithBackend]); // La dependencia es estable, por lo que el efecto se ejecuta una vez.
+    }, [syncUserWithBackend]);
 
-    
-    // --- LÓGICA DE MINERÍA Y UI (SIN CAMBIOS) ---
-    // Esta lógica ahora es segura porque se renderizará solo cuando `user` tenga datos.
+    // --- LÓGICA DE MINERÍA (SIN CAMBIOS) ---
     const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
         user?.lastMiningClaim,
         user?.effectiveMiningRate ?? 0,
         user?.miningStatus ?? 'IDLE'
     );
 
-    const handleStartMining = async () => { /* ...código sin cambios... */ };
-    const handleClaim = async () => { /* ...código sin cambios... */ };
-    const renderControlButton = () => { /* ...código sin cambios... */ };
+    const handleStartMining = async () => {
+        toast.loading('Iniciando ciclo...', { id: 'mining_control' });
+        try {
+            const response = await api.post('/wallet/start-mining');
+            updateUser(response.data.user);
+            toast.success('¡Ciclo de minado iniciado!', { id: 'mining_control' });
+        } catch (error) { toast.error(error.response?.data?.message || 'Error.', { id: 'mining_control' }); }
+    };
+    const handleClaim = async () => {
+        toast.loading('Reclamando...', { id: 'mining_control' });
+        try {
+            const response = await api.post('/wallet/claim');
+            updateUser(response.data.user);
+            toast.success(response.data.message, { id: 'mining_control' });
+        } catch (error) { toast.error(error.response?.data?.message || 'Error.', { id: 'mining_control' }); }
+    };
+    const renderControlButton = () => {
+        switch (buttonState) {
+            case 'SHOW_START': return <button onClick={handleStartMining} className="w-full py-4 bg-blue-500 text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">INICIAR</button>;
+            case 'SHOW_CLAIM': return <button onClick={handleClaim} className="w-full py-4 bg-gradient-to-r from-accent-start to-accent-end text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">RECLAMAR</button>;
+            default: return null; 
+        }
+    };
     const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
 
-    // --- RENDERIZADO CONDICIONAL ---
-    
-    // 1. Mientras `isLoadingAuth` sea true, mostramos un loader.
-    //    Esto cubre el tiempo desde que la app se monta hasta que el backend responde.
+    // --- RENDERIZADO CONDICIONAL DE LA PÁGINA ---
     if (isLoadingAuth) {
         return <div className="w-full h-full flex items-center justify-center"><Loader text="Sincronizando..." /></div>;
     }
 
-    // 2. Si no hay usuario después de la carga, significa que hubo un error.
     if (!user) {
         return <div className="w-full h-full flex items-center justify-center p-4"><AuthErrorScreen message="No se pudo cargar la información. Por favor, reinicia la aplicación desde Telegram." /></div>;
     }
     
-    // 3. Si todo está correcto, renderizamos la página principal.
+    // --- RENDERIZADO DE LA UI PRINCIPAL ---
     return (
         <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
             <div className="px-4 pt-4 space-y-4">

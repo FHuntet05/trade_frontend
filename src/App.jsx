@@ -1,15 +1,13 @@
-// frontend/src/App.jsx (VERSIÓN PROTOCOLO CERO v29.0)
-import React, { useEffect } from 'react';
+// frontend/src/App.jsx (VERSIÓN FINAL v32.0 - ESTABLE Y SIMPLE)
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import useUserStore from './store/userStore';
 
-// Componentes y Páginas (SIN OMISIONES)
+// --- IMPORTS DE COMPONENTES Y PÁGINAS ---
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
 import HomePage from './pages/HomePage';
-// ... (resto de sus imports de páginas)
 import ToolsPage from './pages/ToolsPage';
 import RankingPage from './pages/RankingPage';
 import TeamPage from './pages/TeamPage';
@@ -36,46 +34,24 @@ import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 
-// --- EL DETONADOR DEL PROTOCOLO CERO ---
-// Este componente no renderiza nada. Su única misión es llamar a la
-// función de inicialización del store UNA SOLA VEZ.
-const AppInitializer = () => {
-    useEffect(() => {
-        // Usamos getState para no causar re-renders. Es un "dispara y olvida".
-        useUserStore.getState().initializeApp();
-    }, []); // El array vacío asegura que se ejecute solo una vez.
-
-    return null; // No renderiza nada a la UI.
-};
-
-// GUARDIÁN DE RUTAS DE USUARIO (Mantiene la lógica de Admin)
-const UserRouteGuard = () => {
-    const { user, isAuthenticated } = useUserStore();
-    if (isAuthenticated && user?.role === 'admin') {
-        return <Navigate to="/admin/dashboard" replace />;
-    }
-    return <Layout />;
-};
-
 function App() {
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
-      {/* El detonador se coloca aquí, en la raíz, para ejecutarse lo antes posible. */}
-      <AppInitializer />
-
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        
-        <Route element={<UserRouteGuard />}>
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/tools" element={<ToolsPage />} />
-            <Route path="/ranking" element={<RankingPage />} />
-            <Route path="/team" element={<TeamPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+        {/* La ruta raíz redirige a /home para tener un punto de entrada único y predecible. */}
+        <Route path="/" element={<Navigate to="/home" replace />} />
+
+        {/* Todas las páginas de usuario viven dentro de un Layout común para consistencia. */}
+        <Route element={<Layout />}>
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/tools" element={<ToolsPage />} />
+          <Route path="/ranking" element={<RankingPage />} />
+          <Route path="/team" element={<TeamPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
-        
-        {/* El resto de sus rutas se mantienen intactas */}
+
+        {/* Rutas que no usan el Layout principal */}
         <Route path="/language" element={<LanguagePage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/about" element={<AboutPage />} />
@@ -83,6 +59,7 @@ function App() {
         <Route path="/history" element={<FinancialHistoryPage />} />
         <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
         
+        {/* Las rutas de admin se mantienen separadas y protegidas */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>
