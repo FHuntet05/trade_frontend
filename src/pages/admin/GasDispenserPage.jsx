@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (VERIFICACIÓN FINAL DE INTEGRIDAD v35.14 - CON RECARGA MANUAL DIRIGIDA)
+// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (CORRECCIÓN VISUAL MODAL v35.17)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
@@ -9,7 +9,6 @@ import Modal from '../../components/common/Modal'; // Asume que tienes un compon
 
 const GasDispenserPage = () => {
     const [activeChain, setActiveChain] = useState('BSC');
-    // data.walletsNeedingGas ahora contendrá gasBalance y requiredGas como floats precisos
     const [data, setData] = useState({ centralWalletBalance: 0, walletsNeedingGas: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [dispensingStatus, setDispensingStatus] = useState({});
@@ -32,6 +31,7 @@ const GasDispenserPage = () => {
             setData(response.data);
 
             // También carga todas las wallets para el modal manual aquí para eficiencia
+            // El backend ya no filtra las wallets, por lo que obtendremos todas.
             const { data: allWalletsData } = await api.get('/admin/treasury/wallets-list');
             setAllWalletsForManualDispense(allWalletsData);
 
@@ -81,7 +81,6 @@ const GasDispenserPage = () => {
     };
 
     // --- Lógica para la dispensación manual ---
-    // ESTA FUNCIÓN ES LA QUE ESTABA DANDO EL ERROR DE UNDEFINED
     const handleManualDispenseConfirm = async () => {
         if (!selectedWalletForManualDispense || !manualAmountToDispense || parseFloat(manualAmountToDispense) <= 0) {
             toast.error('Por favor, selecciona una wallet e ingresa una cantidad válida.');
@@ -241,20 +240,22 @@ const GasDispenserPage = () => {
                         <label htmlFor="wallet-select" className="block text-sm font-medium text-text-secondary mb-2">Seleccionar Wallet de Destino:</label>
                         <select
                             id="wallet-select"
-                            className="w-full p-2 rounded-md bg-dark-input text-white border border-gray-700 focus:border-accent-start focus:ring focus:ring-accent-start focus:ring-opacity-50"
+                            className="w-full p-2 rounded-md bg-gray-800 text-gray-100 border border-gray-600 focus:border-accent-start focus:ring focus:ring-accent-start focus:ring-opacity-50 appearance-none text-base"
                             value={selectedWalletForManualDispense ? selectedWalletForManualDispense.address : ''}
                             onChange={(e) => {
                                 const wallet = allWalletsForManualDispense.find(w => w.address === e.target.value);
                                 setSelectedWalletForManualDispense(wallet);
-                                // Pre-rellena la cantidad a dispensar con el gas faltante estimado
-                                setManualAmountToDispense(wallet ? Math.max(0, wallet.estimatedRequiredGas - wallet.gasBalance).toFixed(8) : '');
+                                // Pre-rellena la cantidad a dispensar con el gas faltante estimado (o 0 si ya tiene suficiente)
+                                const gasMissing = wallet ? Math.max(0, wallet.estimatedRequiredGas - wallet.gasBalance) : 0;
+                                setManualAmountToDispense(gasMissing.toFixed(8)); // Muestra con 8 decimales por defecto
                             }}
                         >
-                            <option value="">-- Selecciona una wallet --</option>
+                            <option value="" className="bg-gray-800 text-gray-100">-- Selecciona una wallet --</option>
+                            {/* Filtra y mapea solo las wallets de la cadena activa */}
                             {allWalletsForManualDispense
-                                .filter(w => w.chain === activeChain) // Filtra por la cadena activa
+                                .filter(w => w.chain === activeChain)
                                 .map(wallet => (
-                                <option key={wallet.address} value={wallet.address}>
+                                <option key={wallet.address} value={wallet.address} className="bg-gray-800 text-gray-100">
                                     {wallet.user?.username || 'Usuario Desconocido'} - {wallet.address.substring(0, 10)}... ({wallet.chain})
                                 </option>
                             ))}
@@ -277,7 +278,7 @@ const GasDispenserPage = () => {
                         <input
                             type="number"
                             id="manual-amount"
-                            className="w-full p-2 rounded-md bg-dark-input text-white border border-gray-700 focus:border-accent-start focus:ring focus:ring-accent-start focus:ring-opacity-50"
+                            className="w-full p-2 rounded-md bg-gray-800 text-gray-100 border border-gray-600 focus:border-accent-start focus:ring focus:ring-accent-start focus:ring-opacity-50 placeholder-gray-400 text-base"
                             placeholder={`Ej: ${selectedWalletForManualDispense ? Math.max(0, selectedWalletForManualDispense.estimatedRequiredGas - selectedWalletForManualDispense.gasBalance).toFixed(8) : '0.00006'}`}
                             step="0.00000001" // Permite input con muchas decimales
                             value={manualAmountToDispense}
@@ -295,9 +296,10 @@ const GasDispenserPage = () => {
                             Cancelar
                         </button>
                         <button
-                            onClick={handleManualDispenseConfirm} // <<< ESTA ES LA FUNCIÓN REFERENCIADA
+                            onClick={handleManualDispenseConfirm}
                             className="px-4 py-2 bg-accent-start text-white rounded-md hover:bg-accent-end transition-colors disabled:opacity-50"
-                            disabled={manualDispenseLoading || !selectedWalletForManualDispense || parseFloat(manualAmountToDispense) <= 0}
+                            // Habilitar el botón si hay una wallet seleccionada y una cantidad válida (incluso si es 0 y el usuario quiere un extra)
+                            disabled={manualDispenseLoading || !selectedWalletForManualDispense || isNaN(parseFloat(manualAmountToDispense)) || parseFloat(manualAmountToDispense) < 0}
                         >
                             {manualDispenseLoading ? 'Dispensando...' : 'Dispensar Ahora'}
                         </button>
