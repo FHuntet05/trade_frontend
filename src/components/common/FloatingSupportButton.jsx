@@ -5,7 +5,7 @@ import { HiChatBubbleLeftRight } from 'react-icons/hi2';
 
 const FloatingSupportButton = ({ dragRef }) => {
   // --- REEMPLAZA ESTO CON TU ENLACE DE SOPORTE REAL ---
-  const supportLink = 'https://t.me/TuUsuarioDeSoporte';
+  const supportLink = 'https://t.me/NeurolinkServic';
 
   const handleSupportClick = () => {
     try {
