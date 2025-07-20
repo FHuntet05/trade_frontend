@@ -1,5 +1,5 @@
-// frontend/src/App.jsx (VERSIÓN FINAL v28.1 - TIERRA QUEMADA)
-import React from 'react';
+// frontend/src/App.jsx (VERSIÓN PROTOCOLO CERO v29.0)
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
@@ -9,6 +9,7 @@ import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
 import HomePage from './pages/HomePage';
+// ... (resto de sus imports de páginas)
 import ToolsPage from './pages/ToolsPage';
 import RankingPage from './pages/RankingPage';
 import TeamPage from './pages/TeamPage';
@@ -35,14 +36,24 @@ import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 
+// --- EL DETONADOR DEL PROTOCOLO CERO ---
+// Este componente no renderiza nada. Su única misión es llamar a la
+// función de inicialización del store UNA SOLA VEZ.
+const AppInitializer = () => {
+    useEffect(() => {
+        // Usamos getState para no causar re-renders. Es un "dispara y olvida".
+        useUserStore.getState().initializeApp();
+    }, []); // El array vacío asegura que se ejecute solo una vez.
 
-// GUARDIÁN DE RUTAS DE USUARIO (Se mantiene para la lógica de Admin)
+    return null; // No renderiza nada a la UI.
+};
+
+// GUARDIÁN DE RUTAS DE USUARIO (Mantiene la lógica de Admin)
 const UserRouteGuard = () => {
     const { user, isAuthenticated } = useUserStore();
     if (isAuthenticated && user?.role === 'admin') {
         return <Navigate to="/admin/dashboard" replace />;
     }
-    // Renderiza el Layout que envuelve las páginas de usuario
     return <Layout />;
 };
 
@@ -50,19 +61,12 @@ function App() {
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
+      {/* El detonador se coloca aquí, en la raíz, para ejecutarse lo antes posible. */}
+      <AppInitializer />
 
       <Routes>
-        {/*
-          LA SOLUCIÓN DE TIERRA QUEMADA:
-          NO HAY REDIRECCIÓN. La ruta raíz '/' apunta directamente a HomePage.
-          HomePage ahora es responsable de manejar su propia lógica y la limpieza de la URL.
-        */}
         <Route path="/" element={<HomePage />} />
         
-        {/*
-          Las rutas anidadas ahora viven dentro de UserRouteGuard, que renderiza el Layout.
-          HomePage ya no está dentro de este grupo para evitar un Layout anidado.
-        */}
         <Route element={<UserRouteGuard />}>
             <Route path="/home" element={<HomePage />} />
             <Route path="/tools" element={<ToolsPage />} />
@@ -71,15 +75,14 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
         </Route>
         
-        {/* Rutas sin el layout principal */}
+        {/* El resto de sus rutas se mantienen intactas */}
         <Route path="/language" element={<LanguagePage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/support" anidadoelement={<SupportPage />} />
+        <Route path="/support" element={<SupportPage />} />
         <Route path="/history" element={<FinancialHistoryPage />} />
         <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
         
-        {/* El flujo de admin se mantiene intacto */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>

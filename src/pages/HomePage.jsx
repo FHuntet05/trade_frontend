@@ -1,7 +1,6 @@
-// frontend/pages/HomePage.jsx (VERSIÓN FINAL v28.1 - TIERRA QUEMADA COMPLETA)
-import React, { useEffect, useRef } from 'react';
+// frontend/pages/HomePage.jsx (VERSIÓN PROTOCOLO CERO v29.0)
+import React from 'react';
 import toast from 'react-hot-toast';
-import { useLocation, useNavigate } from 'react-router-dom';
 import useUserStore from '../store/userStore';
 import api from '../api/axiosConfig';
 
@@ -16,7 +15,7 @@ import { useMiningLogic } from '../hooks/useMiningLogic';
 import Loader from '../components/common/Loader';
 import AuthErrorScreen from '../components/AuthErrorScreen';
 
-// Componente interno para el contenido de la UI
+// Componente interno para el contenido de la UI, sin cambios en su lógica interna.
 const HomePageContent = () => {
     const { user, updateUser } = useUserStore();
     const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
@@ -25,7 +24,6 @@ const HomePageContent = () => {
         user?.miningStatus ?? 'IDLE'
     );
 
-    // --- MANEJADORES DE ACCIONES (SIN OMISIONES) ---
     const handleStartMining = async () => {
         toast.loading('Iniciando ciclo...', { id: 'mining_control' });
         try {
@@ -51,7 +49,6 @@ const HomePageContent = () => {
     };
     const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
     
-    // --- JSX DE LA UI (SIN OMISIONES) ---
     return (
         <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
             <div className="px-4 pt-4 space-y-4">
@@ -77,49 +74,11 @@ const HomePageContent = () => {
     );
 };
 
-
-// Componente principal que envuelve la lógica
+// El componente HomePage ahora solo se preocupa de renderizar el estado correcto.
 const HomePage = () => {
-    const { user, syncUserWithBackend, isLoadingAuth, error } = useUserStore();
-    const hasInitialized = useRef(false);
-    const location = useLocation();
-    const navigate = useNavigate();
+    // Se conecta al store para obtener el estado. No inicia ninguna lógica.
+    const { user, isLoadingAuth, error } = useUserStore();
 
-    useEffect(() => {
-        if (hasInitialized.current) return;
-        hasInitialized.current = true;
-
-        const initializeApp = () => {
-            console.log("[v28.1 HomePage] Iniciando secuencia de TIERRA QUEMADA.");
-            const tg = window.Telegram?.WebApp;
-            if (!tg || !tg.initDataUnsafe?.user?.id) {
-                console.error("[v28.1 HomePage] Entorno Telegram no válido.");
-                return;
-            }
-
-            // --- EL HACK DE FUERZA BRUTA ---
-            const currentUrl = window.location.href;
-            const match = currentUrl.match(/[?&]startapp=([^&]+)/);
-            const refCode = match ? match[1] : null;
-            console.log(`[v28.1 HomePage] RefCode extraído por fuerza bruta: ${refCode}`);
-            
-            tg.ready();
-            tg.expand();
-
-            syncUserWithBackend(tg.initDataUnsafe.user, refCode);
-
-            // --- LIMPIEZA DE URL ---
-            if (location.pathname === '/' || location.search.includes('startapp')) {
-                console.log("[v28.1 HomePage] Limpiando URL y normalizando a /home.");
-                // Usamos navigate para mantenernos dentro del ecosistema de React Router
-                navigate('/home', { replace: true });
-            }
-        };
-
-        initializeApp();
-    }, [syncUserWithBackend, location, navigate]);
-
-    // --- RENDERIZADO CONDICIONAL ---
     if (isLoadingAuth) {
         return <div className="w-full h-screen flex items-center justify-center bg-dark-primary"><Loader text="Sincronizando..." /></div>;
     }
@@ -129,11 +88,10 @@ const HomePage = () => {
     }
 
     if (!user) {
-        return <AuthErrorScreen message="No se pudieron cargar los datos del usuario. Por favor, reinicia la app." />;
+        return <AuthErrorScreen message="No se pudieron cargar los datos. Por favor, reinicia la app desde Telegram." />;
     }
     
-    // Si todo está bien, renderizamos el Layout con el contenido de la página.
-    // Esto asegura que la navegación (BottomNav, etc.) se muestre correctamente.
+    // Si todo está bien, renderiza el Layout y el contenido.
     return (
         <Layout>
             <HomePageContent />
