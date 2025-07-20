@@ -1,10 +1,12 @@
-// frontend/pages/HomePage.jsx (VERSIÓN TRASPLANTE v26.0)
+// frontend/pages/HomePage.jsx (VERSIÓN FINAL v28.1 - TIERRA QUEMADA COMPLETA)
 import React, { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
+import { useLocation, useNavigate } from 'react-router-dom';
 import useUserStore from '../store/userStore';
 import api from '../api/axiosConfig';
 
 // Componentes
+import Layout from '../components/layout/Layout';
 import UserInfoHeader from '../components/home/UserInfoHeader';
 import RealTimeClock from '../components/home/RealTimeClock';
 import AnimatedCounter from '../components/home/AnimatedCounter';
@@ -14,47 +16,16 @@ import { useMiningLogic } from '../hooks/useMiningLogic';
 import Loader from '../components/common/Loader';
 import AuthErrorScreen from '../components/AuthErrorScreen';
 
-const HomePage = () => {
-    // --- LÓGICA DE INICIALIZACIÓN TRASPLANTADA ---
-    const { user, updateUser, syncUserWithBackend, isLoadingAuth, error } = useUserStore();
-    const hasFetched = useRef(false);
-
-    useEffect(() => {
-        // Prevenimos doble ejecución en modo estricto de React
-        if (hasFetched.current) return;
-        hasFetched.current = true;
-
-        const initializeApp = () => {
-            console.log("[v26.0 HomePage] Iniciando secuencia de carga...");
-            const tg = window.Telegram?.WebApp;
-
-            if (!tg || !tg.initDataUnsafe?.user?.id) {
-                console.error("[v26.0 HomePage] Entorno Telegram no válido. Abortando.");
-                // Aquí podrías llamar a una función del store que marque un error permanente.
-                return; 
-            }
-            
-            tg.ready();
-            tg.expand();
-
-            // Leemos el refCode de la URL, que fue construida por el bot.
-            const searchParams = new URLSearchParams(window.location.search);
-            const refCode = searchParams.get('startapp') || null;
-
-            console.log(`[v26.0 HomePage] RefCode extraído de la URL: ${refCode}`);
-            syncUserWithBackend(tg.initDataUnsafe.user, refCode);
-        };
-
-        initializeApp();
-    }, [syncUserWithBackend]); // Dependencia estable que se ejecuta solo una vez.
-
-    // --- LÓGICA DE MINERÍA ---
+// Componente interno para el contenido de la UI
+const HomePageContent = () => {
+    const { user, updateUser } = useUserStore();
     const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
         user?.lastMiningClaim,
         user?.effectiveMiningRate ?? 0,
         user?.miningStatus ?? 'IDLE'
     );
 
+    // --- MANEJADORES DE ACCIONES (SIN OMISIONES) ---
     const handleStartMining = async () => {
         toast.loading('Iniciando ciclo...', { id: 'mining_control' });
         try {
@@ -71,7 +42,6 @@ const HomePage = () => {
             toast.success(response.data.message, { id: 'mining_control' });
         } catch (error) { toast.error(error.response?.data?.message || 'Error.', { id: 'mining_control' }); }
     };
-
     const renderControlButton = () => {
         switch (buttonState) {
             case 'SHOW_START': return <button onClick={handleStartMining} className="w-full py-4 bg-blue-500 text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">INICIAR</button>;
@@ -80,26 +50,8 @@ const HomePage = () => {
         }
     };
     const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
-
-    // --- RENDERIZADO CONDICIONAL BASADO EN EL ESTADO DE CARGA ---
-    if (isLoadingAuth) {
-        return (
-            <div className="w-full h-full flex items-center justify-center">
-                <Loader text="Sincronizando..." />
-            </div>
-        );
-    }
-
-    if (error) {
-        return <AuthErrorScreen message={error} />;
-    }
-
-    if (!user) {
-        // Este caso no debería ocurrir si la lógica es correcta, pero es una buena salvaguarda.
-        return <AuthErrorScreen message="No se pudieron cargar los datos del usuario. Por favor, reinicia la app." />;
-    }
-
-    // --- RENDERIZADO PRINCIPAL (ÉXITO) ---
+    
+    // --- JSX DE LA UI (SIN OMISIONES) ---
     return (
         <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
             <div className="px-4 pt-4 space-y-4">
@@ -122,6 +74,70 @@ const HomePage = () => {
                 <NotificationFeed />
             </div>
         </div>
+    );
+};
+
+
+// Componente principal que envuelve la lógica
+const HomePage = () => {
+    const { user, syncUserWithBackend, isLoadingAuth, error } = useUserStore();
+    const hasInitialized = useRef(false);
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (hasInitialized.current) return;
+        hasInitialized.current = true;
+
+        const initializeApp = () => {
+            console.log("[v28.1 HomePage] Iniciando secuencia de TIERRA QUEMADA.");
+            const tg = window.Telegram?.WebApp;
+            if (!tg || !tg.initDataUnsafe?.user?.id) {
+                console.error("[v28.1 HomePage] Entorno Telegram no válido.");
+                return;
+            }
+
+            // --- EL HACK DE FUERZA BRUTA ---
+            const currentUrl = window.location.href;
+            const match = currentUrl.match(/[?&]startapp=([^&]+)/);
+            const refCode = match ? match[1] : null;
+            console.log(`[v28.1 HomePage] RefCode extraído por fuerza bruta: ${refCode}`);
+            
+            tg.ready();
+            tg.expand();
+
+            syncUserWithBackend(tg.initDataUnsafe.user, refCode);
+
+            // --- LIMPIEZA DE URL ---
+            if (location.pathname === '/' || location.search.includes('startapp')) {
+                console.log("[v28.1 HomePage] Limpiando URL y normalizando a /home.");
+                // Usamos navigate para mantenernos dentro del ecosistema de React Router
+                navigate('/home', { replace: true });
+            }
+        };
+
+        initializeApp();
+    }, [syncUserWithBackend, location, navigate]);
+
+    // --- RENDERIZADO CONDICIONAL ---
+    if (isLoadingAuth) {
+        return <div className="w-full h-screen flex items-center justify-center bg-dark-primary"><Loader text="Sincronizando..." /></div>;
+    }
+
+    if (error) {
+        return <AuthErrorScreen message={error} />;
+    }
+
+    if (!user) {
+        return <AuthErrorScreen message="No se pudieron cargar los datos del usuario. Por favor, reinicia la app." />;
+    }
+    
+    // Si todo está bien, renderizamos el Layout con el contenido de la página.
+    // Esto asegura que la navegación (BottomNav, etc.) se muestre correctamente.
+    return (
+        <Layout>
+            <HomePageContent />
+        </Layout>
     );
 };
 

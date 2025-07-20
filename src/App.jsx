@@ -1,10 +1,10 @@
-// frontend/src/App.jsx (VERSIÓN DEFINITIVA v27.0 - ENLACE INQUEBRANTABLE)
+// frontend/src/App.jsx (VERSIÓN FINAL v28.1 - TIERRA QUEMADA)
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 
-// Componentes y Páginas (SIN CAMBIOS)
+// Componentes y Páginas (SIN OMISIONES)
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
@@ -35,27 +35,14 @@ import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 
-// ======================= INICIO DE LA ARQUITECTURA DEFINITIVA =======================
 
-// --- ANÁLISIS Y CAMBIOS v27.0 ---
-// 1. EL NUEVO REDIRECTOR INTELIGENTE
-// Este componente reemplaza al redirector defectuoso. Su única misión es
-// redirigir de "/" a "/home" PERO CONSERVANDO CUALQUIER PARÁMETRO DE LA URL.
-function RootParameterPreservingRedirector() {
-  const location = useLocation();
-  // location.search contiene la parte de los parámetros de la URL, ej: "?startapp=CODIGO123"
-  const destination = `/home${location.search}`;
-  console.log(`[v27.0 Redirector] Preservando parámetros. Redirigiendo a: ${destination}`);
-  return <Navigate to={destination} replace />;
-}
-
-// 2. EL GUARDIÁN DE RUTAS DE USUARIO
-// Este componente se mantiene para la lógica del admin, es correcto.
+// GUARDIÁN DE RUTAS DE USUARIO (Se mantiene para la lógica de Admin)
 const UserRouteGuard = () => {
     const { user, isAuthenticated } = useUserStore();
     if (isAuthenticated && user?.role === 'admin') {
         return <Navigate to="/admin/dashboard" replace />;
     }
+    // Renderiza el Layout que envuelve las páginas de usuario
     return <Layout />;
 };
 
@@ -65,10 +52,17 @@ function App() {
       <Toaster position="top-center" reverseOrder={false} />
 
       <Routes>
-        {/* LA LÍNEA CORREGIDA: La ruta raíz ahora usa el redirector inteligente */}
-        <Route path="/" element={<RootParameterPreservingRedirector />} />
+        {/*
+          LA SOLUCIÓN DE TIERRA QUEMADA:
+          NO HAY REDIRECCIÓN. La ruta raíz '/' apunta directamente a HomePage.
+          HomePage ahora es responsable de manejar su propia lógica y la limpieza de la URL.
+        */}
+        <Route path="/" element={<HomePage />} />
         
-        {/* Las rutas de usuario están protegidas por el guardián de rol */}
+        {/*
+          Las rutas anidadas ahora viven dentro de UserRouteGuard, que renderiza el Layout.
+          HomePage ya no está dentro de este grupo para evitar un Layout anidado.
+        */}
         <Route element={<UserRouteGuard />}>
             <Route path="/home" element={<HomePage />} />
             <Route path="/tools" element={<ToolsPage />} />
@@ -81,7 +75,7 @@ function App() {
         <Route path="/language" element={<LanguagePage />} />
         <Route path="/faq" element={<FaqPage />} />
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/support" element={<SupportPage />} />
+        <Route path="/support" anidadoelement={<SupportPage />} />
         <Route path="/history" element={<FinancialHistoryPage />} />
         <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
         
