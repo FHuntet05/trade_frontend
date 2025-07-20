@@ -1,17 +1,14 @@
-// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (CORREGIDO v21.6 - ELIMINACIÓN RAÍZ)
+// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (VERSIÓN FINALIZADA v35.13 - DISPENSADOR INTELIGENTE)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import api from '../../api/axiosConfig';
 import Loader from '../../components/common/Loader';
-// --- INICIO DE LA CORRECCIÓN ---
-// 1. Se importa HiOutlineArrowPath (el ícono de 'spinner' correcto).
 import { HiOutlineFunnel, HiCheckCircle, HiXCircle, HiOutlineArrowPath } from 'react-icons/hi2';
-// 2. Se elimina HiOutlineClock (no existe).
-// --- FIN DE LA CORRECCIÓN ---
 
 const GasDispenserPage = () => {
     const [activeChain, setActiveChain] = useState('BSC');
+    // data.walletsNeedingGas ahora contiene gasBalance y requiredGas como floats precisos
     const [data, setData] = useState({ centralWalletBalance: 0, walletsNeedingGas: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [dispensingStatus, setDispensingStatus] = useState({});
@@ -34,21 +31,35 @@ const GasDispenserPage = () => {
 
     useEffect(() => {
         analyzeGas();
+        // Refrescar análisis cada 30 segundos para precios de gas actualizados
+        const intervalId = setInterval(analyzeGas, 30000); 
+        return () => clearInterval(intervalId); // Limpiar el intervalo al desmontar
     }, [analyzeGas]);
 
     const handleSingleDispatch = async (wallet) => {
-        const { address, requiredGas } = wallet;
+        const { address, requiredGas, gasBalance } = wallet;
+        // Calcular la cantidad a dispensar: Si ya tiene algo de gas, envía solo la diferencia.
+        // Si no tiene nada o la cantidad es muy pequeña, envía el total requerido.
+        const amountToDispense = Math.max(0, requiredGas - gasBalance);
+        
+        // Pequeña tolerancia para números flotantes (si la diferencia es mínima y ya tiene suficiente)
+        if (amountToDispense < 0.00000001 && gasBalance >= requiredGas) { 
+            toast.success(`La wallet ${address.substring(0,8)}... ya tiene suficiente gas.`);
+            setDispensingStatus(prev => ({ ...prev, [address]: 'success' }));
+            return;
+        }
+
         setDispensingStatus(prev => ({ ...prev, [address]: 'loading' }));
         const dispatchPromise = api.post('/admin/gas-dispenser/dispatch', { 
             chain: activeChain, 
-            targets: [{ address, amount: requiredGas }] 
+            targets: [{ address, amount: amountToDispense }] // Envía solo la cantidad necesaria
         });
         toast.promise(dispatchPromise, {
-            loading: `Dispensando ${requiredGas.toFixed(6)} ${currency} a ${address.substring(0, 8)}...`,
+            loading: `Dispensando ${amountToDispense.toFixed(6)} ${currency} a ${address.substring(0, 8)}...`,
             success: (res) => {
                 setDispensingStatus(prev => ({ ...prev, [address]: 'success' }));
                 setReport(res.data);
-                analyzeGas();
+                analyzeGas(); // Re-analizar después de dispensar para actualizar saldos
                 return `Gas dispensado exitosamente.`;
             },
             error: (err) => {
@@ -62,14 +73,14 @@ const GasDispenserPage = () => {
 
     const renderActionButton = (wallet) => {
         const status = dispensingStatus[wallet.address];
-        const canAfford = data.centralWalletBalance >= wallet.requiredGas;
+        const amountToDispense = Math.max(0, wallet.requiredGas - wallet.gasBalance);
+        // Deshabilitar si ya tiene suficiente gas o si la cantidad a dispensar es negativa/mínima
+        const alreadyHasEnough = wallet.gasBalance >= wallet.requiredGas - 0.00000001; // Pequeña tolerancia
+        const canAfford = data.centralWalletBalance >= amountToDispense;
 
-        // --- INICIO DE LA CORRECCIÓN ---
-        // 3. Se reemplaza el ícono en la función renderActionButton.
         if (status === 'loading') {
             return <HiOutlineArrowPath className="w-5 h-5 text-gray-400 animate-spin" />;
         }
-        // --- FIN DE LA CORRECCIÓN ---
         if (status === 'success') {
             return <HiCheckCircle className="w-6 h-6 text-green-500" />;
         }
@@ -77,12 +88,18 @@ const GasDispenserPage = () => {
             return <HiXCircle className="w-6 h-6 text-red-500" />;
         }
 
+        // Si ya tiene suficiente, muestra el estado
+        if (alreadyHasEnough) {
+            return <span className="text-green-500 text-sm">✅ Suficiente</span>;
+        }
+
+        // Si no tiene suficiente, muestra el botón para dispensar
         return (
             <button 
                 onClick={() => handleSingleDispatch(wallet)}
                 disabled={!canAfford}
                 className="px-3 py-1 text-xs font-bold bg-accent-start text-white rounded-md enabled:hover:bg-accent-end transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-                title={!canAfford ? 'Saldo insuficiente en la billetera central' : 'Dispensar gas a esta wallet'}
+                title={!canAfford ? 'Saldo insuficiente en la billetera central' : `Dispensar ${amountToDispense.toFixed(8)} ${currency} a esta wallet`}
             >
                 Dispensar
             </button>
@@ -119,6 +136,7 @@ const GasDispenserPage = () => {
                                         <th className="p-3 text-right">Saldo USDT</th>
                                         <th className="p-3 text-right">Gas Actual ({currency})</th>
                                         <th className="p-3 text-right">Gas Requerido (Est.)</th>
+                                        <th className="p-3 text-right">Gas a Dispensar</th> {/* NUEVA COLUMNA */}
                                         <th className="p-3 text-center">Acción</th>
                                     </tr>
                                 </thead>
@@ -127,8 +145,11 @@ const GasDispenserPage = () => {
                                         <tr key={wallet.address} className="hover:bg-dark-tertiary">
                                             <td className="p-3 font-mono text-sm">{wallet.address}</td>
                                             <td className="p-3 text-right font-mono text-green-400">{wallet.usdtBalance.toFixed(4)}</td>
-                                            <td className="p-3 text-right font-mono text-red-400">{wallet.gasBalance.toFixed(6)}</td>
-                                            <td className="p-3 text-right font-mono text-yellow-400">{wallet.requiredGas.toFixed(6)}</td>
+                                            <td className="p-3 text-right font-mono text-red-400">{wallet.gasBalance.toFixed(8)}</td> {/* Mostrar con más decimales para precisión */}
+                                            <td className="p-3 text-right font-mono text-yellow-400">{wallet.requiredGas.toFixed(8)}</td> {/* Mostrar con más decimales para precisión */}
+                                            <td className="p-3 text-right font-mono text-blue-400">
+                                                {Math.max(0, wallet.requiredGas - wallet.gasBalance).toFixed(8)} {currency} {/* Cálculo de lo que falta */}
+                                            </td>
                                             <td className="p-3 text-center">{renderActionButton(wallet)}</td>
                                         </tr>
                                     ))}
