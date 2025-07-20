@@ -35,7 +35,7 @@ const TeamPage = () => {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
   const referralLink = `https://t.me/ntx_miner_bot?start=${user?.telegramId}`;
-  const shareText = "¡Únete a NEURO LINK y empieza a ganar NTX! Usa mi enlace para obtener un bono de bienvenida.";
+  const shareText = "¡Ven y forma tu equipo y ganemos dinero juntos!";
 
   useEffect(() => {
     fetchTeamStats();

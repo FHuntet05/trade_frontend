@@ -5,7 +5,7 @@ import { HiOutlineVideoCamera } from 'react-icons/hi2';
 
 const SocialShare = ({ referralLink }) => {
   // El texto que se compartirá junto al enlace. Lo codificamos para que sea seguro en una URL.
-  const shareText = encodeURIComponent('¡Únete a mi equipo en NEURO LINK y empieza a ganar recompensas! Mi enlace:');
+  const shareText = encodeURIComponent('¡Ven y forma tu equipo y ganemos dinero juntos! Mi enlace:');
 
   const socialPlatforms = [
     { name: 'X', icon: FaXTwitter, url: `https://twitter.com/intent/tweet?url=${referralLink}&text=${shareText}`, color: 'hover:text-[#000000] hover:bg-white' },
