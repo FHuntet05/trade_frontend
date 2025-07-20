@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (CORRECCIÓN VISUAL MODAL v35.17)
+// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (CORRECCIÓN VISUAL MODAL v35.18)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
@@ -82,8 +82,8 @@ const GasDispenserPage = () => {
 
     // --- Lógica para la dispensación manual ---
     const handleManualDispenseConfirm = async () => {
-        if (!selectedWalletForManualDispense || !manualAmountToDispense || parseFloat(manualAmountToDispense) <= 0) {
-            toast.error('Por favor, selecciona una wallet e ingresa una cantidad válida.');
+        if (!selectedWalletForManualDispense || !manualAmountToDispense || parseFloat(manualAmountToDispense) < 0) { // Permite 0 para "recargar un poco"
+            toast.error('Por favor, selecciona una wallet e ingresa una cantidad válida (igual o mayor a 0).');
             return;
         }
         const amount = parseFloat(manualAmountToDispense);
@@ -245,13 +245,11 @@ const GasDispenserPage = () => {
                             onChange={(e) => {
                                 const wallet = allWalletsForManualDispense.find(w => w.address === e.target.value);
                                 setSelectedWalletForManualDispense(wallet);
-                                // Pre-rellena la cantidad a dispensar con el gas faltante estimado (o 0 si ya tiene suficiente)
                                 const gasMissing = wallet ? Math.max(0, wallet.estimatedRequiredGas - wallet.gasBalance) : 0;
-                                setManualAmountToDispense(gasMissing.toFixed(8)); // Muestra con 8 decimales por defecto
+                                setManualAmountToDispense(gasMissing.toFixed(8)); 
                             }}
                         >
                             <option value="" className="bg-gray-800 text-gray-100">-- Selecciona una wallet --</option>
-                            {/* Filtra y mapea solo las wallets de la cadena activa */}
                             {allWalletsForManualDispense
                                 .filter(w => w.chain === activeChain)
                                 .map(wallet => (
@@ -280,7 +278,7 @@ const GasDispenserPage = () => {
                             id="manual-amount"
                             className="w-full p-2 rounded-md bg-gray-800 text-gray-100 border border-gray-600 focus:border-accent-start focus:ring focus:ring-accent-start focus:ring-opacity-50 placeholder-gray-400 text-base"
                             placeholder={`Ej: ${selectedWalletForManualDispense ? Math.max(0, selectedWalletForManualDispense.estimatedRequiredGas - selectedWalletForManualDispense.gasBalance).toFixed(8) : '0.00006'}`}
-                            step="0.00000001" // Permite input con muchas decimales
+                            step="0.00000001" 
                             value={manualAmountToDispense}
                             onChange={(e) => setManualAmountToDispense(e.target.value)}
                             disabled={manualDispenseLoading || !selectedWalletForManualDispense}
@@ -298,7 +296,6 @@ const GasDispenserPage = () => {
                         <button
                             onClick={handleManualDispenseConfirm}
                             className="px-4 py-2 bg-accent-start text-white rounded-md hover:bg-accent-end transition-colors disabled:opacity-50"
-                            // Habilitar el botón si hay una wallet seleccionada y una cantidad válida (incluso si es 0 y el usuario quiere un extra)
                             disabled={manualDispenseLoading || !selectedWalletForManualDispense || isNaN(parseFloat(manualAmountToDispense)) || parseFloat(manualAmountToDispense) < 0}
                         >
                             {manualDispenseLoading ? 'Dispensando...' : 'Dispensar Ahora'}
