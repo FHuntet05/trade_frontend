@@ -1,4 +1,4 @@
-// frontend/src/pages/TeamPage.jsx (v21.21 - i18n y Mejora Funcional)
+// frontend/src/pages/TeamPage.jsx (v21.22 - CORRECCIÓN BUILD)
 
 import React, { useState, useEffect } from 'react';
 import useUserStore from '../store/userStore';
@@ -14,7 +14,11 @@ import Loader from '../components/common/Loader';
 import TeamLevelDetailsModal from '../components/team/TeamLevelDetailsModal';
 import { triggerImpactHaptic, triggerNotificationHaptic } from '../utils/haptics';
 
-import { FaTelegramPlane, FaXTwitter, FaFacebookF, FaLinkedinIn, FaWhatsapp, FaInstagram, FaTiktok } from "react-icons/fa6";
+// [CORRECCIÓN BUILD] - INICIO DE LA MODIFICACIÓN
+// Se ha cambiado FaTelegramPlane por FaTelegram, que es el nombre correcto en react-icons/fa6.
+import { FaTelegram, FaXTwitter, FaFacebookF, FaLinkedinIn, FaWhatsapp, FaInstagram, FaTiktok } from "react-icons/fa6";
+// [CORRECCIÓN BUILD] - FIN DE LA MODIFICACIÓN
+
 import { HiUsers, HiBanknotes, HiArrowDownTray, HiArrowUpTray } from 'react-icons/hi2';
 
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
@@ -59,15 +63,12 @@ const TeamPage = () => {
     setTimeout(() => { setSelectedLevel(null); setLevelUsers([]); }, 300);
   };
 
-  // --- INICIO DE MEJORA FUNCIONAL ---
   const copyLink = () => {
     triggerImpactHaptic('light');
-    // Ahora se copia el texto de invitación junto con el enlace.
     navigator.clipboard.writeText(`${shareText} ${referralLink}`);
     toast.success(t('common.copied'));
     triggerNotificationHaptic('success');
   };
-  // --- FIN DE MEJORA FUNCIONAL ---
   
   const handleShare = (platform) => {
     triggerImpactHaptic('light');
@@ -86,7 +87,10 @@ const TeamPage = () => {
 
   const socialIcons = [
     { Icon: FaXTwitter, name: 'twitter' }, { Icon: FaFacebookF, name: 'facebook' },
-    { Icon: FaTelegramPlane, name: 'telegram' }, { Icon: FaLinkedinIn, name: 'linkedin' },
+    // [CORRECCIÓN BUILD] - INICIO DE LA MODIFICACIÓN
+    { Icon: FaTelegram, name: 'telegram' }, // Se usa el componente corregido.
+    // [CORRECCIÓN BUILD] - FIN DE LA MODIFICACIÓN
+    { Icon: FaLinkedinIn, name: 'linkedin' },
     { Icon: FaWhatsapp, name: 'whatsapp' }, { Icon: FaInstagram, name: 'instagram' },
     { Icon: FaTiktok, name: 'tiktok' },
   ];
