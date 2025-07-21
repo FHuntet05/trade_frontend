@@ -1,9 +1,10 @@
-// frontend/pages/HomePage.jsx (VERSIÓN RESTAURACIÓN TOTAL v33.0)
+// frontend/pages/HomePage.jsx (VERSIÓN RESTAURACIÓN TOTAL v33.1 - i18n)
 
 import React from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
 import api from '../api/axiosConfig';
+import { useTranslation } from 'react-i18next'; // i18n
 
 // --- IMPORTS COMPLETOS DE COMPONENTES DE UI ---
 import UserInfoHeader from '../components/home/UserInfoHeader';
@@ -15,19 +16,13 @@ import { useMiningLogic } from '../hooks/useMiningLogic';
 import AuthErrorScreen from '../components/AuthErrorScreen';
 
 const HomePage = () => {
-    // Obtenemos el usuario del store. Ya no nos preocupamos por `isLoadingAuth`.
-    // El componente `UserGatekeeper` en App.jsx ya ha manejado el estado de carga.
+    const { t } = useTranslation(); // i18n
     const { user, updateUser } = useUserStore();
 
-    // Medida de seguridad: Si por alguna razón extrema este componente se renderiza
-    // sin un usuario (ej. un error de lógica en App.jsx), mostramos un error.
     if (!user) {
-        return <AuthErrorScreen message="Error: No se pudo obtener la información del usuario. Intente reiniciar la aplicación." />;
+        return <AuthErrorScreen message={t('homePage.errors.noUser')} />; // i18n
     }
     
-    // --- LÓGICA DE MINERÍA Y UI (SIN CAMBIOS) ---
-    // Esta lógica ahora es 100% segura porque la guarda de arriba previene
-    // que se ejecute si `user` es nulo.
     const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
         user.lastMiningClaim,
         user.effectiveMiningRate ?? 0,
@@ -35,36 +30,33 @@ const HomePage = () => {
     );
 
     const handleStartMining = async () => {
-        toast.loading('Iniciando ciclo...', { id: 'mining_control' });
+        toast.loading(t('homePage.toasts.startingCycle'), { id: 'mining_control' }); // i18n
         try {
             const response = await api.post('/wallet/start-mining');
             updateUser(response.data.user);
-            toast.success('¡Ciclo de minado iniciado!', { id: 'mining_control' });
-        } catch (error) { toast.error(error.response?.data?.message || 'Error.', { id: 'mining_control' }); }
+            toast.success(t('homePage.toasts.cycleStarted'), { id: 'mining_control' }); // i18n
+        } catch (error) { toast.error(error.response?.data?.message || t('common.error'), { id: 'mining_control' }); } // i18n
     };
     const handleClaim = async () => {
-        toast.loading('Reclamando...', { id: 'mining_control' });
+        toast.loading(t('homePage.toasts.claiming'), { id: 'mining_control' }); // i18n
         try {
             const response = await api.post('/wallet/claim');
             updateUser(response.data.user);
             toast.success(response.data.message, { id: 'mining_control' });
-        } catch (error) { toast.error(error.response?.data?.message || 'Error.', { id: 'mining_control' }); }
+        } catch (error) { toast.error(error.response?.data?.message || t('common.error'), { id: 'mining_control' }); } // i18n
     };
     const renderControlButton = () => {
         switch (buttonState) {
-            case 'SHOW_START': return <button onClick={handleStartMining} className="w-full py-4 bg-blue-500 text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">INICIAR</button>;
-            case 'SHOW_CLAIM': return <button onClick={handleClaim} className="w-full py-4 bg-gradient-to-r from-accent-start to-accent-end text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">RECLAMAR</button>;
+            case 'SHOW_START': return <button onClick={handleStartMining} className="w-full py-4 bg-blue-500 text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">{t('homePage.buttons.start')}</button>; // i18n
+            case 'SHOW_CLAIM': return <button onClick={handleClaim} className="w-full py-4 bg-gradient-to-r from-accent-start to-accent-end text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">{t('homePage.buttons.claim')}</button>; // i18n
             default: return null; 
         }
     };
     const shouldShowButton = buttonState === 'SHOW_START' || buttonState === 'SHOW_CLAIM';
     
-    // --- RENDERIZADO DE LA UI PRINCIPAL (SIN CAMBIOS) ---
-    // Este JSX se renderiza dentro del <Layout> proporcionado por App.jsx
     return (
         <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-4">
             <div className="px-4 pt-4 space-y-4">
-                {/* UserInfoHeader ahora podrá leer `user.referredBy.fullName` si existe */}
                 <UserInfoHeader />
                 <RealTimeClock />
             </div>

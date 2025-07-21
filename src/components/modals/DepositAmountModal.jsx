@@ -1,15 +1,12 @@
-// frontend/src/components/modals/DepositAmountModal.jsx (CORREGIDO - Sin mínimo de depósito)
+// frontend/src/components/modals/DepositAmountModal.jsx (i18n)
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next'; // i18n
 import { HiXMark } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
-// ... (variantes de animación no cambian) ...
-const backdropVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-};
+const backdropVariants = { hidden: { opacity: 0 }, visible: { opacity: 1 } };
 const modalVariants = {
   hidden: { scale: 0.9, opacity: 0 },
   visible: { scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 200, damping: 25 } },
@@ -17,15 +14,14 @@ const modalVariants = {
 };
 
 const DepositAmountModal = ({ onProceed, onClose }) => {
+  const { t } = useTranslation(); // i18n
   const [amount, setAmount] = useState('');
 
   const handleProceed = () => {
     const numericAmount = parseFloat(amount);
     
-    // --- CORRECCIÓN CLAVE: Se elimina la validación del mínimo de depósito. ---
-    // Ahora solo validamos que sea un número válido y mayor que cero.
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      toast.error(`Por favor, introduce una cantidad válida.`);
+      toast.error(t('depositAmountModal.invalidAmountToast')); // i18n
       return;
     }
     onProceed(numericAmount);
@@ -34,19 +30,14 @@ const DepositAmountModal = ({ onProceed, onClose }) => {
   return (
     <motion.div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
-      variants={backdropVariants}
-      initial="hidden"
-      animate="visible"
-      exit="hidden"
-      onClick={onClose}
+      variants={backdropVariants} initial="hidden" animate="visible" exit="hidden" onClick={onClose}
     >
       <motion.div
         className="relative bg-dark-secondary rounded-2xl border border-white/10 w-full max-w-md text-white p-6"
-        variants={modalVariants}
-        onClick={(e) => e.stopPropagation()}
+        variants={modalVariants} onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white">Recargar Saldo</h2>
+          <h2 className="text-xl font-bold text-white">{t('depositAmountModal.title')}</h2> {/* i18n */}
           <button onClick={onClose} className="p-1 rounded-full hover:bg-white/20 transition-colors">
             <HiXMark className="w-6 h-6 text-white" />
           </button>
@@ -54,15 +45,14 @@ const DepositAmountModal = ({ onProceed, onClose }) => {
         
         <main className="flex-grow space-y-4">
           <p className="text-text-secondary">
-            Introduce la cantidad en USDT que deseas depositar en tu cuenta.
+            {t('depositAmountModal.instruction')} {/* i18n */}
           </p>
           <div className="relative">
             <input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              // --- CAMBIO VISUAL: Eliminamos la referencia al mínimo en el placeholder ---
-              placeholder="Ej: 50"
+              placeholder={t('depositAmountModal.placeholder')} // i18n
               className="w-full bg-black/20 text-white text-2xl font-bold p-4 rounded-lg border-2 border-transparent focus:border-accent-start focus:outline-none"
               autoFocus
             />
@@ -76,7 +66,7 @@ const DepositAmountModal = ({ onProceed, onClose }) => {
                 disabled={!amount}
                 className="w-full py-3 bg-gradient-to-r from-accent-start to-accent-end text-white text-lg font-bold rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
-                Continuar
+                {t('common.continue')} {/* i18n */}
             </button>
         </footer>
       </motion.div>

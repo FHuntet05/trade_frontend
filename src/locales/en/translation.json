@@ -34,18 +34,45 @@
     "loading": "Loading...",
     "error": "Could not load the tools."
   },
-"home": {
-  "miningRate": "NTX/H",
-  "mined": "NTX",
-  "claimButton": {
-    "claim": "CLAIM",
-    "claiming": "CLAIMING...",
-    "mining": "MINING..."
+  "home": {
+    "miningRate": "NTX/H",
+    "mined": "NTX",
+    "claimButton": {
+      "claim": "Claim",
+      "claiming": "Claiming...",
+      "mining": "Mining..."
+    },
+    "claimToast": {
+      "loading": "Claiming your rewards...",
+      "success": "Your rewards have been added to your balance!",
+      "error": "Claim failed. Please try again."
+    }
+},
+ "depositPage": {
+    "title": "Recharge",
+    "loadingAddress": "Loading address...",
+    "addressLabel": "Deposit address {{network}}",
+    "rechargeCompleteButton": "RECHARGE COMPLETE",
+    "reminder": {
+      "title": "Warm reminder",
+      "item1": "Copy the address or scan the QR code.",
+      "item2": "Do not recharge assets other than {{network}}.",
+      "item3": "The minimum deposit amount is 2 USDT.",
+      "item4": "If it does not arrive, please refresh the page or contact support."
+    }
   },
-  "claimToast": {
-    "loading": "Claiming your rewards...",
-    "success": "Rewards added to your balance!",
-    "error": "Error claiming. Please try again."
+  "depositAmountModal": {
+    "title": "Recharge Balance",
+    "instruction": "Enter the amount in USDT you wish to deposit into your account.",
+    "placeholder": "E.g: 50",
+    "invalidAmountToast": "Please enter a valid amount."
+  },
+  "directDepositModal": {
+    "title": "Complete Payment",
+    "instruction": "Scan the QR code or copy the details to pay from your wallet.",
+    "amountLabel": "EXACT amount to send",
+    "addressLabel": "Deposit address ({{currency}})",
+    "warning": "Important: Only send {{currency}} to this address. Other assets will be lost.",
+    "paidButton": "I have made the payment"
   }
- }
 }

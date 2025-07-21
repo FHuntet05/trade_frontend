@@ -34,18 +34,52 @@
     "loading": "Cargando...",
     "error": "No se pudieron cargar las herramientas."
   },
-"home": {
-  "miningRate": "NTX/H",
-  "mined": "NTX",
-  "claimButton": {
-    "claim": "RECLAMAR",
-    "claiming": "RECLAMANDO...",
-    "mining": "MINANDO..."
+ "common": {
+    "error": "Error",
+    "copied": "¡Copiado!",
+    "continue": "Continuar",
+    "loading": "Cargando...",
+    "close": "Cerrar"
   },
-  "claimToast": {
-    "loading": "Reclamando tus recompensas...",
-    "success": "¡Recompensas añadidas a tu saldo!",
-    "error": "Error al reclamar. Inténtalo de nuevo."
+  "homePage": {
+    "buttons": {
+      "start": "INICIAR",
+      "claim": "RECLAMAR"
+    },
+    "toasts": {
+      "startingCycle": "Iniciando ciclo...",
+      "cycleStarted": "¡Ciclo de minado iniciado!",
+      "claiming": "Reclamando..."
+    },
+    "errors": {
+      "noUser": "Error: No se pudo obtener la información del usuario. Intente reiniciar la aplicación."
+    }
+  },
+  "depositPage": {
+    "title": "Recargar",
+    "loadingAddress": "Cargando dirección...",
+    "addressLabel": "Dirección de depósito {{network}}",
+    "rechargeCompleteButton": "RECARGA COMPLETA",
+    "reminder": {
+      "title": "Recordatorio cálido",
+      "item1": "Copie la dirección o escanee el código QR.",
+      "item2": "No recargue otros activos que no sean {{network}}.",
+      "item3": "La cantidad mínima de depósito es 2 USDT.",
+      "item4": "Si no llega, actualice la página o contacte con soporte."
+    }
+  },
+  "depositAmountModal": {
+    "title": "Recargar Saldo",
+    "instruction": "Introduce la cantidad en USDT que deseas depositar en tu cuenta.",
+    "placeholder": "Ej: 50",
+    "invalidAmountToast": "Por favor, introduce una cantidad válida."
+  },
+  "directDepositModal": {
+    "title": "Completar Pago",
+    "instruction": "Escanea el código QR o copia los detalles para pagar desde tu wallet.",
+    "amountLabel": "Cantidad EXACTA a enviar",
+    "addressLabel": "Dirección de depósito ({{currency}})",
+    "warning": "Importante: Envía únicamente {{currency}} a esta dirección. Otros activos se perderán.",
+    "paidButton": "He realizado el pago"
   }
- }
 }
