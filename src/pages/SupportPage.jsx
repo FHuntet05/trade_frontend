@@ -1,21 +1,24 @@
+// frontend/pages/SupportPage.jsx (v1.1 - i18n)
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import StaticPageLayout from '../components/layout/StaticPageLayout';
 
-const SupportPage = () => (
-   <div className="flex flex-col h-full space-y-6 animate-fade-in">
-  <StaticPageLayout title="Atención al Cliente">
-    <div className="space-y-4">
-      <p>Si tienes algún problema, duda o sugerencia, no dudes en contactarnos. Nuestro equipo de soporte está aquí para ayudarte.</p>
-      <div>
-        <h3 className="font-semibold text-text-primary mb-1">Soporte</h3>
-        <a href="https://t.me/NeurolinkServic" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-          https://t.me/NeurolinkServic
-        </a>
-      </div>
+const SupportPage = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col h-full space-y-6 animate-fade-in">
+      <StaticPageLayout title={t('supportPage.title')}>
+        <div className="space-y-4">
+          <p>{t('supportPage.p1')}</p>
+          <div>
+            <h3 className="font-semibold text-text-primary mb-1">{t('supportPage.supportLink')}</h3>
+            <a href="https://t.me/NeurolinkServic" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              https://t.me/NeurolinkServic
+            </a>
+          </div>
+        </div>
+      </StaticPageLayout>
     </div>
-    
-  </StaticPageLayout>
-  </div>
-);
-
+  );
+};
 export default SupportPage;

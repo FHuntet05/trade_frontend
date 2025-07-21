@@ -34,52 +34,114 @@
     "loading": "Cargando...",
     "error": "No se pudieron cargar las herramientas."
   },
- "common": {
-    "error": "Error",
-    "copied": "¡Copiado!",
-    "continue": "Continuar",
-    "loading": "Cargando...",
-    "close": "Cerrar"
-  },
-  "homePage": {
-    "buttons": {
-      "start": "INICIAR",
-      "claim": "RECLAMAR"
+    "common": {
+        "error": "Error",
+        "copied": "¡Copiado!",
+        "continue": "Continuar",
+        "loading": "Cargando...",
+        "close": "Cerrar"
     },
-    "toasts": {
-      "startingCycle": "Iniciando ciclo...",
-      "cycleStarted": "¡Ciclo de minado iniciado!",
-      "claiming": "Reclamando..."
+    "homePage": {
+        "buttons": {
+            "start": "INICIAR",
+            "claim": "RECLAMAR"
+        },
+        "toasts": {
+            "startingCycle": "Iniciando ciclo...",
+            "cycleStarted": "¡Ciclo de minado iniciado!",
+            "claiming": "Reclamando..."
+        },
+        "errors": {
+            "noUser": "Error: No se pudo obtener la información del usuario. Intente reiniciar la aplicación."
+        },
+        "taskCenter": "Centro de Tareas"
     },
-    "errors": {
-      "noUser": "Error: No se pudo obtener la información del usuario. Intente reiniciar la aplicación."
+    "profilePage": {
+        "balanceNtxLabel": "Cartera de Valor (NTX)",
+        "balanceUsdtLabel": "Cartera de Corretaje (USDT)",
+        "toasts": {
+            "insufficientBalance": "Saldo insuficiente. El mínimo para retirar es {{min}} USDT.",
+            "insufficientNtx": "Saldo NTX insuficiente. El mínimo para intercambiar es {{min}} NTX.",
+            "loadingPrices": "Obteniendo precios de mercado...",
+            "selectCoin": "Selecciona una moneda para pagar."
+        }
+    },
+    "teamPage": {
+        "stats": {
+            "members": "Miembros del Equipo",
+            "totalCommission": "Comisión Total",
+            "teamRecharge": "Recargas del Equipo",
+            "teamWithdrawals": "Retiros del Equipo"
+        },
+        "referralLink": {
+            "copy": "Copiar",
+            "shareOn": "Compartir en",
+            "shareText": "¡Ven y forma tu equipo y ganemos dinero juntos!"
+        },
+        "levels": {
+            "level": "NIVEL",
+            "totalMembers": "Miembros Totales",
+            "validMembers": "Miembros Válidos",
+            "showDetails": "MOSTRAR DETALLES"
+        },
+        "shareWithFriends": "COMPARTIR CON AMIGOS",
+        "detailsModal": {
+            "errorLoading": "No se pudieron cargar los detalles del equipo."
+        }
+    },
+    "toolsPage": {
+        "hoursOfWork": "Horas de trabajo",
+        "miningSpeed": "Velocidad de minería",
+        "perDay": "NTX/Día",
+        "tabs": {
+            "allTools": "Herramientas de minería",
+            "myTools": "Mejora"
+        },
+        "purchaseHistory": "Historial de compras",
+        "noActiveTools": "No tienes herramientas activas."
+    },
+    "rankingPage": {
+        "tabs": {
+            "global": "Mantener la clasificación",
+            "team": "Clasificación de equipos"
+        },
+        "loading": "Cargando clasificación...",
+        "error": "No se pudo cargar la clasificación."
+    },
+    "historyPage": {
+        "title": "Historial de Registros",
+        "loading": "Cargando historial...",
+        "error": "No se pudo cargar el historial.",
+        "empty": "No tienes transacciones todavía."
+    },
+    "faqPage": {
+        "title": "Preguntas Frecuentes (FAQ)",
+        "q1": "¿Qué es NEURO LINK?",
+        "a1": "NEURO LINK es una plataforma de simulación de minería gamificada que te permite ganar tokens NTX a través de la compra y gestión de herramientas virtuales.",
+        "q2": "¿Cómo puedo aumentar mis ganancias?",
+        "a2": "Puedes aumentar tu tasa de minería comprando herramientas más potentes en la sección 'Mejora'. También puedes ganar bonificaciones invitando a amigos a unirse a tu equipo.",
+        "q3": "¿Qué es el token NTX?",
+        "a3": "NTX es el token nativo de la plataforma NEURO LINK. Lo acumulas a través de la minería y puedes usarlo dentro del ecosistema de la aplicación.",
+        "q4": "¿Cómo funciona el sistema de referidos?",
+        "a4": "Cuando alguien se registra usando tu código de invitación, se une a tu equipo. Ganas un porcentaje de la actividad de minería de los miembros de tu equipo, repartido en varios niveles."
+    },
+    "aboutPage": {
+        "title": "Sobre nosotros",
+        "p1": "Somos un equipo apasionado por la tecnología blockchain y las finanzas descentralizadas. Nuestra misión con NEURO LINK es crear una puerta de entrada accesible y divertida al mundo de las criptomonedas.",
+        "p2": "Creemos que el aprendizaje debe ser una experiencia atractiva, y hemos diseñado esta plataforma para simular los conceptos de minería y recompensas de una manera sencilla y visual."
+    },
+    "supportPage": {
+        "title": "Atención al Cliente",
+        "p1": "Si tienes algún problema, duda o sugerencia, no dudes en contactarnos. Nuestro equipo de soporte está aquí para ayudarte.",
+        "supportLink": "Soporte"
+    },
+    "taskLogic": {
+        "markingVisited": "Marcando como visitado...",
+        "visitSuccess": "¡Vuelve para reclamar tu recompensa!",
+        "visitError": "Algo salió mal.",
+        "claimingReward": "Reclamando recompensa...",
+        "claimSuccess": "¡Recompensa reclamada!",
+        "claimError": "No se pudo reclamar la tarea.",
+        "statusError": "No se pudo actualizar el estado de las tareas."
     }
-  },
-  "depositPage": {
-    "title": "Recargar",
-    "loadingAddress": "Cargando dirección...",
-    "addressLabel": "Dirección de depósito {{network}}",
-    "rechargeCompleteButton": "RECARGA COMPLETA",
-    "reminder": {
-      "title": "Recordatorio cálido",
-      "item1": "Copie la dirección o escanee el código QR.",
-      "item2": "No recargue otros activos que no sean {{network}}.",
-      "item3": "La cantidad mínima de depósito es 2 USDT.",
-      "item4": "Si no llega, actualice la página o contacte con soporte."
-    }
-  },
-  "depositAmountModal": {
-    "title": "Recargar Saldo",
-    "instruction": "Introduce la cantidad en USDT que deseas depositar en tu cuenta.",
-    "placeholder": "Ej: 50",
-    "invalidAmountToast": "Por favor, introduce una cantidad válida."
-  },
-  "directDepositModal": {
-    "title": "Completar Pago",
-    "instruction": "Escanea el código QR o copia los detalles para pagar desde tu wallet.",
-    "amountLabel": "Cantidad EXACTA a enviar",
-    "addressLabel": "Dirección de depósito ({{currency}})",
-    "warning": "Importante: Envía únicamente {{currency}} a esta dirección. Otros activos se perderán.",
-    "paidButton": "He realizado el pago"
-  }
 }

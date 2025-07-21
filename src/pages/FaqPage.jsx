@@ -1,5 +1,6 @@
-// src/pages/FaqPage.jsx
+// src/pages/FaqPage.jsx (v1.1 - i18n)
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import StaticPageLayout from '../components/layout/StaticPageLayout';
 
 const FaqItem = ({ question, answer }) => (
@@ -10,28 +11,16 @@ const FaqItem = ({ question, answer }) => (
 );
 
 const FaqPage = () => {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col h-full space-y-6 animate-fade-in">
-    <StaticPageLayout title="Preguntas Frecuentes (FAQ)">
-      <FaqItem
-        question="¿Qué es NEURO LINK?"
-        answer="NEURO LINK es una plataforma de simulación de minería gamificada que te permite ganar tokens NTX a través de la compra y gestión de herramientas virtuales."
-      />
-      <FaqItem
-        question="¿Cómo puedo aumentar mis ganancias?"
-        answer="Puedes aumentar tu tasa de minería comprando herramientas más potentes en la sección 'Mejora'. También puedes ganar bonificaciones invitando a amigos a unirse a tu equipo."
-      />
-      <FaqItem
-        question="¿Qué es el token NTX?"
-        answer="NTX es el token nativo de la plataforma NEURO LINK. Lo acumulas a través de la minería y puedes usarlo dentro del ecosistema de la aplicación."
-      />
-      <FaqItem
-        question="¿Cómo funciona el sistema de referidos?"
-        answer="Cuando alguien se registra usando tu código de invitación, se une a tu equipo. Ganas un porcentaje de la actividad de minería de los miembros de tu equipo, repartido en varios niveles."
-      />
-    </StaticPageLayout>
-   </div> 
+      <StaticPageLayout title={t('faqPage.title')}>
+        <FaqItem question={t('faqPage.q1')} answer={t('faqPage.a1')} />
+        <FaqItem question={t('faqPage.q2')} answer={t('faqPage.a2')} />
+        <FaqItem question={t('faqPage.q3')} answer={t('faqPage.a3')} />
+        <FaqItem question={t('faqPage.q4')} answer={t('faqPage.a4')} />
+      </StaticPageLayout>
+    </div>
   );
 };
-
 export default FaqPage;
