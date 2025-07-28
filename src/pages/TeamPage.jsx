@@ -37,7 +37,7 @@ const TeamPage = () => {
   const [levelUsers, setLevelUsers] = useState([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
-  const referralLink = `https://t.me/ntx_miner_bot?start=${user?.telegramId}`;
+  const referralLink = `https://t.me/nicentx_bot?start=${user?.telegramId}`;
   const shareText = t('teamPage.referralLink.shareText');
 
   useEffect(() => { fetchTeamStats(); }, [fetchTeamStats]);
