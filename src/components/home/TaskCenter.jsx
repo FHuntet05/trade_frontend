@@ -10,7 +10,7 @@ const TaskCenter = () => {
   const allTasks = [
     { id: 'boughtUpgrade', title: 'Primera Mejora', description: 'Compra cualquier herramienta VIP.', reward: 1500 },
     { id: 'invitedTenFriends', title: 'Invitar 3 Amigos', description: 'Tu equipo debe tener 3 miembros.', reward: 1000 },
-    { id: 'joinedTelegram', title: 'Unirse al Grupo', description: 'Únete a nuestra comunidad oficial.', reward: 500, link: 'https://t.me/neurolinkgrup' },
+    { id: 'joinedTelegram', title: 'Unirse al Grupo', description: 'Únete a nuestra comunidad oficial.', reward: 500, link: 'https://t.me/nicebotntx' },
   ];
 
   if (isLoading) {
