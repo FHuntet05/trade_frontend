@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 
-// --- IMPORTS COMPLETOS DE COMPONENTES Y PÁGINAS ---
+// --- IMPORTS COMPLETOS ---
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/layout/AdminLayout';
 import AdminProtectedRoute from './components/layout/AdminProtectedRoute';
@@ -36,8 +36,8 @@ import GasDispenserPage from './pages/admin/GasDispenserPage';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from './pages/admin/AdminBlockchainMonitorPage';
 
-const AppInitializer = () => { const { isAuthenticated, syncUserWithBackend } = useUserStore(); useEffect(() => { if (isAuthenticated) return; const tg = window.Telegram?.WebApp; if (tg?.initDataUnsafe?.user?.id) { console.log('[AppInitializer] No autenticado, iniciando sincronización...'); syncUserWithBackend(tg.initDataUnsafe.user); } }, [isAuthenticated, syncUserWithBackend]); return null; };
-const UserGatekeeper = ({ children }) => { const { user, isAuthenticated, isLoadingAuth } = useUserStore(); if (isLoadingAuth) { return ( <div className="w-full h-screen flex items-center justify-center bg-dark-primary" style={{ background: 'var(--background-main)' }}> <Loader text="Autenticando..." /> </div> ); } if (!isAuthenticated) { return ( <div className="w-full h-screen flex items-center justify-center p-4 bg-dark-primary"> Error de autenticación. Por favor, reinicia la app desde Telegram. </div> ); } if (user && user.role === 'admin') { return <Navigate to="/admin/dashboard" replace />; } return children; };
+const AppInitializer = () => { const { isAuthenticated, syncUserWithBackend } = useUserStore(); useEffect(() => { if (isAuthenticated) return; const tg = window.Telegram?.WebApp; if (tg?.initDataUnsafe?.user?.id) { syncUserWithBackend(tg.initDataUnsafe.user); } }, [isAuthenticated, syncUserWithBackend]); return null; };
+const UserGatekeeper = ({ children }) => { const { user, isAuthenticated, isLoadingAuth } = useUserStore(); if (isLoadingAuth) { return ( <div className="w-full h-screen flex items-center justify-center bg-dark-primary"><Loader text="Autenticando..." /></div> ); } if (!isAuthenticated) { return ( <div className="w-full h-screen flex items-center justify-center p-4 bg-dark-primary">Error de autenticación. Por favor, reinicia la app desde Telegram.</div> ); } if (user && user.role === 'admin') { return <Navigate to="/admin/dashboard" replace />; } return children; };
 
 function App() {
   return (
@@ -45,10 +45,7 @@ function App() {
       <Toaster position="top-center" reverseOrder={false} />
       
       <Routes>
-        {/* [ACCESO DIRECTO ADMIN] - La ruta de login ahora redirige al dashboard */}
-        <Route path="/admin/login" element={<Navigate to="/admin/dashboard" replace />} />
-
-        {/* El AdminProtectedRoute ahora valida con la sesión principal de usuario */}
+        {/* El AdminProtectedRoute ahora valida correctamente la sesión del admin */}
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
