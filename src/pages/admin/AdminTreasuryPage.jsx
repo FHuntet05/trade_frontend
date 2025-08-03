@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminTreasuryPage.jsx (v39.1 - CORRECCIÓN LÓGICA BARRIDO USDT SELECTIVO)
+// RUTA: frontend/src/pages/admin/AdminTreasuryPage.jsx (v39.3 - LÓGICA DE CONFIRMACIÓN ROBUSTA)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../api/axiosConfig';
@@ -81,11 +81,8 @@ const AdminTreasuryPage = () => {
     const handleWalletSelection = (address) => {
         setSelectedWallets(prev => {
             const newSelection = new Set(prev);
-            if (newSelection.has(address)) {
-                newSelection.delete(address);
-            } else {
-                newSelection.add(address);
-            }
+            if (newSelection.has(address)) newSelection.delete(address);
+            else newSelection.add(address);
             return newSelection;
         });
     };
@@ -99,25 +96,19 @@ const AdminTreasuryPage = () => {
         }
     };
 
-    // [CORRECCIÓN LÓGICA] - Esta función ahora respeta los checkboxes
     const handleOpenUsdtSweepModal = (chain) => {
         if (selectedWallets.size === 0) {
             toast.error(`Por favor, seleccione las wallets de la cadena ${chain} que desea barrer.`);
             return;
         }
 
-        // 1. Obtener los objetos completos de las wallets seleccionadas
         const walletsSeleccionadas = data.wallets.filter(w => selectedWallets.has(w.address));
-        
-        // 2. De las seleccionadas, filtrar las que son realmente candidatas para el barrido
         const walletsCandidatas = walletsSeleccionadas.filter(w =>
-            w.chain === chain &&
-            w.usdtBalance > 0.000001 &&
-            w.gasBalance >= w.estimatedRequiredGas 
+            w.chain === chain && w.usdtBalance > 0.000001 && w.gasBalance >= w.estimatedRequiredGas 
         );
 
         if (walletsCandidatas.length === 0) {
-            toast.error("Ninguna de las wallets seleccionadas tiene USDT o gas suficiente para el barrido.");
+            toast.error("Ninguna de las wallets seleccionadas tiene USDT y gas suficiente para el barrido.");
             return;
         }
 
@@ -126,25 +117,25 @@ const AdminTreasuryPage = () => {
         setIsSweepModalOpen(true);
     };
 
-    const handleSweepConfirm = async (sweepDetails) => {
+    // [CORRECCIÓN] - Lógica de confirmación simplificada y más robusta.
+    const handleSweepConfirm = async (recipientAddress) => {
         setIsSweepModalOpen(false);
 
-        // Los detalles ahora vienen del contexto, que ya está filtrado correctamente
-        const finalSweepDetails = {
-            chain: sweepDetails.chain,
-            token: sweepDetails.token,
-            recipientAddress: sweepDetails.recipientAddress,
-            walletsToSweep: sweepDetails.walletsCandidatas.map(w => w.address)
+        const payload = {
+            chain: sweepContext.chain,
+            token: sweepContext.token,
+            recipientAddress: recipientAddress,
+            walletsToSweep: sweepContext.walletsCandidatas.map(w => w.address)
         };
 
-        const sweepPromise = api.post('/admin/sweep-funds', finalSweepDetails);
+        const sweepPromise = api.post('/admin/sweep-funds', payload);
 
         toast.promise(sweepPromise, {
-          loading: `Ejecutando barrido de ${finalSweepDetails.walletsToSweep.length} wallets...`,
+          loading: `Ejecutando barrido de ${payload.walletsToSweep.length} wallets...`,
           success: (res) => {
             setSweepReport(res.data);
             setIsReportModalOpen(true);
-            setSelectedWallets(new Set()); // Limpiar selección después de la operación
+            setSelectedWallets(new Set());
             fetchTreasuryData(currentPage);
             return 'Operación de barrido USDT completada. Revisa el reporte.';
           },
@@ -163,11 +154,9 @@ const AdminTreasuryPage = () => {
         let currency = '';
 
         if (chain === 'BSC') {
-            // ¡IMPORTANTE! Reemplazar con la dirección de su wallet central de BSC
             recipientAddress = "0x...TU_WALLET_CENTRAL_BSC"; 
             currency = 'BNB';
         } else if (chain === 'TRON') {
-            // ¡IMPORTANTE! Reemplazar con la dirección de su wallet central de TRON
             recipientAddress = "T...TU_WALLET_CENTRAL_TRON"; 
             currency = 'TRX';
         }
@@ -239,9 +228,7 @@ const AdminTreasuryPage = () => {
                         <table className="w-full text-left">
                             <thead className="text-xs text-text-secondary uppercase bg-dark-tertiary">
                                 <tr>
-                                    <th className="p-3">
-                                        <input type="checkbox" className="form-checkbox bg-dark-tertiary rounded" onChange={handleSelectAllOnPage} checked={isAllOnPageSelected} />
-                                    </th>
+                                    <th className="p-3"><input type="checkbox" className="form-checkbox bg-dark-tertiary rounded" onChange={handleSelectAllOnPage} checked={isAllOnPageSelected} /></th>
                                     <th className="p-3">Usuario</th>
                                     <th className="p-3">Wallet Address</th>
                                     <th className="p-3">Chain</th>
@@ -254,14 +241,10 @@ const AdminTreasuryPage = () => {
                                 <tbody className="divide-y divide-white/10">
                                     {data.wallets.length > 0 ? data.wallets.map((wallet) => (
                                         <tr key={wallet.address} className={`hover:bg-dark-tertiary ${selectedWallets.has(wallet.address) ? 'bg-blue-900/50' : ''}`}>
-                                            <td className="p-3">
-                                                <input type="checkbox" className="form-checkbox bg-dark-tertiary rounded" checked={selectedWallets.has(wallet.address)} onChange={() => handleWalletSelection(wallet.address)} />
-                                            </td>
+                                            <td className="p-3"><input type="checkbox" className="form-checkbox bg-dark-tertiary rounded" checked={selectedWallets.has(wallet.address)} onChange={() => handleWalletSelection(wallet.address)} /></td>
                                             <td className="p-3 font-medium">{wallet.user?.username || 'N/A'}</td>
                                             <td className="p-3 font-mono text-sm">{wallet.address}</td>
-                                            <td className="p-3">
-                                                <span className={`px-2 py-1 text-xs font-bold rounded-full ${wallet.chain === 'BSC' ? 'bg-yellow-400/20 text-yellow-300' : 'bg-red-400/20 text-red-300'}`}>{wallet.chain}</span>
-                                            </td>
+                                            <td className="p-3"><span className={`px-2 py-1 text-xs font-bold rounded-full ${wallet.chain === 'BSC' ? 'bg-yellow-400/20 text-yellow-300' : 'bg-red-400/20 text-red-300'}`}>{wallet.chain}</span></td>
                                             <td className="p-3 text-right font-mono text-green-400">{parseFloat(wallet.usdtBalance).toFixed(6)}</td>
                                             <td className="p-3 text-right font-mono text-text-secondary">{parseFloat(wallet.gasBalance).toFixed(6)} {wallet.chain === 'BSC' ? 'BNB' : 'TRX'}</td>
                                             <td className="p-3 text-right font-mono text-yellow-400">{parseFloat(wallet.estimatedRequiredGas).toFixed(6)} {wallet.chain === 'BSC' ? 'BNB' : 'TRX'}</td>

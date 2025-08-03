@@ -1,43 +1,32 @@
-// RUTA: frontend/src/pages/admin/components/SweepConfirmationModal.jsx (VERSIÓN BARRIDO INTELIGENTE)
+// RUTA: frontend/src/pages/admin/components/SweepConfirmationModal.jsx (v39.3 - VERSIÓN SIMPLIFICADA Y ROBUSTA)
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiOutlineKey, HiOutlineWallet, HiXMark, HiInformationCircle } from 'react-icons/hi2';
+import { HiOutlineWallet, HiXMark } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 
 const SweepConfirmationModal = ({ isOpen, onClose, onConfirm, context }) => {
   const [recipientAddress, setRecipientAddress] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
 
-  // Resetea los campos cuando el modal se cierra o el contexto cambia
+  // Resetea la dirección cuando el modal se cierra
   useEffect(() => {
     if (!isOpen) {
       setRecipientAddress('');
-      setAdminPassword('');
     }
   }, [isOpen]);
   
   if (!isOpen || !context) return null;
 
   const { chain, token, walletsCandidatas, totalUsdtToSweep } = context;
-  const hasCandidates = walletsCandidatas && walletsCandidatas.length > 0;
 
+  // [CORRECCIÓN] - La función de confirmación ahora solo pasa la dirección.
   const handleConfirm = () => {
-    if (!recipientAddress || !adminPassword) {
-      toast.error("Por favor, complete la dirección de destino y la contraseña.");
+    if (!recipientAddress) {
+      toast.error("Por favor, ingrese la dirección de destino.");
       return;
     }
-    if (!hasCandidates) {
-      toast.error("No hay wallets elegibles para barrer.");
-      return;
-    }
-    onConfirm({
-      chain,
-      token,
-      recipientAddress,
-      adminPassword,
-      walletsToSweep: walletsCandidatas.map(w => w.address),
-    });
+    // La página principal se encarga de construir el payload completo.
+    onConfirm(recipientAddress);
   };
 
   return (
@@ -68,16 +57,9 @@ const SweepConfirmationModal = ({ isOpen, onClose, onConfirm, context }) => {
               <p className="text-text-secondary">
                 Estás a punto de iniciar un barrido masivo de <span className="font-bold text-accent-start">{token}</span> en la red <span className="font-bold text-accent-start">{chain}</span>.
               </p>
-              {hasCandidates ? (
-                <p className="text-lg font-semibold mt-2">
-                  Se barrerán <span className="text-white">{totalUsdtToSweep.toFixed(4)} {token}</span> desde <span className="text-white">{walletsCandidatas.length}</span> wallets.
-                </p>
-              ) : (
-                 <div className="mt-2 flex items-center gap-2 text-yellow-400">
-                    <HiInformationCircle className="w-5 h-5"/>
-                    <p>No se encontraron wallets con fondos y gas suficiente.</p>
-                 </div>
-              )}
+              <p className="text-lg font-semibold mt-2">
+                Se barrerán <span className="text-white">{totalUsdtToSweep.toFixed(4)} {token}</span> desde <span className="text-white">{walletsCandidatas.length}</span> wallets.
+              </p>
             </div>
             
             <div className="space-y-4">
@@ -95,20 +77,7 @@ const SweepConfirmationModal = ({ isOpen, onClose, onConfirm, context }) => {
                   />
                 </div>
               </div>
-              <div>
-                <label htmlFor="adminPassword" className="block text-sm font-medium text-text-secondary mb-1">Tu Contraseña de Administrador</label>
-                <div className="relative">
-                  <HiOutlineKey className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
-                  <input
-                    id="adminPassword"
-                    type="password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    placeholder="Contraseña para confirmar"
-                    className="w-full bg-dark-tertiary border border-white/10 rounded-md p-2 pl-10 focus:ring-2 focus:ring-accent-start focus:outline-none"
-                  />
-                </div>
-              </div>
+              {/* [CORRECCIÓN] - El campo de contraseña ha sido eliminado por ser innecesario y no estar implementado en el backend para esta acción. */}
             </div>
 
             <div className="mt-6 flex gap-4">
@@ -117,7 +86,7 @@ const SweepConfirmationModal = ({ isOpen, onClose, onConfirm, context }) => {
               </button>
               <button
                 onClick={handleConfirm}
-                disabled={!recipientAddress || !adminPassword || !hasCandidates}
+                disabled={!recipientAddress}
                 className="w-full py-2 font-bold text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
               >
                 Confirmar y Barrer
