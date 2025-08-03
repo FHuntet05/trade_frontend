@@ -154,10 +154,10 @@ const AdminTreasuryPage = () => {
         let currency = '';
 
         if (chain === 'BSC') {
-            recipientAddress = "0x...TU_WALLET_CENTRAL_BSC"; 
+            recipientAddress = "0xc5a3d612a5A07C3f4eFdB00A26335D657EE093bE"; 
             currency = 'BNB';
         } else if (chain === 'TRON') {
-            recipientAddress = "T...TU_WALLET_CENTRAL_TRON"; 
+            recipientAddress = "TTzEPPZm7nWLd7M4AvQU3ecH7TmESEDabW"; 
             currency = 'TRX';
         }
 
