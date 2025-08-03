@@ -1,13 +1,12 @@
-// RUTA: frontend/src/pages/admin/AdminTreasuryPage.jsx (v36.0 - PAGINACIÓN Y RENDIMIENTO)
+// RUTA: frontend/src/pages/admin/AdminTreasuryPage.jsx (v37.0 - BARRIDO DE GAS BNB + PAGINACIÓN)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
-import { HiOutlineBanknotes, HiOutlineCpuChip, HiOutlineArrowDownTray } from 'react-icons/hi2';
+import { HiOutlineBanknotes, HiOutlineCpuChip, HiOutlineArrowDownTray, HiOutlineTrash } from 'react-icons/hi2';
 import SweepConfirmationModal from './components/SweepConfirmationModal';
 import SweepReportModal from './components/SweepReportModal';
 
-// --- COMPONENTES DE UI REUTILIZABLES ---
 const SummaryCard = ({ title, amount, currency, icon }) => (
   <div className="bg-dark-tertiary p-4 rounded-lg border border-white/10 flex items-center gap-4">
     <div className="p-3 bg-dark-secondary rounded-full">{icon}</div>
@@ -22,6 +21,7 @@ const TableSkeleton = ({ rows = 10 }) => (
     <tbody>
         {Array.from({ length: rows }).map((_, index) => (
             <tr key={index} className="animate-pulse">
+                <td className="p-3"><div className="h-6 w-6 bg-gray-700 rounded-md"></div></td>
                 <td className="p-3"><div className="h-4 bg-gray-700 rounded w-3/4"></div></td>
                 <td className="p-3"><div className="h-4 bg-gray-700 rounded w-full"></div></td>
                 <td className="p-3"><div className="h-4 bg-gray-700 rounded w-1/2"></div></td>
@@ -43,12 +43,12 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         </div>
     );
 };
-// --- FIN DE COMPONENTES DE UI ---
 
 const AdminTreasuryPage = () => {
     const [data, setData] = useState({ wallets: [], summary: { usdt: 0, bnb: 0, trx: 0 }, pagination: { currentPage: 1, totalPages: 0, totalWallets: 0 } });
     const [isLoading, setIsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
+    const [selectedWallets, setSelectedWallets] = useState(new Set());
     
     const [isSweepModalOpen, setIsSweepModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -73,18 +73,40 @@ const AdminTreasuryPage = () => {
 
     const handlePageChange = (newPage) => {
         if (newPage > 0 && newPage <= (data.pagination.totalPages || 1)) {
+            setSelectedWallets(new Set());
             setCurrentPage(newPage);
         }
     };
 
-    const handleOpenSweepModal = (chain) => {
+    const handleWalletSelection = (address) => {
+        setSelectedWallets(prev => {
+            const newSelection = new Set(prev);
+            if (newSelection.has(address)) {
+                newSelection.delete(address);
+            } else {
+                newSelection.add(address);
+            }
+            return newSelection;
+        });
+    };
+
+    const handleSelectAllOnPage = (e) => {
+        if (e.target.checked) {
+            const allAddressesOnPage = new Set(data.wallets.map(w => w.address));
+            setSelectedWallets(allAddressesOnPage);
+        } else {
+            setSelectedWallets(new Set());
+        }
+    };
+
+    const handleOpenSweepModal = (chain, token) => {
         const walletsCandidatas = data.wallets.filter(w =>
             w.chain === chain &&
             w.usdtBalance > 0.000001 &&
             w.gasBalance >= w.estimatedRequiredGas 
         );
         const totalUsdtToSweep = walletsCandidatas.reduce((sum, w) => sum + w.usdtBalance, 0);
-        setSweepContext({ chain, token: 'USDT', walletsCandidatas, totalUsdtToSweep });
+        setSweepContext({ chain, token, walletsCandidatas, totalUsdtToSweep });
         setIsSweepModalOpen(true);
     };
 
@@ -93,47 +115,75 @@ const AdminTreasuryPage = () => {
         const sweepPromise = api.post('/admin/sweep-funds', sweepDetails);
 
         toast.promise(sweepPromise, {
-          loading: 'Ejecutando barrido masivo... Esta operación puede tardar.',
+          loading: 'Ejecutando barrido masivo de USDT... Esta operación puede tardar.',
           success: (res) => {
             setSweepReport(res.data);
             setIsReportModalOpen(true);
             fetchTreasuryData(currentPage);
-            return 'Operación de barrido completada. Revisa el reporte.';
+            return 'Operación de barrido USDT completada. Revisa el reporte.';
           },
           error: (err) => err.response?.data?.message || 'Error crítico durante el barrido.',
         });
     };
-    
-    const hasFundsOnChain = (chain) => {
-        if (!data || !data.wallets) return false;
-        // Esta comprobación ahora solo aplica a la página actual, pero es suficiente para habilitar el botón.
-        return data.wallets.some(w => w.chain === chain && w.usdtBalance > 0.000001 && w.gasBalance >= w.estimatedRequiredGas);
+
+    const handleSweepGasConfirm = async () => {
+        if (selectedWallets.size === 0) {
+            toast.error("Por favor, selecciona al menos una wallet para barrer el gas.");
+            return;
+        }
+
+        const walletsToSweepAddresses = Array.from(selectedWallets);
+        const centralWalletAddress = "0xc5a3d612a5A07C3f4eFdB00A26335D657EE093bE"; // ¡IMPORTANTE! Reemplazar con la wallet correcta
+        
+        const sweepGasPromise = api.post('/admin/sweep-gas', {
+            chain: 'BSC',
+            recipientAddress: centralWalletAddress,
+            walletsToSweep: walletsToSweepAddresses
+        });
+
+        toast.promise(sweepGasPromise, {
+            loading: `Barriendo gas BNB de ${walletsToSweepAddresses.length} wallets...`,
+            success: (res) => {
+                setSweepReport(res.data);
+                setIsReportModalOpen(true);
+                setSelectedWallets(new Set());
+                fetchTreasuryData(currentPage);
+                return `Operación de barrido de gas completada. Revisa el reporte.`;
+            },
+            error: (err) => err.response?.data?.message || 'Error crítico durante el barrido de gas.'
+        });
     };
+    
+    const isAllOnPageSelected = selectedWallets.size > 0 && selectedWallets.size === data.wallets.length;
+    const bnbWalletsSelected = data.wallets.filter(w => selectedWallets.has(w.address) && w.chain === 'BSC' && w.gasBalance > 0).length > 0;
 
     return (
         <>
             <div className="space-y-6">
                 <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
                     <h1 className="text-2xl font-semibold mb-1">Tesorería de Depósitos</h1>
-                    <p className="text-text-secondary">Visión general de los fondos en wallets de depósito, listos para ser barridos a la wallet central.</p>
+                    <p className="text-text-secondary">Visión general de los fondos en wallets de depósito. Desde aquí puedes barrer USDT o el gas BNB restante.</p>
                 </div>
                 
                 <div>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-                        <h2 className="text-xl font-semibold">Resumen Total</h2>
+                        <h2 className="text-xl font-semibold">Resumen Total (Informativo)</h2>
                         <div className="flex gap-4">
-                            <button onClick={() => handleOpenSweepModal('BSC')} disabled={isLoading} className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
+                             <button onClick={handleSweepGasConfirm} disabled={!bnbWalletsSelected || isLoading} className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
+                                <HiOutlineTrash /> Barrer Gas BNB ({Array.from(selectedWallets).length})
+                            </button>
+                            <button onClick={() => handleOpenSweepModal('BSC', 'USDT')} disabled={isLoading} className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
                                 <HiOutlineArrowDownTray /> Barrer USDT (BSC)
                             </button>
-                            <button onClick={() => handleOpenSweepModal('TRON')} disabled={isLoading} className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
+                            <button onClick={() => handleOpenSweepModal('TRON', 'USDT')} disabled={isLoading} className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
                                 <HiOutlineArrowDownTray /> Barrer USDT (TRON)
                             </button>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <SummaryCard title="Total USDT" amount={data.summary.usdt} currency="USDT" icon={<HiOutlineBanknotes className="w-6 h-6 text-green-400"/>} />
-                        <SummaryCard title="Total BNB (Gas)" amount={data.summary.bnb} currency="BNB" icon={<HiOutlineCpuChip className="w-6 h-6 text-yellow-400"/>} />
-                        <SummaryCard title="Total TRX (Gas)" amount={data.summary.trx} currency="TRX" icon={<HiOutlineCpuChip className="w-6 h-6 text-red-400"/>} />
+                        <SummaryCard title="Total USDT (Calculado en background)" amount={data.summary.usdt} currency="USDT" icon={<HiOutlineBanknotes className="w-6 h-6 text-green-400"/>} />
+                        <SummaryCard title="Total BNB (Calculado en background)" amount={data.summary.bnb} currency="BNB" icon={<HiOutlineCpuChip className="w-6 h-6 text-yellow-400"/>} />
+                        <SummaryCard title="Total TRX (Calculado en background)" amount={data.summary.trx} currency="TRX" icon={<HiOutlineCpuChip className="w-6 h-6 text-red-400"/>} />
                     </div>
                 </div>
 
@@ -143,6 +193,9 @@ const AdminTreasuryPage = () => {
                         <table className="w-full text-left">
                             <thead className="text-xs text-text-secondary uppercase bg-dark-tertiary">
                                 <tr>
+                                    <th className="p-3">
+                                        <input type="checkbox" className="form-checkbox bg-dark-tertiary rounded" onChange={handleSelectAllOnPage} checked={isAllOnPageSelected} />
+                                    </th>
                                     <th className="p-3">Usuario</th>
                                     <th className="p-3">Wallet Address</th>
                                     <th className="p-3">Chain</th>
@@ -154,7 +207,10 @@ const AdminTreasuryPage = () => {
                             {isLoading ? <TableSkeleton /> : (
                                 <tbody className="divide-y divide-white/10">
                                     {data.wallets.length > 0 ? data.wallets.map((wallet) => (
-                                        <tr key={wallet.address} className="hover:bg-dark-tertiary">
+                                        <tr key={wallet.address} className={`hover:bg-dark-tertiary ${selectedWallets.has(wallet.address) ? 'bg-blue-900/50' : ''}`}>
+                                            <td className="p-3">
+                                                <input type="checkbox" className="form-checkbox bg-dark-tertiary rounded" checked={selectedWallets.has(wallet.address)} onChange={() => handleWalletSelection(wallet.address)} />
+                                            </td>
                                             <td className="p-3 font-medium">{wallet.user?.username || 'N/A'}</td>
                                             <td className="p-3 font-mono text-sm">{wallet.address}</td>
                                             <td className="p-3">
@@ -165,7 +221,7 @@ const AdminTreasuryPage = () => {
                                             <td className="p-3 text-right font-mono text-yellow-400">{parseFloat(wallet.estimatedRequiredGas).toFixed(6)} {wallet.chain === 'BSC' ? 'BNB' : 'TRX'}</td>
                                         </tr>
                                     )) : (
-                                        <tr><td colSpan="6" className="text-center p-6 text-text-secondary">No se encontraron wallets con saldo.</td></tr>
+                                        <tr><td colSpan="7" className="text-center p-6 text-text-secondary">No se encontraron wallets en esta página.</td></tr>
                                     )}
                                 </tbody>
                             )}
