@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (v36.0 - PAGINACIÓN Y COLA DE PROCESAMIENTO)
+// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (v37.1 - CORRECCIÓN DE REFERENCE ERROR)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
@@ -6,6 +6,9 @@ import api from '../../api/axiosConfig';
 import Loader from '../../components/common/Loader';
 import { HiOutlineFunnel, HiCheckCircle, HiXCircle, HiOutlineArrowPath } from 'react-icons/hi2';
 import Modal from '../../components/common/Modal';
+
+// [CORRECCIÓN] - Declaración de la constante que faltaba
+const GAS_SUFFICIENT_TOLERANCE = 0.000000001; 
 
 // --- COMPONENTES DE UI REUTILIZABLES ---
 const TableSkeleton = ({ rows = 5 }) => (
@@ -64,8 +67,8 @@ const GasDispenserPage = () => {
     }, []);
 
     useEffect(() => {
-        setCurrentPage(1); // Reset page when chain changes
-        setSelectedWallets(new Set()); // Clear selection when chain changes
+        setCurrentPage(1); 
+        setSelectedWallets(new Set()); 
         analyzeGas(1, activeChain);
     }, [activeChain, analyzeGas]);
 
