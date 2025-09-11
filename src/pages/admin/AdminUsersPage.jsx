@@ -1,89 +1,203 @@
-// frontend/src/pages/admin/AdminUsersPage.jsx (COMPLETO CON AJUSTE DE SALDO)
+// RUTA: admin-frontend/src/pages/admin/UsersPage.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
+// ARQUITECTURA: Página contenedora para la gestión completa de usuarios.
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
-import { useDebounce } from 'use-debounce';
+import useAdminStore from '../../store/adminStore'; // Necesario para la lógica del Super Admin.
 
-import UsersTable from './components/UsersTable';
-import EditUserModal from './components/EditUserModal';
-import AdjustBalanceModal from './components/AdjustBalanceModal'; // <-- Importamos nuevo modal
+// Importación de Componentes
 import Loader from '../../components/common/Loader';
-import { HiOutlineSearch } from 'react-icons/hi';
+import UsersTable from './components/UsersTable';
+import Pagination from '../../components/common/Pagination';
+import EditUserModal from './components/EditUserModal';
+import AdjustBalanceModal from './components/AdjustBalanceModal';
+import PromoteAdminModal from './components/PromoteAdminModal';
+import { HiOutlineUserGroup, HiOutlineMagnifyingGlass } from 'react-icons/hi2';
 
-const AdminUsersPage = () => {
-  const [users, setUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
+const UsersPage = () => {
+    // --- Estado del Componente ---
+    const [usersData, setUsersData] = useState({ users: [], pages: 1, totalUsers: 0 });
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedUser, setSelectedUser] = useState(null);
 
-  // Estados para modales
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isAdjustBalanceModalOpen, setIsAdjustBalanceModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+    // Estado para controlar la visibilidad de cada modal.
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
+    const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
 
-  const fetchUsers = useCallback(() => { /* ... (código sin cambios) ... */ }, [page, debouncedSearchTerm]);
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
-  useEffect(() => { setPage(1); }, [debouncedSearchTerm]);
-  const fetchUsersRelleno = useCallback(async () => { setIsLoading(true); try { const { data } = await api.get('/admin/users', { params: { page, search: debouncedSearchTerm } }); setUsers(data.users); setPage(data.page); setTotalPages(data.pages); } catch (error) { toast.error(error.response?.data?.message || 'No se pudieron cargar los usuarios.'); } finally { setIsLoading(false); } }, [page, debouncedSearchTerm]);
-  useEffect(() => { fetchUsersRelleno(); }, [fetchUsersRelleno]);
-  useEffect(() => { setPage(1); }, [debouncedSearchTerm]);
+    // --- Hooks y Lógica de Datos ---
+    const [searchParams, setSearchParams] = useSearchParams();
+    const currentPage = Number(searchParams.get('page')) || 1;
+    const currentSearch = searchParams.get('search') || '';
 
-  // Lógica para abrir modales
-  const handleEditClick = (user) => { setSelectedUser(user); setIsEditModalOpen(true); };
-  const handleAdjustBalanceClick = (user) => { setSelectedUser(user); setIsAdjustBalanceModalOpen(true); };
-  const handleCloseModals = () => { setIsEditModalOpen(false); setIsAdjustBalanceModalOpen(false); setSelectedUser(null); };
+    const { admin } = useAdminStore();
+    // Verificamos si el admin logueado es el Super Admin.
+    const isSuperAdmin = admin?.telegramId?.toString() === process.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
 
-  const handleSaveChanges = async (userId, updatedData) => { /* ... */ };
-  const handleSaveChangesRelleno = async (userId, updatedData) => { try { const { data: updatedUser } = await api.put(`/admin/users/${userId}`, updatedData); setUsers(users.map(u => (u._id === userId ? updatedUser : u))); toast.success(`Usuario ${updatedUser.username} actualizado.`); handleCloseModals(); } catch (error) { toast.error(error.response?.data?.message || 'No se pudo actualizar el usuario.'); } };
-  
-  const handleStatusChange = async (userId, newStatus) => { /* ... */ };
-  const handleStatusChangeRelleno = async (userId, newStatus) => { const userToChange = users.find(u => u._id === userId); const actionText = newStatus === 'banned' ? 'banear' : 'reactivar'; if (window.confirm(`¿Estás seguro de que quieres ${actionText} a ${userToChange.username}?`)) { try { const { data: updatedUser } = await api.put(`/admin/users/${userId}/status`, { status: newStatus }); setUsers(users.map(u => (u._id === userId ? updatedUser : u))); toast.success(`Usuario ${updatedUser.username} ha sido ${actionText === 'banear' ? 'baneado' : 'reactivado'}.`); } catch (error) { toast.error(error.response?.data?.message || `No se pudo ${actionText} al usuario.`); } } };
+    // --- Función de Carga de Datos ---
+    const fetchUsers = useCallback(async (page, search) => {
+        setIsLoading(true);
+        try {
+            const { data } = await api.get('/admin/users', { params: { page, search } });
+            setUsersData(data);
+        } catch (error) {
+            toast.error(error.response?.data?.message || "No se pudieron cargar los usuarios.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
-  // --- Lógica para ajuste manual de saldo ---
-  const handleManualTransaction = async (userId, transactionData) => {
-    try {
-      const { data } = await api.post('/admin/transactions/manual', { userId, ...transactionData });
-      setUsers(users.map(u => (u._id === userId ? data.user : u)));
-      toast.success('Ajuste de saldo realizado con éxito.');
-      handleCloseModals();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'No se pudo realizar el ajuste.');
-    }
-  };
+    // Effect para cargar los usuarios cuando cambia la página o la búsqueda.
+    useEffect(() => {
+        fetchUsers(currentPage, currentSearch);
+    }, [currentPage, currentSearch, fetchUsers]);
+    
+    // --- Handlers de Acciones del Usuario ---
+    const handleSearch = (e) => {
+        e.preventDefault();
+        const searchTerm = e.target.elements.search.value;
+        setSearchParams({ search: searchTerm, page: 1 });
+    };
 
-  return (
-    <>
-      <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
-        <div className="flex justify-between items-center mb-4 gap-4">
-          <h1 className="text-2xl font-semibold">Gestión de Usuarios</h1>
-          <div className="relative w-full max-w-xs">
-            <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
-            <input type="text" placeholder="Buscar por nombre o ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-black/20 text-white rounded-lg border-2 border-transparent focus:border-accent-start focus:outline-none" />
-          </div>
-        </div>
+    const handlePageChange = (newPage) => {
+        setSearchParams({ search: currentSearch, page: newPage });
+    };
+    
+    // --- Handlers de Modales ---
+    const openModal = (user, modalSetter) => {
+        setSelectedUser(user);
+        modalSetter(true);
+    };
 
-        {isLoading ? <div className="flex justify-center items-center h-64"><Loader text="Cargando usuarios..." /></div> : (
-          <>
-            <UsersTable users={users} onEdit={handleEditClick} onStatusChange={handleStatusChangeRelleno} onAdjustBalance={handleAdjustBalanceClick} />
-            {totalPages > 0 ? (
-              <div className="flex justify-between items-center mt-4">
-                <span className="text-sm text-text-secondary">Página {page} de {totalPages}</span>
-                <div className="flex gap-2"><button onClick={() => setPage(p => p - 1)} disabled={page <= 1} className="px-4 py-2 text-sm font-medium bg-black/20 rounded-md disabled:opacity-50">Anterior</button><button onClick={() => setPage(p => p + 1)} disabled={page >= totalPages} className="px-4 py-2 text-sm font-medium bg-black/20 rounded-md disabled:opacity-50">Siguiente</button></div>
-              </div>
-            ) : <div className="text-center py-16 text-text-secondary"><p>No se encontraron usuarios.</p></div>}
-          </>
-        )}
-      </div>
-      <AnimatePresence>
-        {isEditModalOpen && <EditUserModal user={selectedUser} onClose={handleCloseModals} onSave={handleSaveChangesRelleno} />}
-        {isAdjustBalanceModalOpen && <AdjustBalanceModal user={selectedUser} onClose={handleCloseModals} onSave={handleManualTransaction} />}
-      </AnimatePresence>
-    </>
-  );
+    const closeModal = (modalSetter) => {
+        setSelectedUser(null);
+        modalSetter(false);
+    };
+    
+    // --- Lógica de Llamadas a la API ---
+    const handleSaveChanges = async (userId, data) => {
+        const promise = api.put(`/admin/users/${userId}`, data);
+        toast.promise(promise, {
+            loading: 'Guardando cambios...',
+            success: () => {
+                closeModal(setIsEditModalOpen);
+                fetchUsers(currentPage, currentSearch); // Recargar datos.
+                return 'Usuario actualizado con éxito.';
+            },
+            error: (err) => err.response?.data?.message || 'Error al actualizar el usuario.',
+        });
+    };
+
+    const handleStatusChange = async (userId, newStatus) => {
+        const promise = api.put(`/admin/users/${userId}/status`, { status: newStatus });
+        toast.promise(promise, {
+            loading: `Cambiando estado...`,
+            success: 'Estado del usuario actualizado.',
+            error: 'No se pudo cambiar el estado.',
+        });
+        // Optimistic UI update:
+        setUsersData(prev => ({ ...prev, users: prev.users.map(u => u._id === userId ? { ...u, status: newStatus } : u) }));
+    };
+
+    const handleAdjustBalance = async (userId, data) => {
+        const promise = api.post(`/admin/users/${userId}/adjust-balance`, data);
+        toast.promise(promise, {
+            loading: 'Ajustando saldo...',
+            success: () => {
+                closeModal(setIsBalanceModalOpen);
+                fetchUsers(currentPage, currentSearch); // Recargar datos.
+                return 'Saldo ajustado con éxito.';
+            },
+            error: (err) => err.response?.data?.message || 'Error al ajustar el saldo.',
+        });
+    };
+    
+    const handlePromote = async (userId, password) => {
+        const promise = api.post('/admin/users/promote', { userId, password });
+        toast.promise(promise, {
+            loading: `Promoviendo a ${selectedUser.username}...`,
+            success: () => {
+                closeModal(setIsPromoteModalOpen);
+                fetchUsers(currentPage, currentSearch); // Recargar datos.
+                return `${selectedUser.username} es ahora administrador.`;
+            },
+            error: (err) => err.response?.data?.message || 'No se pudo promover al usuario.',
+        });
+    };
+
+    return (
+        <>
+            <div className="space-y-6">
+                <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
+                    <h1 className="text-2xl font-semibold flex items-center gap-3">
+                        <HiOutlineUserGroup /> Gestión de Usuarios
+                    </h1>
+                    <p className="text-text-secondary mt-1">Busca, edita y gestiona los permisos de los usuarios.</p>
+                </div>
+
+                <div className="bg-dark-secondary p-4 rounded-lg border border-white/10">
+                    <form onSubmit={handleSearch} className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            name="search"
+                            defaultValue={currentSearch}
+                            placeholder="Buscar por username o Telegram ID..."
+                            className="w-full bg-dark-primary p-2 rounded-md border border-white/20 focus:ring-accent-start focus:border-accent-start"
+                        />
+                        <button type="submit" className="p-2 bg-accent-start rounded-md text-white">
+                            <HiOutlineMagnifyingGlass className="w-6 h-6" />
+                        </button>
+                    </form>
+                </div>
+                
+                {isLoading ? (
+                    <div className="flex justify-center"><Loader /></div>
+                ) : (
+                    <>
+                        <UsersTable
+                            users={usersData.users}
+                            onEdit={(user) => openModal(user, setIsEditModalOpen)}
+                            onStatusChange={handleStatusChange}
+                            onAdjustBalance={(user) => openModal(user, setIsBalanceModalOpen)}
+                            // Solo mostramos el botón de promover si el admin logueado es Super Admin
+                            onPromote={isSuperAdmin ? (user) => openModal(user, setIsPromoteModalOpen) : undefined}
+                        />
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={usersData.pages}
+                            onPageChange={handlePageChange}
+                        />
+                    </>
+                )}
+            </div>
+
+            {/* --- Renderizado Condicional de Modales --- */}
+            {isEditModalOpen && (
+                <EditUserModal 
+                    user={selectedUser}
+                    onClose={() => closeModal(setIsEditModalOpen)}
+                    onSave={handleSaveChanges}
+                    isSuperAdmin={isSuperAdmin}
+                />
+            )}
+            {isBalanceModalOpen && (
+                <AdjustBalanceModal
+                    user={selectedUser}
+                    onClose={() => closeModal(setIsBalanceModalOpen)}
+                    onSave={handleAdjustBalance}
+                />
+            )}
+            {isPromoteModalOpen && (
+                 <PromoteAdminModal
+                    user={selectedUser}
+                    onClose={() => closeModal(setIsPromoteModalOpen)}
+                    onPromote={handlePromote}
+                />
+            )}
+        </>
+    );
 };
 
-export default AdminUsersPage;
+export default UsersPage;

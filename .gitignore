@@ -1,24 +1,50 @@
-# Logs
-logs
+# Archivo .gitignore Unificado para el Proyecto BlockSphere
+
+# === Dependencias ===
+# Ignora las carpetas de dependencias en CUALQUIER subdirectorio.
+node_modules/
+
+# === Archivos de Configuración y Secretos ===
+# NUNCA subir archivos de entorno a un repositorio público o privado.
+# Contienen claves de API, secretos de base de datos, frases semilla, etc.
+.env
+.env.*
+!.env.example
+
+# === Archivos de Logs ===
+# Ignora logs generados por aplicaciones y gestores de paquetes.
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# === Archivos de Sistema Operativo ===
+# Ignora archivos específicos de macOS, Windows y Linux.
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+desktop.ini
+
+# === Directorios de Build y Caché ===
+# Ignora la salida de los procesos de build de frontend y backend.
+dist/
+build/
+.vite/
+.vercel/
+.output/
+
+# === Archivos de IDEs y Editores ===
+# Ignora configuraciones específicas de entornos de desarrollo locales.
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# === Reportes de Pruebas y Cobertura ===
+coverage/
+.nyc_output/
+
+# === Archivos Misceláneos ===
+# Usado por algunas librerías para caché o configuración temporal.
+.tmp

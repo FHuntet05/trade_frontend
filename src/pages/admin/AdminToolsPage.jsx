@@ -1,64 +1,135 @@
-// frontend/src/pages/admin/AdminToolsPage.jsx (COMPLETO)
+// RUTA: admin-frontend/src/pages/admin/AdminToolsPage.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
+// ARQUITECTURA: Página de gestión para las Fábricas (VIPs), adaptada y mejorada.
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
+
+// --- Componentes Reutilizables y de UI ---
 import Loader from '../../components/common/Loader';
-import ToolFormModal from './components/ToolFormModal';
-import { HiPencil, HiTrash } from 'react-icons/hi2';
+import ToolFormModal from './components/ToolFormModal'; // Usamos el nombre del modal de su imagen
+import ToolsTable from './components/ToolsTable'; // Usaremos una tabla específica
+import { HiOutlineWrenchScrewdriver, HiPlus } from 'react-icons/hi2';
 
 const AdminToolsPage = () => {
-  const [tools, setTools] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTool, setEditingTool] = useState(null);
+    // --- Estado de la Página ---
+    const [tools, setTools] = useState([]); // Almacenará la lista de Fábricas/Herramientas
+    const [isLoading, setIsLoading] = useState(true);
+    
+    // --- Estado para el Modal de Edición/Creación ---
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingTool, setEditingTool] = useState(null); // Si no es null, estamos editando
 
-  const fetchTools = useCallback(async () => { setIsLoading(true); try { const { data } = await api.get('/admin/tools'); setTools(data); } catch (e) { toast.error('No se pudieron cargar las herramientas.'); } finally { setIsLoading(false); } }, []);
-  useEffect(() => { fetchTools(); }, [fetchTools]);
+    // --- Carga de Datos ---
+    const fetchTools = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            // [BLOCKSPHERE] Llamamos al endpoint estandarizado '/admin/factories'.
+            const { data } = await api.get('/admin/factories');
+            setTools(data);
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Error al cargar las fábricas.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
-  const handleOpenModal = (tool = null) => { setEditingTool(tool); setIsModalOpen(true); };
-  const handleCloseModal = () => { setEditingTool(null); setIsModalOpen(false); };
+    useEffect(() => {
+        fetchTools();
+    }, [fetchTools]);
 
-  const handleSaveTool = async (formData, toolId) => {
-    const isEditing = !!toolId;
-    const request = isEditing ? api.put(`/admin/tools/${toolId}`, formData) : api.post('/admin/tools', formData);
-    try {
-      await toast.promise(request, { loading: 'Guardando...', success: `Herramienta ${isEditing ? 'actualizada' : 'creada'}.`, error: 'Ocurrió un error.' });
-      fetchTools(); handleCloseModal();
-    } catch (error) { toast.error(error.response?.data?.message || 'Error al guardar.'); }
-  };
+    // --- Handlers para el Modal ---
+    const handleOpenModal = (tool = null) => {
+        setEditingTool(tool); // Si pasamos una 'tool', la estamos editando. Si es null, creamos una nueva.
+        setIsModalOpen(true);
+    };
 
-  const handleDeleteTool = async (toolId) => {
-    if (!window.confirm("¿Seguro que quieres eliminar esta herramienta? Esta acción es irreversible.")) return;
-    try {
-      await toast.promise(api.delete(`/admin/tools/${toolId}`), { loading: 'Eliminando...', success: 'Herramienta eliminada.', error: 'Ocurrió un error.' });
-      fetchTools();
-    } catch (error) { toast.error(error.response?.data?.message || 'Error al eliminar.'); }
-  };
+    const handleCloseModal = () => {
+        setEditingTool(null);
+        setIsModalOpen(false);
+    };
 
-  return (
-    <>
-      <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
-        <div className="flex justify-between items-center mb-4"><h1 className="text-2xl font-semibold">Gestión de Herramientas</h1><button onClick={() => handleOpenModal()} className="px-4 py-2 font-bold text-white bg-accent-start rounded-lg">Crear Herramienta</button></div>
-        {isLoading ? <Loader /> : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tools.map(tool => (
-              <div key={tool._id} className="bg-dark-primary p-4 rounded-lg border border-white/10 flex flex-col justify-between">
-                <img src={tool.imageUrl} alt={tool.name} className="w-full h-32 object-contain rounded-t-lg mb-4" />
-                <h3 className="font-bold text-lg">{tool.name} <span className="text-xs text-text-secondary">(V{tool.vipLevel})</span></h3>
-                <div className="text-sm text-text-secondary space-y-1 mt-2">
-                  <p>Precio: <span className="font-mono text-white">{tool.price} USDT</span></p>
-                  <p>Ganancia: <span className="font-mono text-white">{tool.miningBoost} NTX/Día</span></p>
-                  <p>Duración: <span className="font-mono text-white">{tool.durationDays} días</span></p>
+    // --- Lógica de la API para Guardar (Crear o Actualizar) ---
+    const handleSaveTool = async (formData, toolId) => {
+        const isEditing = !!toolId;
+        const request = isEditing 
+            ? api.put(`/admin/factories/${toolId}`, formData) // Actualizar
+            : api.post('/admin/factories', formData);       // Crear
+
+        toast.promise(request, {
+            loading: 'Guardando datos...',
+            success: () => {
+                handleCloseModal();
+                fetchTools(); // Recargar la lista.
+                return `Fábrica ${isEditing ? 'actualizada' : 'creada'} correctamente.`;
+            },
+            error: (err) => err.response?.data?.message || 'Error al guardar los datos.',
+        });
+    };
+
+    // --- Lógica de la API para Eliminar ---
+    const handleDeleteTool = async (toolId) => {
+        // Usamos una confirmación nativa del navegador por simplicidad y seguridad.
+        if (window.confirm('¿Seguro que quieres eliminar esta fábrica? Esta acción es irreversible.')) {
+            const promise = api.delete(`/admin/factories/${toolId}`);
+            toast.promise(promise, {
+                loading: 'Eliminando fábrica...',
+                success: () => {
+                    fetchTools(); // Recargar la lista.
+                    return 'Fábrica eliminada con éxito.';
+                },
+                error: (err) => err.response?.data?.message || 'No se pudo eliminar la fábrica.',
+            });
+        }
+    };
+
+    return (
+        <>
+            <div className="space-y-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="bg-dark-secondary p-6 rounded-lg border border-white/10 flex-grow">
+                        <h1 className="text-2xl font-semibold flex items-center gap-3">
+                            <HiOutlineWrenchScrewdriver /> Gestión de Fábricas (VIP)
+                        </h1>
+                        <p className="text-text-secondary mt-1">Crea, edita y elimina los niveles de inversión disponibles para los usuarios.</p>
+                    </div>
+                    <button 
+                        onClick={() => handleOpenModal()} 
+                        className="flex items-center gap-2 px-4 py-2 font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors w-full md:w-auto"
+                    >
+                        <HiPlus className="w-5 h-5" />
+                        Crear Nueva Fábrica
+                    </button>
                 </div>
-                <div className="flex gap-2 mt-4 pt-4 border-t border-white/10"><button onClick={() => handleOpenModal(tool)} className="flex-1 px-3 py-1.5 text-xs flex items-center justify-center gap-2 bg-blue-500/20 text-blue-400 rounded-md"><HiPencil /> Editar</button><button onClick={() => handleDeleteTool(tool._id)} className="flex-1 px-3 py-1.5 text-xs flex items-center justify-center gap-2 bg-red-500/20 text-red-400 rounded-md"><HiTrash /> Eliminar</button></div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      <AnimatePresence>{isModalOpen && <ToolFormModal tool={editingTool} onClose={handleCloseModal} onSave={handleSaveTool} />}</AnimatePresence>
-    </>
-  );
+                
+                {isLoading ? (
+                    <div className="flex justify-center p-10"><Loader /></div>
+                ) : (
+                    <div className="bg-dark-secondary rounded-lg border border-white/10 p-4">
+                       <ToolsTable 
+                         tools={tools}
+                         onEdit={handleOpenModal}
+                         onDelete={handleDeleteTool}
+                       />
+                    </div>
+                )}
+            </div>
+
+            {/* --- Modal de Formulario --- */}
+            <AnimatePresence>
+            {isModalOpen && (
+                <ToolFormModal 
+                    // El key es importante para que React remonte el componente si cambia el item a editar.
+                    key={editingTool ? editingTool._id : 'new'} 
+                    factory={editingTool}
+                    onSave={handleSaveTool}
+                    onClose={handleCloseModal}
+                />
+            )}
+            </AnimatePresence>
+        </>
+    );
 };
+
 export default AdminToolsPage;

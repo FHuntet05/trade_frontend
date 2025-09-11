@@ -1,116 +1,120 @@
-// frontend/src/pages/admin/AdminSettingsPage.jsx (COMPLETO)
+// RUTA: admin-frontend/src/pages/admin/AdminSettingsPage.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
+// ARQUITECTURA: Fusión de campos del modelo Legacy con la estructura de UI del proyecto Modelo.
 
 import React, { useState, useEffect, useCallback } from 'react';
-import api from '../../api/axiosConfig';
+import { useForm } from 'react-hook-form';
+import { useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import Loader from '../../components/common/Loader';
+import api from '../../api/axiosConfig';
+import { HiOutlineCog6Tooth } from 'react-icons/hi2';
+
+// --- Sub-componentes para un código más limpio ---
+const SettingsCard = ({ title, description, children }) => (
+    <div className="bg-dark-secondary rounded-lg border border-white/10">
+        <div className="p-6 border-b border-white/10">
+            <h2 className="text-xl font-bold">{title}</h2>
+            <p className="text-sm text-text-secondary mt-1">{description}</p>
+        </div>
+        <div className="p-6 space-y-4">{children}</div>
+    </div>
+);
+
+const SettingsInput = ({ name, label, type, register, step, ...props }) => (
+    <div>
+        <label htmlFor={name} className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
+        <input 
+            type={type} 
+            id={name}
+            step={step}
+            {...register(name, { valueAsNumber: type === 'number' })} 
+            className="w-full bg-dark-primary p-2 rounded-md border border-white/20"
+            {...props}
+        />
+    </div>
+);
+
+const SettingsToggle = ({ name, label, register }) => (
+    <div className="flex items-center justify-between">
+        <label htmlFor={name} className="text-sm font-medium text-text-secondary">{label}</label>
+        <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id={name} {...register(name)} className="sr-only peer" />
+            <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-accent-start peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+        </label>
+    </div>
+);
 
 const AdminSettingsPage = () => {
-  const [settings, setSettings] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+    const { register, handleSubmit, reset, formState: { isSubmitting, isDirty } } = useForm();
 
-  const fetchSettings = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const { data } = await api.get('/admin/settings');
-      setSettings(data);
-    } catch (error) {
-      toast.error('No se pudo cargar la configuración.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    const loadSettings = useCallback(async () => {
+        const toastId = toast.loading('Cargando ajustes...');
+        try {
+            const { data } = await api.get('/admin/settings');
+            reset(data); // `react-hook-form` poblará el formulario con los datos recibidos.
+            toast.success('Ajustes cargados.', { id: toastId });
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'No se pudo cargar la configuración.', { id: toastId });
+        }
+    }, [reset]);
 
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+    useEffect(() => {
+        loadSettings();
+    }, [loadSettings]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setSettings(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    const settingsToSave = {
-      ...settings,
-      minimumWithdrawal: Number(settings.minimumWithdrawal),
-      withdrawalFeePercent: Number(settings.withdrawalFeePercent),
-      swapFeePercent: Number(settings.swapFeePercent),
+    const onSubmit = async (data) => {
+        const promise = api.put('/admin/settings', data);
+        toast.promise(promise, {
+            loading: 'Guardando configuración...',
+            success: (res) => {
+                reset(res.data); // Resetea el formulario con los nuevos datos para que 'isDirty' sea false.
+                return '¡Configuración guardada!';
+            },
+            error: (err) => err.response?.data?.message || 'Error al guardar.',
+        });
     };
 
-    try {
-      await toast.promise(
-        api.put('/admin/settings', settingsToSave),
-        {
-          loading: 'Guardando configuración...',
-          success: '¡Configuración guardada exitosamente!',
-          error: 'Error al guardar la configuración.',
-        }
-      );
-    } catch (error) {
-      // El toast ya maneja el mensaje de error
-    }
-  };
+    return (
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-semibold flex items-center gap-3">
+                        <HiOutlineCog6Tooth /> Ajustes Generales
+                    </h1>
+                    <p className="text-text-secondary mt-1">Modifica los parámetros globales del sistema.</p>
+                </div>
+                <button 
+                    type="submit" 
+                    disabled={isSubmitting || !isDirty}
+                    className="px-6 py-2 font-bold bg-accent-start text-white rounded-lg hover:bg-accent-end disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                >
+                    {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* --- Columna Izquierda: Controles Principales --- */}
+                <div className="space-y-6">
+                    <SettingsCard title="Controles Principales" description="Activa o desactiva funcionalidades críticas del sistema.">
+                        <SettingsToggle name="maintenanceMode" label="Modo Mantenimiento" register={register} />
+                        <SettingsToggle name="withdrawalsEnabled" label="Habilitar Retiros para Usuarios" register={register} />
+                    </SettingsCard>
+                    <SettingsCard title="Ajustes de Retiros" description="Configura las reglas para las solicitudes de retiro.">
+                        <SettingsInput name="minWithdrawal" label="Monto Mínimo de Retiro (USDT)" type="number" step="0.01" register={register} />
+                        <SettingsInput name="withdrawalFeePercent" label="Comisión por Retiro (%)" type="number" step="0.1" register={register} />
+                    </SettingsCard>
+                </div>
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-full"><Loader text="Cargando configuración..." /></div>;
-  }
-
-  if (!settings) {
-    return <div className="text-center">No se pudo cargar la configuración.</div>;
-  }
-
-  return (
-    <form onSubmit={handleSave} className="space-y-8">
-      {/* Sección de Mantenimiento */}
-      <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
-        <h2 className="text-xl font-semibold mb-4">Modo Mantenimiento</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <label htmlFor="maintenanceMode" className="font-medium">Habilitar Modo Mantenimiento</label>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="maintenanceMode" name="maintenanceMode" checked={settings.maintenanceMode} onChange={handleChange} className="sr-only peer" />
-              <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-accent-start peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-start"></div>
-            </label>
-          </div>
-          <div>
-            <label htmlFor="maintenanceMessage" className="block text-sm font-medium text-text-secondary mb-1">Mensaje de Mantenimiento</label>
-            <input type="text" id="maintenanceMessage" name="maintenanceMessage" value={settings.maintenanceMessage} onChange={handleChange} className="w-full p-2 bg-black/20 rounded-md" />
-          </div>
-        </div>
-      </div>
-
-      {/* Sección de Parámetros Financieros */}
-      <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
-        <h2 className="text-xl font-semibold mb-4">Parámetros Financieros</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="minimumWithdrawal" className="block text-sm font-medium text-text-secondary mb-1">Monto Mínimo de Retiro (USDT)</label>
-            <input type="number" id="minimumWithdrawal" name="minimumWithdrawal" value={settings.minimumWithdrawal} onChange={handleChange} className="w-full p-2 bg-black/20 rounded-md" step="0.01" />
-          </div>
-          <div>
-            <label htmlFor="withdrawalFeePercent" className="block text-sm font-medium text-text-secondary mb-1">Comisión de Retiro (%)</label>
-            <input type="number" id="withdrawalFeePercent" name="withdrawalFeePercent" value={settings.withdrawalFeePercent} onChange={handleChange} className="w-full p-2 bg-black/20 rounded-md" step="0.1" />
-          </div>
-          <div>
-            <label htmlFor="swapFeePercent" className="block text-sm font-medium text-text-secondary mb-1">Comisión de Swap (%)</label>
-            <input type="number" id="swapFeePercent" name="swapFeePercent" value={settings.swapFeePercent} onChange={handleChange} className="w-full p-2 bg-black/20 rounded-md" step="0.1" />
-          </div>
-        </div>
-      </div>
-
-      {/* Botón de Guardar */}
-      <div className="flex justify-end">
-        <button type="submit" className="px-8 py-3 font-bold text-white bg-gradient-to-r from-accent-start to-accent-end rounded-lg">
-          Guardar Configuración
-        </button>
-      </div>
-    </form>
-  );
+                {/* --- Columna Derecha: Comisiones y Reglas de Negocio --- */}
+                <div className="space-y-6">
+                    <SettingsCard title="Comisiones por Referidos" description="Define el porcentaje de comisión para cada nivel de referido.">
+                        <SettingsInput name="commissionLevel1" label="Comisión Nivel 1 (%)" type="number" step="0.1" register={register} />
+                        <SettingsInput name="commissionLevel2" label="Comisión Nivel 2 (%)" type="number" step="0.1" register={register} />
+                        <SettingsInput name="commissionLevel3" label="Comisión Nivel 3 (%)" type="number" step="0.1" register={register} />
+                    </SettingsCard>
+                </div>
+            </div>
+        </form>
+    );
 };
 
 export default AdminSettingsPage;

@@ -1,93 +1,91 @@
-// RUTA: frontend/src/pages/admin/components/SweepConfirmationModal.jsx (v39.3 - VERSIÓN SIMPLIFICADA Y ROBUSTA)
+// RUTA: admin-frontend/src/pages/admin/components/SweepConfirmationModal.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
+// ARQUITECTURA: Modal simplificado del Modelo, adaptado para un flujo de backend más seguro (sin campo de dirección).
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiOutlineWallet, HiXMark } from 'react-icons/hi2';
-import toast from 'react-hot-toast';
+import { HiOutlineShieldWarning, HiXMark } from 'react-icons/hi2';
+
+// --- Variantes de Animación ---
+const backdropVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+};
+
+const modalVariants = {
+    hidden: { scale: 0.95, y: 20, opacity: 0 },
+    visible: { scale: 1, y: 0, opacity: 1, transition: { type: 'spring', damping: 25, stiffness: 180 } },
+    exit: { scale: 0.95, y: 20, opacity: 0, transition: { duration: 0.2 } },
+};
+
 
 const SweepConfirmationModal = ({ isOpen, onClose, onConfirm, context }) => {
-  const [recipientAddress, setRecipientAddress] = useState('');
-
-  // Resetea la dirección cuando el modal se cierra
-  useEffect(() => {
-    if (!isOpen) {
-      setRecipientAddress('');
-    }
-  }, [isOpen]);
-  
+  // El modal no se renderiza si no está abierto o no tiene contexto.
   if (!isOpen || !context) return null;
 
   const { chain, token, walletsCandidatas, totalUsdtToSweep } = context;
 
-  // [CORRECCIÓN] - La función de confirmación ahora solo pasa la dirección.
+  // El botón "Confirmar" ahora simplemente llama a onConfirm sin parámetros.
+  // La página `AdminTreasuryPage` se encarga de construir el payload final.
   const handleConfirm = () => {
-    if (!recipientAddress) {
-      toast.error("Por favor, ingrese la dirección de destino.");
-      return;
-    }
-    // La página principal se encarga de construir el payload completo.
-    onConfirm(recipientAddress);
+    onConfirm();
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          variants={backdropVariants} initial="hidden" animate="visible" exit="hidden"
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
             className="bg-dark-secondary rounded-lg border border-white/10 w-full max-w-md p-6 shadow-2xl"
+            variants={modalVariants}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Confirmar Barrido de Fondos</h2>
-              <button onClick={onClose} className="p-1 rounded-full hover:bg-dark-tertiary transition-colors">
-                <HiXMark className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <div className="bg-dark-tertiary border border-accent-start/20 rounded-md p-4 mb-4">
-              <p className="text-text-secondary">
-                Estás a punto de iniciar un barrido masivo de <span className="font-bold text-accent-start">{token}</span> en la red <span className="font-bold text-accent-start">{chain}</span>.
-              </p>
-              <p className="text-lg font-semibold mt-2">
-                Se barrerán <span className="text-white">{totalUsdtToSweep.toFixed(4)} {token}</span> desde <span className="text-white">{walletsCandidatas.length}</span> wallets.
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="recipientAddress" className="block text-sm font-medium text-text-secondary mb-1">Dirección de Destino</label>
-                <div className="relative">
-                  <HiOutlineWallet className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
-                  <input
-                    id="recipientAddress"
-                    type="text"
-                    value={recipientAddress}
-                    onChange={(e) => setRecipientAddress(e.target.value)}
-                    placeholder={`Dirección ${chain} donde recibir los fondos`}
-                    className="w-full bg-dark-tertiary border border-white/10 rounded-md p-2 pl-10 focus:ring-2 focus:ring-accent-start focus:outline-none"
-                  />
+            {/* --- Encabezado --- */}
+            <div className="flex justify-between items-start mb-4">
+                <div>
+                    <h2 className="text-xl font-bold">Confirmar Barrido de Fondos</h2>
+                    <p className="text-sm text-text-secondary">Esta acción es irreversible.</p>
                 </div>
-              </div>
-              {/* [CORRECCIÓN] - El campo de contraseña ha sido eliminado por ser innecesario y no estar implementado en el backend para esta acción. */}
+                <button onClick={onClose} className="p-1 rounded-full hover:bg-dark-tertiary transition-colors"><HiXMark className="w-6 h-6" /></button>
             </div>
+            
+            {/* --- Caja de Advertencia --- */}
+            <div className="bg-yellow-900/20 border border-yellow-500/50 text-yellow-300 p-4 rounded-lg flex items-start gap-3 mb-4">
+              <HiOutlineShieldWarning className="w-10 h-10 flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="font-bold">¡Atención!</h3>
+                <p className="text-sm">
+                    Estás a punto de iniciar un barrido masivo de {token} en la red {chain}. 
+                    Los fondos serán transferidos a la wallet central segura del sistema.
+                </p>
+              </div>
+            </div>
+            
+            {/* --- Resumen de la Operación --- */}
+            <div className="bg-dark-tertiary border border-accent-start/20 rounded-md p-4 mb-6">
+              <p className="text-lg font-semibold mt-1 text-center">
+                Total a Barrer: <span className="text-white font-mono">{totalUsdtToSweep.toFixed(4)} {token}</span>
+              </p>
+              <p className="text-sm text-text-secondary text-center">
+                Desde <span className="text-white font-bold">{walletsCandidatas.length}</span> wallets de depósito.
+              </p>
+            </div>
+            
+            {/* [BLOCKSPHERE] - Campo de dirección ELIMINADO intencionalmente para forzar el
+                uso de la wallet segura pre-configurada en el backend, aumentando la seguridad.
+            */}
 
+            {/* --- Botones de Acción --- */}
             <div className="mt-6 flex gap-4">
-              <button onClick={onClose} className="w-full py-2 rounded-md bg-dark-tertiary hover:bg-white/10 transition-colors">
+              <button onClick={onClose} className="w-full py-2.5 rounded-md bg-dark-tertiary hover:bg-white/10 transition-colors">
                 Cancelar
               </button>
               <button
                 onClick={handleConfirm}
-                disabled={!recipientAddress}
-                className="w-full py-2 font-bold text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
+                className="w-full py-2.5 font-bold text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:bg-gray-600"
               >
                 Confirmar y Barrer
               </button>
