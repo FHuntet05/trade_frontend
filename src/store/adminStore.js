@@ -1,17 +1,15 @@
-// frontend/src/store/adminStore.js (CON FUNCIÓN PARA RESETEO DE PASSWORD)
+// frontend/src/store/adminStore.js (ACTUALIZADO PARA GUARDAR EL OBJETO ADMIN COMPLETO)
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-// Ya no necesitamos el api de aquí, las llamadas se harán desde los componentes.
 
 const useAdminStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       admin: null,
       token: null,
       isAuthenticated: false,
       isLoading: false,
 
-      // --- INICIO DE LA MODIFICACIÓN ---
       setAdminAndToken: (token, adminData) => {
         set({
           token: token,
@@ -20,14 +18,12 @@ const useAdminStore = create(
           isLoading: false,
         });
       },
-      // --- FIN DE LA MODIFICACIÓN ---
 
-      login: async (username, password, api) => { // Pasamos `adminApi` como argumento
+      login: async (username, password, api) => {
         set({ isLoading: true });
         try {
           const { data } = await api.post('/auth/login/admin', { username, password });
           if (data.passwordResetRequired) {
-             // Guardamos el token temporal para el reseteo
              set({ token: data.token, isLoading: false });
              return { success: true, passwordResetRequired: true };
           }
@@ -36,7 +32,7 @@ const useAdminStore = create(
             return { success: true, twoFactorRequired: true, userId: data.userId };
           }
           set({
-            admin: data.admin,
+            admin: data.admin, 
             token: data.token,
             isAuthenticated: true,
             isLoading: false,
@@ -49,7 +45,7 @@ const useAdminStore = create(
         }
       },
 
-      completeTwoFactorLogin: async (userId, token2fa, api) => { // Pasamos `adminApi` como argumento
+      completeTwoFactorLogin: async (userId, token2fa, api) => {
         set({ isLoading: true });
         try {
           const { data } = await api.post('/auth/2fa/verify-login', { userId, token: token2fa });
@@ -70,8 +66,6 @@ const useAdminStore = create(
       logout: () => {
         set({ admin: null, token: null, isAuthenticated: false });
       },
-      
-      // ...el resto de funciones como setTwoFactorEnabled se mantienen...
     }),
     {
       name: 'neuro-link-admin-storage',

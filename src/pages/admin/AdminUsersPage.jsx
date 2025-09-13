@@ -1,203 +1,165 @@
-// RUTA: admin-frontend/src/pages/admin/UsersPage.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
-// ARQUITECTURA: Página contenedora para la gestión completa de usuarios.
-
+// frontend/src/pages/admin/AdminUsersPage.jsx (LÓGICA SIMPLIFICADA E INTEGRADA)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import api from '../../api/axiosConfig';
+import adminApi from '../../admin/api/adminApi';
 import toast from 'react-hot-toast';
-import useAdminStore from '../../store/adminStore'; // Necesario para la lógica del Super Admin.
+import useAdminStore from '../../store/adminStore';
 
-// Importación de Componentes
 import Loader from '../../components/common/Loader';
-import UsersTable from './components/UsersTable';
+import UsersTable from './components/UsersTable'; // Asumimos que UsersTable recibe los handlers de acciones
 import Pagination from '../../components/common/Pagination';
-import EditUserModal from './components/EditUserModal';
-import AdjustBalanceModal from './components/AdjustBalanceModal';
 import PromoteAdminModal from './components/PromoteAdminModal';
-import { HiOutlineUserGroup, HiOutlineMagnifyingGlass } from 'react-icons/hi2';
+import ResetPasswordModal from './components/ResetPasswordModal';
+import { HiOutlineUserGroup, HiOutlineMagnifyingGlass, HiOutlineShieldCheck, HiOutlineLockClosed, HiOutlineNoSymbol, HiOutlineCheckCircle } from 'react-icons/hi2';
 
-const UsersPage = () => {
-    // --- Estado del Componente ---
-    const [usersData, setUsersData] = useState({ users: [], pages: 1, totalUsers: 0 });
+const SUPER_ADMIN_TELEGRAM_ID = import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
+
+const AdminUsersPage = () => {
+    const [usersData, setUsersData] = useState({ users: [], pages: 1 });
     const [isLoading, setIsLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null);
-
-    // Estado para controlar la visibilidad de cada modal.
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
+    
     const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
+    const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
 
-    // --- Hooks y Lógica de Datos ---
     const [searchParams, setSearchParams] = useSearchParams();
     const currentPage = Number(searchParams.get('page')) || 1;
     const currentSearch = searchParams.get('search') || '';
 
     const { admin } = useAdminStore();
-    // Verificamos si el admin logueado es el Super Admin.
-    const isSuperAdmin = admin?.telegramId?.toString() === process.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
+    const isSuperAdmin = admin?.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID;
 
-    // --- Función de Carga de Datos ---
-    const fetchUsers = useCallback(async (page, search) => {
+    const fetchUsersAndAdmins = useCallback(async (page, search) => {
         setIsLoading(true);
         try {
-            const { data } = await api.get('/admin/users', { params: { page, search } });
+            // El backend debe devolver todos los usuarios, incluyendo los que son admins
+            const { data } = await adminApi.get('/admin/users', { params: { page, search } });
             setUsersData(data);
-        } catch (error) {
-            toast.error(error.response?.data?.message || "No se pudieron cargar los usuarios.");
-        } finally {
-            setIsLoading(false);
-        }
+        } catch (error) { toast.error(error.response?.data?.message || "No se pudieron cargar los usuarios."); } 
+        finally { setIsLoading(false); }
     }, []);
 
-    // Effect para cargar los usuarios cuando cambia la página o la búsqueda.
-    useEffect(() => {
-        fetchUsers(currentPage, currentSearch);
-    }, [currentPage, currentSearch, fetchUsers]);
+    useEffect(() => { fetchUsersAndAdmins(currentPage, currentSearch); }, [currentPage, currentSearch, fetchUsersAndAdmins]);
     
-    // --- Handlers de Acciones del Usuario ---
-    const handleSearch = (e) => {
-        e.preventDefault();
-        const searchTerm = e.target.elements.search.value;
-        setSearchParams({ search: searchTerm, page: 1 });
-    };
+    const handleSearch = (e) => { e.preventDefault(); setSearchParams({ search: e.target.elements.search.value, page: 1 }); };
+    const handlePageChange = (newPage) => { setSearchParams({ search: currentSearch, page: newPage }); };
 
-    const handlePageChange = (newPage) => {
-        setSearchParams({ search: currentSearch, page: newPage });
-    };
-    
-    // --- Handlers de Modales ---
-    const openModal = (user, modalSetter) => {
-        setSelectedUser(user);
-        modalSetter(true);
-    };
+    // --- Handlers de Acciones (Super Admin) ---
 
-    const closeModal = (modalSetter) => {
-        setSelectedUser(null);
-        modalSetter(false);
-    };
-    
-    // --- Lógica de Llamadas a la API ---
-    const handleSaveChanges = async (userId, data) => {
-        const promise = api.put(`/admin/users/${userId}`, data);
-        toast.promise(promise, {
-            loading: 'Guardando cambios...',
-            success: () => {
-                closeModal(setIsEditModalOpen);
-                fetchUsers(currentPage, currentSearch); // Recargar datos.
-                return 'Usuario actualizado con éxito.';
-            },
-            error: (err) => err.response?.data?.message || 'Error al actualizar el usuario.',
-        });
-    };
-
-    const handleStatusChange = async (userId, newStatus) => {
-        const promise = api.put(`/admin/users/${userId}/status`, { status: newStatus });
-        toast.promise(promise, {
-            loading: `Cambiando estado...`,
-            success: 'Estado del usuario actualizado.',
-            error: 'No se pudo cambiar el estado.',
-        });
-        // Optimistic UI update:
-        setUsersData(prev => ({ ...prev, users: prev.users.map(u => u._id === userId ? { ...u, status: newStatus } : u) }));
-    };
-
-    const handleAdjustBalance = async (userId, data) => {
-        const promise = api.post(`/admin/users/${userId}/adjust-balance`, data);
-        toast.promise(promise, {
-            loading: 'Ajustando saldo...',
-            success: () => {
-                closeModal(setIsBalanceModalOpen);
-                fetchUsers(currentPage, currentSearch); // Recargar datos.
-                return 'Saldo ajustado con éxito.';
-            },
-            error: (err) => err.response?.data?.message || 'Error al ajustar el saldo.',
-        });
-    };
-    
     const handlePromote = async (userId, password) => {
-        const promise = api.post('/admin/users/promote', { userId, password });
+        const promise = adminApi.post('/admin/users/promote', { userId, password });
         toast.promise(promise, {
-            loading: `Promoviendo a ${selectedUser.username}...`,
-            success: () => {
-                closeModal(setIsPromoteModalOpen);
-                fetchUsers(currentPage, currentSearch); // Recargar datos.
-                return `${selectedUser.username} es ahora administrador.`;
-            },
+            loading: `Promoviendo usuario...`,
+            success: () => { setIsPromoteModalOpen(false); fetchUsersAndAdmins(currentPage, currentSearch); return `Usuario promovido a administrador.`; },
             error: (err) => err.response?.data?.message || 'No se pudo promover al usuario.',
         });
     };
+
+    const handleToggleAdminBan = (adminId, currentStatus) => {
+        const newStatus = currentStatus === 'active' ? 'banned' : 'active';
+        const promise = adminApi.put(`/admin/admins/${adminId}/status`, { status: newStatus });
+        toast.promise(promise, {
+            loading: `${newStatus === 'banned' ? 'Baneando' : 'Desbaneando'} administrador...`,
+            success: () => { fetchUsersAndAdmins(currentPage, currentSearch); return 'Estado del administrador actualizado.'; },
+            error: (err) => err.response?.data?.message || 'Error al cambiar el estado del admin.',
+        });
+    };
+    
+    const handleResetPassword = async (adminId) => {
+        const promise = adminApi.post(`/admin/admins/${adminId}/reset-password`);
+        toast.promise(promise, {
+            loading: 'Reseteando contraseña...',
+            success: (res) => { setIsResetPasswordModalOpen(false); alert(`Contraseña reseteada. La nueva contraseña temporal es: ${res.data.newPassword}`); return 'Contraseña actualizada.'; },
+            error: (err) => err.response?.data?.message || 'Error al resetear la contraseña.',
+        });
+    };
+
+    // --- Componente de la Tabla Anidado o en línea para mayor claridad ---
+
+    const ActionsCell = ({ user }) => {
+        if (!isSuperAdmin) return null; // Un admin normal no ve ninguna de estas acciones especiales
+
+        // Si el usuario NO es admin, el Super Admin ve la opción de promoverlo.
+        if (user.role !== 'admin') {
+            return (
+                <button onClick={() => { setSelectedUser(user); setIsPromoteModalOpen(true); }} title="Promover a Administrador" className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-full">
+                    <HiOutlineShieldCheck className="w-5 h-5" />
+                </button>
+            );
+        }
+
+        // Si el usuario YA es admin, el Super Admin ve las opciones de gestión de admin.
+        if (user.role === 'admin') {
+            return (
+                <div className="flex justify-center items-center gap-2">
+                    <button onClick={() => { setSelectedUser(user); setIsResetPasswordModalOpen(true); }} title="Resetear Contraseña" className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-full">
+                        <HiOutlineLockClosed className="w-5 h-5" />
+                    </button>
+                    {user.status === 'active' ? (
+                        <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Banear Administrador" className="p-2 text-red-400 hover:bg-red-500/20 rounded-full">
+                            <HiOutlineNoSymbol className="w-5 h-5" />
+                        </button>
+                    ) : (
+                        <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Desbanear Administrador" className="p-2 text-green-400 hover:bg-green-500/20 rounded-full">
+                            <HiOutlineCheckCircle className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
+            );
+        }
+
+        return null;
+    };
+
 
     return (
         <>
             <div className="space-y-6">
                 <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
-                    <h1 className="text-2xl font-semibold flex items-center gap-3">
-                        <HiOutlineUserGroup /> Gestión de Usuarios
-                    </h1>
+                    <h1 className="text-2xl font-semibold flex items-center gap-3"><HiOutlineUserGroup /> Gestión de Usuarios</h1>
                     <p className="text-text-secondary mt-1">Busca, edita y gestiona los permisos de los usuarios.</p>
                 </div>
 
                 <div className="bg-dark-secondary p-4 rounded-lg border border-white/10">
                     <form onSubmit={handleSearch} className="flex items-center gap-2">
-                        <input
-                            type="text"
-                            name="search"
-                            defaultValue={currentSearch}
-                            placeholder="Buscar por username o Telegram ID..."
-                            className="w-full bg-dark-primary p-2 rounded-md border border-white/20 focus:ring-accent-start focus:border-accent-start"
-                        />
-                        <button type="submit" className="p-2 bg-accent-start rounded-md text-white">
-                            <HiOutlineMagnifyingGlass className="w-6 h-6" />
-                        </button>
+                        <input type="text" name="search" defaultValue={currentSearch} placeholder="Buscar por username o Telegram ID..." className="w-full bg-dark-primary p-2 rounded-md" />
+                        <button type="submit" className="p-2 bg-accent-start rounded-md text-white"><HiOutlineMagnifyingGlass className="w-6 h-6" /></button>
                     </form>
                 </div>
                 
-                {isLoading ? (
-                    <div className="flex justify-center"><Loader /></div>
-                ) : (
-                    <>
-                        <UsersTable
-                            users={usersData.users}
-                            onEdit={(user) => openModal(user, setIsEditModalOpen)}
-                            onStatusChange={handleStatusChange}
-                            onAdjustBalance={(user) => openModal(user, setIsBalanceModalOpen)}
-                            // Solo mostramos el botón de promover si el admin logueado es Super Admin
-                            onPromote={isSuperAdmin ? (user) => openModal(user, setIsPromoteModalOpen) : undefined}
-                        />
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={usersData.pages}
-                            onPageChange={handlePageChange}
-                        />
-                    </>
+                {isLoading ? <div className="flex justify-center"><Loader /></div> : (
+                    <div className="bg-dark-secondary rounded-lg border border-white/10 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="text-xs text-text-secondary uppercase bg-dark-tertiary">
+                                    <tr>
+                                        <th className="p-3">Usuario</th>
+                                        <th className="p-3">Rol</th>
+                                        <th className="p-3">Estado</th>
+                                        <th className="p-3 text-center">Acciones Super Admin</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/10">
+                                    {usersData.users.map((user) => (
+                                        <tr key={user._id}>
+                                            <td className="p-3 font-medium">{user.username} ({user.telegramId})</td>
+                                            <td className="p-3"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-blue-500/20 text-blue-300' : 'bg-gray-500/20 text-gray-300'}`}>{user.role}</span></td>
+                                            <td className="p-3"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{user.status}</span></td>
+                                            <td className="p-3 text-center"><ActionsCell user={user} /></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                         <Pagination currentPage={currentPage} totalPages={usersData.pages} onPageChange={handlePageChange} />
+                    </div>
                 )}
             </div>
 
-            {/* --- Renderizado Condicional de Modales --- */}
-            {isEditModalOpen && (
-                <EditUserModal 
-                    user={selectedUser}
-                    onClose={() => closeModal(setIsEditModalOpen)}
-                    onSave={handleSaveChanges}
-                    isSuperAdmin={isSuperAdmin}
-                />
-            )}
-            {isBalanceModalOpen && (
-                <AdjustBalanceModal
-                    user={selectedUser}
-                    onClose={() => closeModal(setIsBalanceModalOpen)}
-                    onSave={handleAdjustBalance}
-                />
-            )}
-            {isPromoteModalOpen && (
-                 <PromoteAdminModal
-                    user={selectedUser}
-                    onClose={() => closeModal(setIsPromoteModalOpen)}
-                    onPromote={handlePromote}
-                />
-            )}
+            {isPromoteModalOpen && <PromoteAdminModal user={selectedUser} onClose={() => setIsPromoteModalOpen(false)} onPromote={handlePromote} />}
+            {isResetPasswordModalOpen && <ResetPasswordModal user={selectedUser} onClose={() => setIsResetPasswordModalOpen(false)} onConfirm={handleResetPassword} />}
         </>
     );
 };
 
-export default UsersPage;
+export default AdminUsersPage;
