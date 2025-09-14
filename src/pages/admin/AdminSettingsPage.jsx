@@ -1,15 +1,12 @@
-// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (CORREGIDO)
-// ARQUITECTURA: Fusión de campos del modelo Legacy con la estructura de UI del proyecto Modelo.
+// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (FASE "REMEDIATIO" - RUTA CON ALIAS CORREGIDA)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-// [REMEDIATIO - CORRECCIÓN] La siguiente línea duplicada ha sido eliminada.
-// import { useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import adminApi from '../../admin/api/adminApi'; // Asegurarse de usar la instancia de API correcta
+// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplica el alias de ruta.
+import adminApi from '@/admin/api/adminApi';
 import { HiOutlineCog6Tooth } from 'react-icons/hi2';
 
-// --- Sub-componentes para un código más limpio ---
 const SettingsCard = ({ title, description, children }) => (
     <div className="bg-dark-secondary rounded-lg border border-white/10">
         <div className="p-6 border-b border-white/10">
@@ -51,7 +48,7 @@ const AdminSettingsPage = () => {
         const toastId = toast.loading('Cargando ajustes...');
         try {
             const { data } = await adminApi.get('/admin/settings');
-            reset(data); // `react-hook-form` poblará el formulario con los datos recibidos.
+            reset(data);
             toast.success('Ajustes cargados.', { id: toastId });
         } catch (error) {
             toast.error(error.response?.data?.message || 'No se pudo cargar la configuración.', { id: toastId });
@@ -67,7 +64,7 @@ const AdminSettingsPage = () => {
         toast.promise(promise, {
             loading: 'Guardando configuración...',
             success: (res) => {
-                reset(res.data); // Resetea el formulario con los nuevos datos para que 'isDirty' sea false.
+                reset(res.data);
                 return '¡Configuración guardada!';
             },
             error: (err) => err.response?.data?.message || 'Error al guardar.',
@@ -93,7 +90,6 @@ const AdminSettingsPage = () => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* --- Columna Izquierda: Controles Principales --- */}
                 <div className="space-y-6">
                     <SettingsCard title="Controles Principales" description="Activa o desactiva funcionalidades críticas del sistema.">
                         <SettingsToggle name="maintenanceMode" label="Modo Mantenimiento" register={register} />
@@ -105,7 +101,6 @@ const AdminSettingsPage = () => {
                     </SettingsCard>
                 </div>
 
-                {/* --- Columna Derecha: Comisiones y Reglas de Negocio --- */}
                 <div className="space-y-6">
                     <SettingsCard title="Comisiones por Referidos" description="Define el porcentaje de comisión para cada nivel de referido.">
                         <SettingsInput name="commissionLevel1" label="Comisión Nivel 1 (%)" type="number" step="0.1" register={register} />
