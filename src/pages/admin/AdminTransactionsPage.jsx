@@ -1,8 +1,8 @@
-// frontend/src/pages/admin/AdminTransactionsPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
+// frontend/src/pages/admin/AdminTransactionsPage.jsx (RUTA DE API DEFINITIVA CORREGIDA)
 
 import React, { useState, useEffect, useCallback } from 'react';
-// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta.
-import adminApi from '@/admin/api/adminApi';
+// [SOLUCIÓN DEFINITIVA] Se corrige la ruta para que coincida con la estructura de carpetas real.
+import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import { useDebounce } from 'use-debounce';
 
