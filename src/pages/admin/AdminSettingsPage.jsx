@@ -1,11 +1,12 @@
-// RUTA: admin-frontend/src/pages/admin/AdminSettingsPage.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
+// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (CORREGIDO)
 // ARQUITECTURA: Fusión de campos del modelo Legacy con la estructura de UI del proyecto Modelo.
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { useEffect, useCallback } from 'react';
+// [REMEDIATIO - CORRECCIÓN] La siguiente línea duplicada ha sido eliminada.
+// import { useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import api from '../../api/axiosConfig';
+import adminApi from '../../admin/api/adminApi'; // Asegurarse de usar la instancia de API correcta
 import { HiOutlineCog6Tooth } from 'react-icons/hi2';
 
 // --- Sub-componentes para un código más limpio ---
@@ -49,7 +50,7 @@ const AdminSettingsPage = () => {
     const loadSettings = useCallback(async () => {
         const toastId = toast.loading('Cargando ajustes...');
         try {
-            const { data } = await api.get('/admin/settings');
+            const { data } = await adminApi.get('/admin/settings');
             reset(data); // `react-hook-form` poblará el formulario con los datos recibidos.
             toast.success('Ajustes cargados.', { id: toastId });
         } catch (error) {
@@ -62,7 +63,7 @@ const AdminSettingsPage = () => {
     }, [loadSettings]);
 
     const onSubmit = async (data) => {
-        const promise = api.put('/admin/settings', data);
+        const promise = adminApi.put('/admin/settings', data);
         toast.promise(promise, {
             loading: 'Guardando configuración...',
             success: (res) => {
