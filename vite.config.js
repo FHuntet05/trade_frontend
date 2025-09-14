@@ -1,25 +1,22 @@
-// frontend/vite.config.js
+// frontend/vite.config.js (FASE "REMEDIATIO" - ALIAS DE RUTA IMPLEMENTADO)
 
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path'; // [REMEDIATIO] Se necesita para resolver las rutas.
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   
-  // --- INICIO DE LA SOLUCIÓN ---
-
   define: {
-    // 1. Inyectamos la variable global 'global' que algunas librerías esperan.
     'global': 'window',
   },
   resolve: {
     alias: {
-      // 2. Creamos un alias para que cualquier importación de 'buffer' 
-      //    apunte a la versión del navegador que instalamos.
       buffer: 'buffer/',
+      // [REMEDIATIO - SOLUCIÓN ESTRUCTURAL]
+      // Se crea un alias para que '@' apunte a la carpeta 'src'.
+      // Esto nos permite usar rutas absolutas y robustas en toda la aplicación.
+      '@': path.resolve(__dirname, './src'),
     },
   },
-
-  // --- FIN DE LA SOLUCIÓN ---
 });

@@ -1,15 +1,15 @@
-// RUTA: frontend/src/components/layout/AdminLayout.jsx (FASE "REMEDIATIO" - RUTAS ESTRUCTURALES CORREGIDAS)
+// RUTA: frontend/src/components/layout/AdminLayout.jsx (FASE "REMEDIATIO" - USANDO ALIAS DE RUTA)
 
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-// [REMEDIATIO - CORRECCIÓN ESTRUCTURAL]
-// Se corrigen todas las rutas para que coincidan con la estructura de carpetas real del proyecto.
-import Sidebar from '../../pages/admin/components/Sidebar';
-import AdminHeaderMobile from '../../pages/admin/components/AdminHeaderMobile';
-import MobileDrawer from '../../pages/admin/components/MobileDrawer';
-import useAdminStore from '../../store/adminStore';
+// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL]
+// Se reemplazan las rutas relativas por las nuevas rutas absolutas con alias.
+// Estas rutas son más limpias y no se romperán si movemos este archivo.
+import Sidebar from '@/pages/admin/components/Sidebar';
+import AdminHeaderMobile from '@/pages/admin/components/AdminHeaderMobile';
+import MobileDrawer from '@/pages/admin/components/MobileDrawer';
+import useAdminStore from '@/store/adminStore';
 
-// --- Helper para obtener el título de la página actual ---
 const getPageTitle = (pathname) => {
     const segments = pathname.split('/').filter(Boolean);
     const routeName = segments[segments.length - 1];
