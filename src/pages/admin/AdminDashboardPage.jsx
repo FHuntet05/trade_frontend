@@ -1,11 +1,12 @@
-// RUTA: frontend/src/pages/admin/AdminDashboardPage.jsx (ACTUALIZADO CON USUARIOS RECIENTES)
+// RUTA: frontend/src/pages/admin/AdminDashboardPage.jsx (FASE "REMEDIATIO" - RUTA DE IMPORTACIÓN CORREGIDA)
 import React, { useState, useEffect } from 'react';
-import adminApi from '../../admin/api/adminApi'; // Asegurarse de usar la instancia de API correcta
+// [REMEDIATIO - CORRECCIÓN CRÍTICA] Se corrige la ruta de importación.
+import adminApi from '../../admin/api/adminApi';
 import toast from 'react-hot-toast';
 import Loader from '../../components/common/Loader';
 import StatCard from './components/StatCard';
 import UserGrowthChart from './components/UserGrowthChart';
-import RecentUsersTable from './components/RecentUsersTable'; // Importamos el nuevo componente
+import RecentUsersTable from './components/RecentUsersTable';
 import { 
   HiOutlineUsers, 
   HiOutlineCurrencyDollar, 
@@ -19,7 +20,7 @@ const initialStatsState = {
   pendingWithdrawals: 0,
   centralWalletBalances: { usdt: 0, bnb: 0 },
   userGrowthData: [],
-  recentUsers: [], // Añadimos el estado inicial para los usuarios recientes
+  recentUsers: [],
 };
 
 const AdminDashboardPage = () => {
@@ -29,10 +30,9 @@ const AdminDashboardPage = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // [MODIFICACIÓN CLAVE] Usamos Promise.all para hacer ambas llamadas en paralelo
         const [statsResponse, usersResponse] = await Promise.all([
           adminApi.get('/admin/stats'),
-          adminApi.get('/admin/users/recent') // Nuevo endpoint para obtener los últimos 5-10 usuarios
+          adminApi.get('/admin/users/recent')
         ]);
         
         setStats({
@@ -55,7 +55,6 @@ const AdminDashboardPage = () => {
   
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Sección de Tarjetas de Estadísticas (sin cambios) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Total Usuarios" value={stats.totalUsers.toLocaleString('es-ES')} icon={HiOutlineUsers} />
         <StatCard title="Volumen Depósitos" value={`$${stats.totalDepositVolume.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={HiOutlineCurrencyDollar} />
@@ -72,21 +71,16 @@ const AdminDashboardPage = () => {
         </div>
       </div>
       
-      {/* [NUEVA SECCIÓN] Contenedor de dos columnas para el gráfico y los nuevos usuarios */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        
-        {/* Columna del Gráfico (ocupa 3 de 5 columnas en pantallas grandes) */}
         <div className="lg:col-span-3 bg-dark-secondary p-6 rounded-lg border border-white/10">
           <h2 className="text-xl font-semibold mb-4 text-white">Crecimiento de Usuarios (Últimos 14 días)</h2>
           <UserGrowthChart data={stats.userGrowthData || []} />
         </div>
         
-        {/* Columna de Nuevos Usuarios (ocupa 2 de 5 columnas en pantallas grandes) */}
         <div className="lg:col-span-2 bg-dark-secondary p-6 rounded-lg border border-white/10">
           <h2 className="text-xl font-semibold mb-4 text-white">Usuarios Recientes</h2>
           <RecentUsersTable users={stats.recentUsers || []} />
         </div>
-        
       </div>
     </div>
   );
