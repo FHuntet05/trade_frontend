@@ -1,9 +1,9 @@
-// RUTA: frontend/src/components/layout/AdminLayout.jsx (FASE "REMEDIATIO" - RUTAS DE IMPORTACIÓN CORREGIDAS)
+// RUTA: frontend/src/components/layout/AdminLayout.jsx (FASE "REMEDIATIO" - RUTAS ESTRUCTURALES CORREGIDAS)
 
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-// [REMEDIATIO - CORRECCIÓN CRÍTICA]
-// Se corrigen todas las rutas para que apunten a la ubicación correcta de los componentes del admin.
+// [REMEDIATIO - CORRECCIÓN ESTRUCTURAL]
+// Se corrigen todas las rutas para que coincidan con la estructura de carpetas real del proyecto.
 import Sidebar from '../../pages/admin/components/Sidebar';
 import AdminHeaderMobile from '../../pages/admin/components/AdminHeaderMobile';
 import MobileDrawer from '../../pages/admin/components/MobileDrawer';
@@ -11,12 +11,11 @@ import useAdminStore from '../../store/adminStore';
 
 // --- Helper para obtener el título de la página actual ---
 const getPageTitle = (pathname) => {
-    const segments = pathname.split('/').filter(Boolean); // Elimina elementos vacíos
+    const segments = pathname.split('/').filter(Boolean);
     const routeName = segments[segments.length - 1];
     
     if (!routeName || routeName === 'admin' || routeName === 'dashboard') return 'Dashboard';
     
-    // Capitaliza la primera letra y reemplaza guiones
     return routeName.charAt(0).toUpperCase() + routeName.slice(1).replace(/-/g, ' ');
 };
 
