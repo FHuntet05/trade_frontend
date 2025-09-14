@@ -1,12 +1,10 @@
-// RUTA: frontend/src/components/layout/AdminLayout.jsx (VERSIÓN FINAL CON RUTAS CORRECTAS)
+// RUTA: frontend/src/components/layout/AdminLayout.jsx (VERSIÓN FINAL CON RUTAS CORREGIDAS)
 
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-
-// [SOLUCIÓN DEFINITIVA] - Rutas corregidas basadas en la estructura de archivos real.
-import Sidebar from '../../pages/admin/components/Sidebar';      // Ruta correcta
-import AdminHeaderMobile from '../admin/AdminHeaderMobile';     // Ruta correcta a archivo nuevo
-import MobileDrawer from '../admin/MobileDrawer';               // Ruta correcta a archivo nuevo
+import Sidebar from '../../pages/admin/components/Sidebar';
+import AdminHeaderMobile from '../admin/AdminHeaderMobile'; // Ruta correcta al archivo que acabamos de crear
+import MobileDrawer from '../admin/MobileDrawer';         // Ruta correcta al archivo que acabamos de crear
 import useAdminStore from '../../store/adminStore';
 
 const getPageTitle = (pathname) => {
