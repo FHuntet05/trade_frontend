@@ -1,10 +1,9 @@
-// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
+// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (IMPORTACIONES VALIDADAS)
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta a todas las importaciones.
 import adminApi from '@/pages/admin/api/adminApi';
 import Loader from '@/components/common/Loader';
-import Pagination from '@/components/common/Pagination';
+import Pagination from '@/components/common/Pagination'; // Esta importación ahora funcionará
 import { HiOutlineFunnel, HiOutlineArrowPath, HiOutlinePaperAirplane } from 'react-icons/hi2';
 
 const TableSkeleton = ({ rows = 5 }) => (
@@ -171,7 +170,7 @@ const GasDispenserPage = () => {
                     </table>
                     {!isLoading && data.wallets.length === 0 && <p className="text-center p-6 text-text-secondary">¡Excelente! Ninguna wallet necesita gas en esta red.</p>}
                 </div>
-                {!isLoading && <Pagination currentPage={currentPage} totalPages={data.pagination?.totalPages} onPageChange={handlePageChange} />}
+                {!isLoading && data.pagination?.totalPages > 1 && <Pagination currentPage={currentPage} totalPages={data.pagination?.totalPages} onPageChange={handlePageChange} />}
             </div>
         </div>
     );
