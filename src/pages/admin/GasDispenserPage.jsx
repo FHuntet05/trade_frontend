@@ -1,14 +1,12 @@
-// RUTA: admin-frontend/src/pages/admin/GasDispenserPage.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
-// ARQUITECTURA: Basada en el Modelo, pero simplificada para operar exclusivamente en la red BSC.
-
+// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import api from '../../api/axiosConfig';
-import Loader from '../../components/common/Loader';
-import Pagination from '../../components/common/Pagination';
+// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta a todas las importaciones.
+import adminApi from '@/admin/api/adminApi';
+import Loader from '@/components/common/Loader';
+import Pagination from '@/components/common/Pagination';
 import { HiOutlineFunnel, HiOutlineArrowPath, HiOutlinePaperAirplane } from 'react-icons/hi2';
 
-// --- Componente de UI para el esqueleto de la tabla ---
 const TableSkeleton = ({ rows = 5 }) => (
     <tbody>
         {Array.from({ length: rows }).map((_, index) => (
@@ -26,26 +24,21 @@ const TableSkeleton = ({ rows = 5 }) => (
 );
 
 const GasDispenserPage = () => {
-    // --- Estado de la Página ---
     const [data, setData] = useState({ centralWalletBalance: 0, wallets: [], pagination: {} });
     const [isLoading, setIsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedWallets, setSelectedWallets] = useState(new Set());
     const [processingWallets, setProcessingWallets] = useState(new Set());
     const [editableAmounts, setEditableAmounts] = useState({});
-
-    // --- Estado para el formulario de dispensación manual ---
     const [manualAddress, setManualAddress] = useState('');
     const [manualAmount, setManualAmount] = useState('');
     const [isManualDispatching, setIsManualDispatching] = useState(false);
 
-    // --- Lógica de Carga de Datos ---
     const analyzeGas = useCallback(async (page) => {
         setIsLoading(true);
         setEditableAmounts({}); 
         try {
-            // [BLOCKSPHERE] Se elimina el parámetro 'chain' ya que ahora es siempre 'BSC'.
-            const response = await api.get(`/admin/gas-dispenser/analyze`, { params: { page, limit: 15 }});
+            const response = await adminApi.get(`/admin/gas-dispenser/analysis`, { params: { page, limit: 15 }});
             setData(response.data);
         } catch (error) {
             toast.error(error.response?.data?.message || 'Error al analizar las wallets.');
@@ -59,14 +52,12 @@ const GasDispenserPage = () => {
         analyzeGas(currentPage);
     }, [currentPage, analyzeGas]);
 
-    // --- Handlers de Interacción de UI ---
     const handlePageChange = (newPage) => { if (newPage > 0 && newPage <= (data.pagination?.totalPages || 1)) setCurrentPage(newPage); };
     const handleWalletSelection = (address) => { setSelectedWallets(prev => { const newSelection = new Set(prev); if (newSelection.has(address)) newSelection.delete(address); else newSelection.add(address); return newSelection; }); };
     const handleSelectAll = (e) => { if (e.target.checked) setSelectedWallets(new Set(data.wallets.map(w => w.address))); else setSelectedWallets(new Set()); };
     const handleAmountChange = (address, value) => { setEditableAmounts(prev => ({ ...prev, [address]: value })); };
     const getAmountToDispense = (wallet) => editableAmounts[wallet.address] ?? Math.max(0, wallet.requiredGas - wallet.gasBalance).toFixed(8);
 
-    // --- Lógica Principal de Envío de Gas ---
     const handleDispatch = async (targets, isManual = false) => {
         if (targets.length === 0) return toast.error("No hay wallets válidas para la dispensación.");
         
@@ -76,7 +67,7 @@ const GasDispenserPage = () => {
         else setProcessingWallets(processingAddresses);
 
         try {
-            const response = await api.post('/admin/gas-dispenser/dispatch', { chain: 'BSC', targets });
+            const response = await adminApi.post('/admin/gas-dispenser/dispatch', { chain: 'BSC', targets });
             const { success, failed } = response.data.summary;
             toast.success(`Dispensación completada. Éxitos: ${success}, Fallos: ${failed}.`, { id: toastId, duration: 5000 });
             
@@ -85,7 +76,7 @@ const GasDispenserPage = () => {
                 setManualAmount('');
             } else {
                 setSelectedWallets(new Set());
-                analyzeGas(currentPage); // Recargar datos
+                analyzeGas(currentPage);
             }
         } catch(error) {
             toast.error(error.response?.data?.message || 'Error en la operación de dispensación.', { id: toastId });
