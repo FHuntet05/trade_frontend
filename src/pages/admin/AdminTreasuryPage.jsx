@@ -1,13 +1,13 @@
-// frontend/src/pages/admin/AdminTreasuryPage.jsx (LÓGICA DE PERMISOS REFORZADA)
+// frontend/src/pages/admin/AdminTreasuryPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
 import React, { useState, useEffect, useCallback } from 'react';
-import adminApi from '../../admin/api/adminApi'; // Asegúrate de usar adminApi
+// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta.
+import adminApi from '@/admin/api/adminApi';
 import toast from 'react-hot-toast';
-import useAdminStore from '../../store/adminStore';
-
-import Loader from '../../components/common/Loader';
-import Pagination from '../../components/common/Pagination';
-import SweepConfirmationModal from './components/SweepConfirmationModal';
-import SweepReportModal from './components/SweepReportModal';
+import useAdminStore from '@/store/adminStore';
+import Loader from '@/components/common/Loader';
+import Pagination from '@/components/common/Pagination';
+import SweepConfirmationModal from '@/pages/admin/components/SweepConfirmationModal';
+import SweepReportModal from '@/pages/admin/components/SweepReportModal';
 import { HiOutlineBanknotes, HiOutlineCpuChip, HiOutlineArrowDownTray, HiOutlineTrash } from 'react-icons/hi2';
 
 const SUPER_ADMIN_TELEGRAM_ID = import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
@@ -34,7 +34,6 @@ const AdminTreasuryPage = () => {
     const [sweepReport, setSweepReport] = useState(null);
 
     const { admin } = useAdminStore();
-    // [MODIFICACIÓN CLAVE] La lógica para determinar si es Super Admin ahora es robusta.
     const isSuperAdmin = admin?.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID;
 
     const fetchTreasuryData = useCallback(async (page) => {
@@ -99,7 +98,6 @@ const AdminTreasuryPage = () => {
                 <div>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                         <h2 className="text-xl font-semibold">Resumen de Fondos en Página</h2>
-                        {/* [MODIFICACIÓN CLAVE] El contenedor de botones solo es visible para el Super Admin */}
                         {isSuperAdmin && (
                             <div className="flex flex-wrap gap-2">
                                 <button onClick={handleSweepGas} disabled={!walletsSelectedForAction || isLoading} className="flex items-center gap-2 px-3 py-2 text-sm font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600">
@@ -116,7 +114,6 @@ const AdminTreasuryPage = () => {
                         <SummaryCard title="Total BNB en Página" amount={data.summary.bnb} currency="BNB" icon={<HiOutlineCpuChip className="w-6 h-6 text-yellow-400"/>} />
                     </div>
                 </div>
-                {/* El resto de la tabla y la lógica se mantienen igual */}
                 <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
                     <h2 className="text-xl font-semibold mb-4">Wallets de Depósito ({data.pagination.totalWallets || 0} en total)</h2>
                     <div className="overflow-x-auto">

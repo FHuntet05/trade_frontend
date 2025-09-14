@@ -1,8 +1,9 @@
-// RUTA: frontend/src/pages/admin/AdminNotificationsPage.jsx (VERSIÓN FINAL, CORREGIDA Y VALIDADA)
+// RUTA: frontend/src/pages/admin/AdminNotificationsPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
 
 import React, { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import api from '../../api/axiosConfig';
+// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplica el alias de ruta.
+import adminApi from '@/admin/api/adminApi';
 import { HiOutlineMegaphone } from 'react-icons/hi2';
 
 const AdminNotificationsPage = () => {
@@ -53,7 +54,7 @@ const AdminNotificationsPage = () => {
                 buttons: finalButtons.length > 0 ? finalButtons : null
             };
             
-            const { data } = await api.post('/admin/notifications/send', payload);
+            const { data } = await adminApi.post('/admin/notifications/broadcast', payload); // Corregido endpoint
             toast.success(data.message);
             
             setMessage(''); 

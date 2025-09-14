@@ -1,15 +1,15 @@
-// frontend/src/pages/admin/AdminUsersPage.jsx (LÓGICA SIMPLIFICADA E INTEGRADA)
+// frontend/src/pages/admin/AdminUsersPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import adminApi from '../../admin/api/adminApi';
+// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta a todas las importaciones.
+import adminApi from '@/admin/api/adminApi';
 import toast from 'react-hot-toast';
-import useAdminStore from '../../store/adminStore';
-
-import Loader from '../../components/common/Loader';
-import UsersTable from './components/UsersTable'; // Asumimos que UsersTable recibe los handlers de acciones
-import Pagination from '../../components/common/Pagination';
-import PromoteAdminModal from './components/PromoteAdminModal';
-import ResetPasswordModal from './components/ResetPasswordModal';
+import useAdminStore from '@/store/adminStore';
+import Loader from '@/components/common/Loader';
+import Pagination from '@/components/common/Pagination';
+import PromoteAdminModal from '@/pages/admin/components/PromoteAdminModal';
+import ResetPasswordModal from '@/pages/admin/components/ResetPasswordModal';
+// La importación de UsersTable se elimina porque la tabla está ahora definida dentro de este mismo archivo.
 import { HiOutlineUserGroup, HiOutlineMagnifyingGlass, HiOutlineShieldCheck, HiOutlineLockClosed, HiOutlineNoSymbol, HiOutlineCheckCircle } from 'react-icons/hi2';
 
 const SUPER_ADMIN_TELEGRAM_ID = import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
@@ -32,7 +32,6 @@ const AdminUsersPage = () => {
     const fetchUsersAndAdmins = useCallback(async (page, search) => {
         setIsLoading(true);
         try {
-            // El backend debe devolver todos los usuarios, incluyendo los que son admins
             const { data } = await adminApi.get('/admin/users', { params: { page, search } });
             setUsersData(data);
         } catch (error) { toast.error(error.response?.data?.message || "No se pudieron cargar los usuarios."); } 
@@ -44,10 +43,8 @@ const AdminUsersPage = () => {
     const handleSearch = (e) => { e.preventDefault(); setSearchParams({ search: e.target.elements.search.value, page: 1 }); };
     const handlePageChange = (newPage) => { setSearchParams({ search: currentSearch, page: newPage }); };
 
-    // --- Handlers de Acciones (Super Admin) ---
-
     const handlePromote = async (userId, password) => {
-        const promise = adminApi.post('/admin/users/promote', { userId, password });
+        const promise = adminApi.post('/admin/admins/promote', { userId, password }); // Corregido el endpoint
         toast.promise(promise, {
             loading: `Promoviendo usuario...`,
             success: () => { setIsPromoteModalOpen(false); fetchUsersAndAdmins(currentPage, currentSearch); return `Usuario promovido a administrador.`; },
@@ -74,12 +71,8 @@ const AdminUsersPage = () => {
         });
     };
 
-    // --- Componente de la Tabla Anidado o en línea para mayor claridad ---
-
     const ActionsCell = ({ user }) => {
-        if (!isSuperAdmin) return null; // Un admin normal no ve ninguna de estas acciones especiales
-
-        // Si el usuario NO es admin, el Super Admin ve la opción de promoverlo.
+        if (!isSuperAdmin) return null;
         if (user.role !== 'admin') {
             return (
                 <button onClick={() => { setSelectedUser(user); setIsPromoteModalOpen(true); }} title="Promover a Administrador" className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-full">
@@ -87,8 +80,6 @@ const AdminUsersPage = () => {
                 </button>
             );
         }
-
-        // Si el usuario YA es admin, el Super Admin ve las opciones de gestión de admin.
         if (user.role === 'admin') {
             return (
                 <div className="flex justify-center items-center gap-2">
@@ -107,10 +98,8 @@ const AdminUsersPage = () => {
                 </div>
             );
         }
-
         return null;
     };
-
 
     return (
         <>
@@ -119,14 +108,12 @@ const AdminUsersPage = () => {
                     <h1 className="text-2xl font-semibold flex items-center gap-3"><HiOutlineUserGroup /> Gestión de Usuarios</h1>
                     <p className="text-text-secondary mt-1">Busca, edita y gestiona los permisos de los usuarios.</p>
                 </div>
-
                 <div className="bg-dark-secondary p-4 rounded-lg border border-white/10">
                     <form onSubmit={handleSearch} className="flex items-center gap-2">
                         <input type="text" name="search" defaultValue={currentSearch} placeholder="Buscar por username o Telegram ID..." className="w-full bg-dark-primary p-2 rounded-md" />
                         <button type="submit" className="p-2 bg-accent-start rounded-md text-white"><HiOutlineMagnifyingGlass className="w-6 h-6" /></button>
                     </form>
                 </div>
-                
                 {isLoading ? <div className="flex justify-center"><Loader /></div> : (
                     <div className="bg-dark-secondary rounded-lg border border-white/10 overflow-hidden">
                         <div className="overflow-x-auto">
@@ -155,7 +142,6 @@ const AdminUsersPage = () => {
                     </div>
                 )}
             </div>
-
             {isPromoteModalOpen && <PromoteAdminModal user={selectedUser} onClose={() => setIsPromoteModalOpen(false)} onPromote={handlePromote} />}
             {isResetPasswordModalOpen && <ResetPasswordModal user={selectedUser} onClose={() => setIsResetPasswordModalOpen(false)} onConfirm={handleResetPassword} />}
         </>

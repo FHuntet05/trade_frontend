@@ -1,9 +1,10 @@
-// frontend/src/pages/admin/AdminWithdrawalsPage.jsx (VERSIÓN v17.0.3 - CORRECCIÓN DE RUTA)
+// frontend/src/pages/admin/AdminWithdrawalsPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
 import React, { useState, useEffect, useCallback } from 'react';
-import useAdminStore from '../../store/adminStore';
-import api from '../../api/axiosConfig';
+// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta.
+import useAdminStore from '@/store/adminStore';
+import adminApi from '@/admin/api/adminApi';
 import toast from 'react-hot-toast';
-import Loader from '../../components/common/Loader';
+import Loader from '@/components/common/Loader';
 import { HiOutlineClipboardDocument, HiOutlineClipboardDocumentCheck } from 'react-icons/hi2';
 
 const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
@@ -38,13 +39,13 @@ const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
                   <span>{tx.user?.username || 'Usuario no encontrado'}</span>
                 </div>
               </td>
-              <td className="px-6 py-4 font-mono">{tx.amount.toFixed(2)}</td>
+              <td className="px-6 py-4 font-mono">{tx.netAmount.toFixed(2)}</td>
               <td className="px-6 py-4 font-mono text-text-secondary">
                 <div className="flex items-center gap-2">
-                  <span className="truncate max-w-xs">{tx.metadata?.walletAddress || 'N/A'}</span>
-                  {tx.metadata?.walletAddress && (
-                    <button onClick={() => handleCopy(tx.metadata.walletAddress)} className="text-gray-400 hover:text-white">
-                      {copiedAddress === tx.metadata.walletAddress ? <HiOutlineClipboardDocumentCheck className="w-5 h-5 text-green-400" /> : <HiOutlineClipboardDocument className="w-5 h-5" />}
+                  <span className="truncate max-w-xs">{tx.walletAddress || 'N/A'}</span>
+                  {tx.walletAddress && (
+                    <button onClick={() => handleCopy(tx.walletAddress)} className="text-gray-400 hover:text-white">
+                      {copiedAddress === tx.walletAddress ? <HiOutlineClipboardDocumentCheck className="w-5 h-5 text-green-400" /> : <HiOutlineClipboardDocument className="w-5 h-5" />}
                     </button>
                   )}
                 </div>
@@ -76,24 +77,20 @@ const AdminWithdrawalsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [processingId, setProcessingId] = useState(null);
-  const { adminInfo } = useAdminStore();
 
   const fetchWithdrawals = useCallback(async (targetPage = 1) => {
     setIsLoading(true);
     setError(null);
     try {
-      // CORRECCIÓN: Se ha eliminado el prefijo '/api' de la ruta.
-      const { data } = await api.get(`/admin/withdrawals/pending?page=${targetPage}`);
+      const { data } = await adminApi.get(`/admin/withdrawals?page=${targetPage}`);
       setWithdrawals(data.withdrawals);
       setPage(data.page);
       setPages(data.pages);
     } catch (err) {
-      // CORRECCIÓN: Añadido un mensaje de error que muestra la ruta fallida.
-      const requestedPath = err.config?.url || 'desconocida';
-      const errorMessage = `Ruta no encontrada - ${requestedPath}`;
+      const errorMessage = `Error al cargar las solicitudes de retiro.`;
       console.error("Error al obtener retiros:", err);
       setError(errorMessage);
-      toast.error("Error al cargar las solicitudes.");
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -114,14 +111,13 @@ const AdminWithdrawalsPage = () => {
         return;
       }
     } else if (status === 'completed') {
-      if (!window.confirm("¿Estás SEGURO de que quieres APROBAR este retiro? Esta acción es para confirmar que ya has enviado los fondos manualmente desde tu exchange. Esta acción es IRREVERSIBLE.")) {
+      if (!window.confirm("¿Estás SEGURO de que quieres APROBAR este retiro? Esta acción es para confirmar que ya has enviado los fondos manualmente. La acción es IRREVERSIBLE.")) {
         setProcessingId(null);
         return;
       }
     }
     
-    // CORRECCIÓN: Se ha eliminado el prefijo '/api' de la ruta.
-    const processPromise = api.put(`/admin/withdrawals/${txId}/process`, { status, adminNotes: notes });
+    const processPromise = adminApi.put(`/admin/withdrawals/${txId}/process`, { status, adminNotes: notes });
 
     try {
         await toast.promise(processPromise, {
@@ -150,11 +146,7 @@ const AdminWithdrawalsPage = () => {
       return (
         <>
           <WithdrawalsTable withdrawals={withdrawals} onProcess={handleProcessWithdrawal} processingId={processingId} />
-          {pages > 1 && (
-            <div className="mt-6 text-center">
-              {/* Aquí se podría implementar la paginación */}
-            </div>
-          )}
+          {/* Aquí se podría implementar la paginación si se necesita */}
         </>
       );
     }

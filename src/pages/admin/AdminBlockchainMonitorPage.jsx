@@ -1,14 +1,10 @@
-// RUTA: frontend/src/pages/admin/AdminBlockchainMonitorPage.jsx (CORRECCIÓN FINAL v21.12)
+// RUTA: frontend/src/pages/admin/AdminBlockchainMonitorPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
 
 import React, { useState, useEffect } from 'react';
-import api from '../../api/axiosConfig';
+// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplica el alias de ruta.
+import adminApi from '@/admin/api/adminApi';
 import { toast } from 'react-hot-toast';
-
-// --- INICIO DE LA CORRECCIÓN FINAL ---
-// Se reemplaza el nombre incorrecto 'HiOutlineDesktopComputer' por el correcto 'HiOutlineComputerDesktop'.
-// Se mantienen los otros íconos que ya eran correctos.
 import { HiOutlineComputerDesktop, HiXCircle, HiRocketLaunch } from 'react-icons/hi2';
-// --- FIN DE LA CORRECCIÓN FINAL ---
 
 const StatusBadge = ({ status }) => {
     const baseClasses = "px-2 py-1 text-xs font-bold rounded-full";
@@ -34,7 +30,7 @@ const TxActions = ({ tx }) => {
         if (!confirmation) return;
 
         setIsLoading(true);
-        const promise = api.post(endpoint, { txHash: tx.txHash });
+        const promise = adminApi.post(endpoint, { txHash: tx.txHash });
         toast.promise(promise, {
             loading: `Enviando transacción de ${actionType === 'cancel' ? 'cancelación' : 'aceleración'}...`,
             success: (res) => {
@@ -66,7 +62,7 @@ const AdminBlockchainMonitorPage = () => {
     useEffect(() => {
         const fetchTxs = async () => {
             try {
-                const { data } = await api.get('/admin/blockchain-monitor/pending');
+                const { data } = await adminApi.get('/admin/blockchain-monitor/pending');
                 setTransactions(data);
             } catch (error) {
                 toast.error("No se pudieron cargar las transacciones.");
@@ -109,7 +105,16 @@ const AdminBlockchainMonitorPage = () => {
                                     <td className="p-3 text-sm">{new Date(tx.createdAt).toLocaleString()}</td>
                                     <td className="p-3 text-sm">{tx.type}</td>
                                     <td className="p-3 text-sm">{tx.chain}</td>
-                                    <td className="p-3 font-mono text-xs"><a href={tx.chain === 'BSC' ? `https://bscscan.com/tx/${tx.txHash}` : `https://tronscan.org/#/transaction/${tx.txHash}`} target="_blank" rel="noopener noreferrer" className="hover:text-accent-start">{tx.txHash ? tx.txHash.substring(0, 20) + '...' : 'N/A'}</a></td>
+                                    <td className="p-3 font-mono text-xs">
+                                        <a 
+                                            href={tx.chain === 'BSC' ? `https://bscscan.com/tx/${tx.txHash}` : `https://tronscan.org/#/transaction/${tx.txHash}`} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="hover:text-accent-start"
+                                        >
+                                            {tx.txHash ? tx.txHash.substring(0, 20) + '...' : 'N/A'}
+                                        </a>
+                                    </td>
                                     <td className="p-3 text-center"><StatusBadge status={tx.status} /></td>
                                     <td className="p-3 text-center"><TxActions tx={tx} /></td>
                                 </tr>

@@ -1,21 +1,23 @@
-// frontend/src/pages/admin/AdminSecurityPage.jsx (COMPLETO)
+// frontend/src/pages/admin/AdminSecurityPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
 import React, { useState } from 'react';
-import useAdminStore from '../../store/adminStore';
-import api from '../../api/axiosConfig';
+// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta.
+import useAdminStore from '@/store/adminStore';
+import adminApi from '@/admin/api/adminApi';
 import toast from 'react-hot-toast';
-import Loader from '../../components/common/Loader';
+import Loader from '@/components/common/Loader';
 import { HiShieldCheck } from 'react-icons/hi2';
 
 const AdminSecurityPage = () => {
   const { admin, setTwoFactorEnabled } = useAdminStore();
-  const [setupData, setSetupData] = useState(null); // Para QR y secreto
+  const [setupData, setSetupData] = useState(null);
   const [verificationToken, setVerificationToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGenerateSecret = async () => {
     setIsLoading(true);
     try {
-      const { data } = await api.post('/admin/2fa/generate');
+      // Corregido: Endpoint para 2FA ahora bajo /admin/security
+      const { data } = await adminApi.post('/admin/security/2fa/generate');
       setSetupData(data);
     } catch (error) {
       toast.error('No se pudo generar el secreto 2FA.');
@@ -28,10 +30,11 @@ const AdminSecurityPage = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { data } = await api.post('/admin/2fa/verify', { token: verificationToken });
+      // Corregido: Endpoint para 2FA ahora bajo /admin/security
+      const { data } = await adminApi.post('/admin/security/2fa/verify', { token: verificationToken });
       toast.success(data.message);
-      setTwoFactorEnabled(true); // Actualizamos el estado global
-      setSetupData(null); // Limpiamos la UI de setup
+      setTwoFactorEnabled(true);
+      setSetupData(null);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error al verificar el token.');
     } finally {
