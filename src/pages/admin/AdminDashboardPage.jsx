@@ -1,12 +1,13 @@
-// RUTA: frontend/src/pages/admin/AdminDashboardPage.jsx (FASE "REMEDIATIO" - RUTA DE IMPORTACIÓN CORREGIDA)
+// RUTA: frontend/src/pages/admin/AdminDashboardPage.jsx (CORRECCIÓN ESTRUCTURAL DEFINITIVA CON ALIAS)
 import React, { useState, useEffect } from 'react';
-// [REMEDIATIO - CORRECCIÓN CRÍTICA] Se corrige la ruta de importación.
-import adminApi from '../../admin/api/adminApi';
+// [REMEDIATIO - SOLUCIÓN DEFINITIVA]
+// Se reemplazan TODAS las rutas relativas por rutas absolutas con el alias '@'.
+import adminApi from '@/admin/api/adminApi';
 import toast from 'react-hot-toast';
-import Loader from '../../components/common/Loader';
-import StatCard from './components/StatCard';
-import UserGrowthChart from './components/UserGrowthChart';
-import RecentUsersTable from './components/RecentUsersTable';
+import Loader from '@/components/common/Loader';
+import StatCard from '@/pages/admin/components/StatCard';
+import UserGrowthChart from '@/pages/admin/components/UserGrowthChart';
+import RecentUsersTable from '@/pages/admin/components/RecentUsersTable';
 import { 
   HiOutlineUsers, 
   HiOutlineCurrencyDollar, 
