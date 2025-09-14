@@ -1,9 +1,9 @@
-// RUTA: frontend/src/components/layout/AdminLayout.jsx (CORREGIDO)
-// ARQUITECTURA: Layout responsive del Modelo, integrando Sidebar, Header y Drawer móvil.
+// RUTA: frontend/src/components/layout/AdminLayout.jsx (FASE "REMEDIATIO" - RUTAS DE IMPORTACIÓN CORREGIDAS)
 
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-// [REMEDIATIO - CORRECCIÓN] Se corrige la ruta de importación para apuntar a la ubicación correcta de los componentes del admin.
+// [REMEDIATIO - CORRECCIÓN CRÍTICA]
+// Se corrigen todas las rutas para que apunten a la ubicación correcta de los componentes del admin.
 import Sidebar from '../../pages/admin/components/Sidebar';
 import AdminHeaderMobile from '../../pages/admin/components/AdminHeaderMobile';
 import MobileDrawer from '../../pages/admin/components/MobileDrawer';
@@ -19,7 +19,6 @@ const getPageTitle = (pathname) => {
     // Capitaliza la primera letra y reemplaza guiones
     return routeName.charAt(0).toUpperCase() + routeName.slice(1).replace(/-/g, ' ');
 };
-
 
 const AdminLayout = () => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
