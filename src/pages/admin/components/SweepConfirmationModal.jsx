@@ -1,9 +1,10 @@
-// RUTA: admin-frontend/src/pages/admin/components/SweepConfirmationModal.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
-// ARQUITECTURA: Modal simplificado del Modelo, adaptado para un flujo de backend más seguro (sin campo de dirección).
+// RUTA: frontend/src/pages/admin/components/SweepConfirmationModal.jsx (FASE "REMEDIATIO" - ICONO CORREGIDO)
+// ARQUITECTURA: Modal simplificado del Modelo, adaptado para un flujo de backend más seguro.
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiOutlineShieldWarning, HiXMark } from 'react-icons/hi2';
+// [REMEDIATIO - CORRECCIÓN CRÍTICA] Se reemplaza el nombre del icono inexistente por el correcto.
+import { HiOutlineExclamationTriangle, HiXMark } from 'react-icons/hi2';
 
 // --- Variantes de Animación ---
 const backdropVariants = {
@@ -19,13 +20,10 @@ const modalVariants = {
 
 
 const SweepConfirmationModal = ({ isOpen, onClose, onConfirm, context }) => {
-  // El modal no se renderiza si no está abierto o no tiene contexto.
   if (!isOpen || !context) return null;
 
   const { chain, token, walletsCandidatas, totalUsdtToSweep } = context;
 
-  // El botón "Confirmar" ahora simplemente llama a onConfirm sin parámetros.
-  // La página `AdminTreasuryPage` se encarga de construir el payload final.
   const handleConfirm = () => {
     onConfirm();
   };
@@ -43,7 +41,6 @@ const SweepConfirmationModal = ({ isOpen, onClose, onConfirm, context }) => {
             variants={modalVariants}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* --- Encabezado --- */}
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h2 className="text-xl font-bold">Confirmar Barrido de Fondos</h2>
@@ -52,9 +49,9 @@ const SweepConfirmationModal = ({ isOpen, onClose, onConfirm, context }) => {
                 <button onClick={onClose} className="p-1 rounded-full hover:bg-dark-tertiary transition-colors"><HiXMark className="w-6 h-6" /></button>
             </div>
             
-            {/* --- Caja de Advertencia --- */}
             <div className="bg-yellow-900/20 border border-yellow-500/50 text-yellow-300 p-4 rounded-lg flex items-start gap-3 mb-4">
-              <HiOutlineShieldWarning className="w-10 h-10 flex-shrink-0 mt-1" />
+              {/* [REMEDIATIO - CORRECCIÓN CRÍTICA] Se usa el nombre del icono correcto. */}
+              <HiOutlineExclamationTriangle className="w-10 h-10 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="font-bold">¡Atención!</h3>
                 <p className="text-sm">
@@ -64,7 +61,6 @@ const SweepConfirmationModal = ({ isOpen, onClose, onConfirm, context }) => {
               </div>
             </div>
             
-            {/* --- Resumen de la Operación --- */}
             <div className="bg-dark-tertiary border border-accent-start/20 rounded-md p-4 mb-6">
               <p className="text-lg font-semibold mt-1 text-center">
                 Total a Barrer: <span className="text-white font-mono">{totalUsdtToSweep.toFixed(4)} {token}</span>
@@ -74,11 +70,6 @@ const SweepConfirmationModal = ({ isOpen, onClose, onConfirm, context }) => {
               </p>
             </div>
             
-            {/* [BLOCKSPHERE] - Campo de dirección ELIMINADO intencionalmente para forzar el
-                uso de la wallet segura pre-configurada en el backend, aumentando la seguridad.
-            */}
-
-            {/* --- Botones de Acción --- */}
             <div className="mt-6 flex gap-4">
               <button onClick={onClose} className="w-full py-2.5 rounded-md bg-dark-tertiary hover:bg-white/10 transition-colors">
                 Cancelar
