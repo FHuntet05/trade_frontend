@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 // [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplica el alias de ruta.
-import adminApi from '@/admin/api/adminApi';
+import adminApi from '@/pages/admin/api/adminApi';
 import { HiOutlineMegaphone } from 'react-icons/hi2';
 
 const AdminNotificationsPage = () => {

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 // [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplica el alias de ruta.
-import adminApi from '@/admin/api/adminApi';
+import adminApi from '@/pages/admin/api/adminApi';
 import { HiOutlineCog6Tooth } from 'react-icons/hi2';
 
 const SettingsCard = ({ title, description, children }) => (

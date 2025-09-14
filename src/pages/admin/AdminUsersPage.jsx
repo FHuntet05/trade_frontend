@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 // [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta a todas las importaciones.
-import adminApi from '@/admin/api/adminApi';
+import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import useAdminStore from '@/store/adminStore';
 import Loader from '@/components/common/Loader';

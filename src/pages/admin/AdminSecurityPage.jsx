@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 // [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta.
 import useAdminStore from '@/store/adminStore';
-import adminApi from '@/admin/api/adminApi';
+import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import Loader from '@/components/common/Loader';
 import { HiShieldCheck } from 'react-icons/hi2';

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 // [REMEDIATIO - SOLUCIÓN DEFINITIVA]
 // Se reemplazan TODAS las rutas relativas por rutas absolutas con el alias '@'.
-import adminApi from '@/admin/api/adminApi';
+import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import Loader from '@/components/common/Loader';
 import StatCard from '@/pages/admin/components/StatCard';

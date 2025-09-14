@@ -1,7 +1,7 @@
 // frontend/src/pages/admin/AdminTreasuryPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
 import React, { useState, useEffect, useCallback } from 'react';
 // [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta.
-import adminApi from '@/admin/api/adminApi';
+import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import useAdminStore from '@/store/adminStore';
 import Loader from '@/components/common/Loader';

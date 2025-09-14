@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 // [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta a todas las importaciones.
-import adminApi from '@/admin/api/adminApi';
+import adminApi from '@/pages/admin/api/adminApi';
 import Loader from '@/components/common/Loader';
 import Pagination from '@/components/common/Pagination';
 import { HiOutlineFunnel, HiOutlineArrowPath, HiOutlinePaperAirplane } from 'react-icons/hi2';
