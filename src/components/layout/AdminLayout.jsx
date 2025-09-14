@@ -1,11 +1,13 @@
-// RUTA: frontend/src/components/layout/AdminLayout.jsx (VERSIÓN FINAL CON RUTAS CORREGIDAS)
+// RUTA: frontend/src/components/layout/AdminLayout.jsx (VERSIÓN FINAL CON RUTAS DEFINITIVAS)
 
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import Sidebar from '../../pages/admin/components/Sidebar';
-import AdminHeaderMobile from '../admin/AdminHeaderMobile'; // Ruta correcta al archivo que acabamos de crear
-import MobileDrawer from '../admin/MobileDrawer';         // Ruta correcta al archivo que acabamos de crear
-import useAdminStore from '../../store/adminStore';
+
+// [SOLUCIÓN DEFINITIVA] - Rutas absolutas con alias, basadas en la estructura de archivos real.
+import Sidebar from '@/pages/admin/components/Sidebar';
+import AdminHeaderMobile from '@/pages/admin/components/AdminHeaderMobile';
+import MobileDrawer from '@/pages/admin/components/MobileDrawer';
+import useAdminStore from '@/store/adminStore';
 
 const getPageTitle = (pathname) => {
     const segments = pathname.split('/').filter(Boolean);
@@ -31,11 +33,15 @@ const AdminLayout = () => {
 
     return (
         <div className="flex min-h-screen bg-dark-primary text-white font-sans">
+            
             <MobileDrawer isOpen={isDrawerOpen} setIsOpen={setIsOpen} />
+
             <div className="hidden md:flex md:flex-shrink-0">
                 <Sidebar />
             </div>
+
             <div className="flex-grow flex flex-col w-full md:w-0">
+
                 <header className="hidden md:flex bg-dark-secondary p-4 justify-end items-center border-b border-white/10">
                     <div className="flex items-center gap-4">
                         <span className="text-text-secondary">
@@ -49,10 +55,12 @@ const AdminLayout = () => {
                         </button>
                     </div>
                 </header>
+
                 <AdminHeaderMobile 
                     title={currentPageTitle}
                     onMenuClick={() => setIsDrawerOpen(true)} 
                 />
+                
                 <main className="flex-grow p-4 md:p-6 overflow-y-auto">
                     <Outlet />
                 </main>
