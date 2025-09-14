@@ -1,13 +1,13 @@
-// RUTA: frontend/src/components/layout/AdminLayout.jsx (FASE "REMEDIATIO" - USANDO ALIAS DE RUTA)
+// RUTA: frontend/src/components/layout/AdminLayout.jsx (SOLUCIÓN ESTRUCTURAL DEFINITIVA)
 
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL]
-// Se reemplazan las rutas relativas por las nuevas rutas absolutas con alias.
-// Estas rutas son más limpias y no se romperán si movemos este archivo.
+// [REMEDIATIO - SOLUCIÓN DEFINITIVA]
+// Se asume que los componentes del layout están en la misma carpeta o en subcarpetas.
+// Si Sidebar está en otro lado, se usa el alias. Si los otros están locales, se usa './'.
 import Sidebar from '@/pages/admin/components/Sidebar';
-import AdminHeaderMobile from '@/pages/admin/components/AdminHeaderMobile';
-import MobileDrawer from '@/pages/admin/components/MobileDrawer';
+import AdminHeaderMobile from './AdminHeaderMobile'; // Corregido a ruta local
+import MobileDrawer from './MobileDrawer';         // Corregido a ruta local
 import useAdminStore from '@/store/adminStore';
 
 const getPageTitle = (pathname) => {
