@@ -1,6 +1,7 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import Sidebar from '../../pages/admin/components/Sidebar';
+// [SOLUCIÓN DEFINITIVA] Se corrige la ruta para que sea local, ya que están en la misma carpeta.
+import Sidebar from './Sidebar'; 
 import { HiXMark } from 'react-icons/hi2';
 
 const MobileDrawer = ({ isOpen, setIsOpen }) => {
