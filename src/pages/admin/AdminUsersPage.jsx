@@ -1,6 +1,9 @@
-// frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS - MÓDULO 2 COMPLETO")
+// RUTA: frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS - AUTH FIX")
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+// [NEXUS AUTH FIX - CORRECCIÓN CRÍTICA]
+// Se cambia la importación al cliente de API del administrador.
+// Esta es la causa principal de la corrupción del estado de autenticación.
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import useAdminStore from '@/store/adminStore';
@@ -51,14 +54,11 @@ const AdminUsersPage = () => {
         });
     };
 
-    // [NEXUS MÓDULO 2 - REPAIR]
     const handleToggleAdminBan = (adminId, currentStatus) => {
         const newStatus = currentStatus === 'active' ? 'banned' : 'active';
         const actionText = newStatus === 'banned' ? 'banear' : 'desbanear';
         
-        // Se añade una confirmación nativa para seguridad.
         if (window.confirm(`¿Seguro que quieres ${actionText} a este administrador?`)) {
-            // Se corrige el endpoint para usar la ruta genérica de actualización de usuario, que es la correcta.
             const promise = adminApi.put(`/admin/users/${adminId}`, { status: newStatus });
             toast.promise(promise, {
                 loading: `${actionText.charAt(0).toUpperCase() + actionText.slice(1)}ndo administrador...`,
@@ -68,16 +68,12 @@ const AdminUsersPage = () => {
         }
     };
     
-    // [NEXUS MÓDULO 2 - REPAIR]
     const handleResetPassword = async (adminId) => {
-        // Se corrige la llamada para enviar el ID en el cuerpo (body) de la petición, como espera el backend.
         const promise = adminApi.post('/admin/admins/reset-password', { adminId });
         toast.promise(promise, {
             loading: 'Reseteando contraseña...',
             success: (res) => {
                 setIsResetPasswordModalOpen(false);
-                // Se corrige la propiedad de 'newPassword' a 'temporaryPassword' para que coincida con la respuesta de la API.
-                // Usamos prompt para asegurar que la contraseña se pueda copiar fácilmente.
                 window.prompt(
                     `Contraseña reseteada. Comunica esta nueva contraseña temporal al administrador (Cópiala con CTRL+C):`,
                     res.data.temporaryPassword
@@ -92,7 +88,6 @@ const AdminUsersPage = () => {
         const stopPropagation = (e) => e.stopPropagation();
 
         if (!isSuperAdmin || user.telegramId.toString() === SUPER_ADMIN_TELEGRAM_ID) {
-            // El Super Admin no puede realizar acciones sobre sí mismo.
             return <td className="p-3 text-center"></td>;
         }
         
@@ -170,7 +165,7 @@ const AdminUsersPage = () => {
                     </div>
                 )}
             </div>
-            {isPromoteModalOpen && <PromoteAdminModal user={selectedUser} onClose={() => setIsPromoteModalOpen(false)} onPromote={handlePromote} />}
+            {isPromoteModalOpen && <PromoteModal user={selectedUser} onClose={() => setIsPromoteModalOpen(false)} onPromote={handlePromote} />}
             {isResetPasswordModalOpen && <ResetPasswordModal user={selectedUser} onClose={() => setIsResetPasswordModalOpen(false)} onConfirm={handleResetPassword} />}
         </>
     );

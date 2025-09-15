@@ -1,20 +1,19 @@
-// RUTA: frontend/src/pages/admin/AdminToolsPage.jsx (VERSIÓN "NEXUS" INTEGRADA)
-// ARQUITECTURA: Página de gestión de Fábricas/VIPs, validada y robustecida.
+// RUTA: frontend/src/pages/admin/AdminToolsPage.jsx (VERSIÓN "NEXUS - AUTH FIX")
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
-// [NEXUS VALIDATION] La ruta de importación de la API es correcta.
-import api from '../../api/axiosConfig'; 
+// [NEXUS AUTH FIX - CORRECCIÓN CRÍTICA]
+// Se cambia la importación al cliente de API del administrador.
+// Esto asegura que se envíe el token de autenticación del adminStore.
+import api from '@/pages/admin/api/adminApi'; 
 import toast from 'react-hot-toast';
 
-// --- Componentes Reutilizables y de UI ---
-import Loader from '../../components/common/Loader';
+import Loader from '@/components/common/Loader';
 import ToolFormModal from './components/ToolFormModal';
 import ToolsTable from './components/ToolsTable';
 import { HiOutlineWrenchScrewdriver, HiPlus } from 'react-icons/hi2';
 
 const AdminToolsPage = () => {
-    // [NEXUS VALIDATION] El estado inicial como array vacío [] es la práctica correcta para prevenir errores de renderizado.
     const [tools, setTools] = useState([]); 
     const [isLoading, setIsLoading] = useState(true);
     
@@ -26,14 +25,12 @@ const AdminToolsPage = () => {
         try {
             const { data } = await api.get('/admin/factories');
             
-            // [NEXUS INTEGRATION] Se añade una capa de validación.
-            // Esto protege el componente si la API alguna vez devuelve algo que no sea un array.
             if (Array.isArray(data)) {
                 setTools(data);
             } else {
                 console.error("Respuesta inesperada de la API, se esperaba un array:", data);
                 toast.error('Error: Formato de datos incorrecto desde el servidor.');
-                setTools([]); // Aseguramos que el estado siga siendo un array vacío.
+                setTools([]);
             }
 
         } catch (error) {
