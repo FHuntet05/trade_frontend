@@ -1,16 +1,19 @@
-// frontend/src/main.jsx (LÓGICA DE DESPACHO)
+// frontend/src/main.jsx (FASE "PERFECTIO" - INICIALIZACIÓN DE i18n CORREGIDA)
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App'; // La app principal del Bot
-import AdminApp from './admin/AdminApp'; // La nueva app del Panel de Admin
+import App from './App';
+import AdminApp from './admin/AdminApp';
 import './index.css';
+
+// [PERFECTIO - CORRECCIÓN CRÍTICA]
+// Se importa el archivo de configuración de i18next.
+// Esta línea ejecuta la lógica dentro de i18n.js, inicializando la librería
+// y haciéndola disponible para toda la aplicación a través del contexto de React.
+import './i18n';
 
 const rootElement = document.getElementById('root');
 const root = ReactDOM.createRoot(rootElement);
 
-// Lógica de Despacho: Decide qué aplicación renderizar.
-// Si la URL comienza con '/admin', carga el panel de administración.
-// De lo contrario, carga el bot de Telegram.
 if (window.location.pathname.startsWith('/admin')) {
   root.render(
     <React.StrictMode>
