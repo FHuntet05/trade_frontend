@@ -1,7 +1,6 @@
-// RUTA: frontend/src/pages/admin/AdminDashboardPage.jsx (CORRECCIÓN ESTRUCTURAL DEFINITIVA CON ALIAS)
+// RUTA: frontend/src/pages/admin/AdminDashboardPage.jsx (VERSIÓN "NEXUS" REPARADA)
+
 import React, { useState, useEffect } from 'react';
-// [REMEDIATIO - SOLUCIÓN DEFINITIVA]
-// Se reemplazan TODAS las rutas relativas por rutas absolutas con el alias '@'.
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import Loader from '@/components/common/Loader';
@@ -33,7 +32,10 @@ const AdminDashboardPage = () => {
       try {
         const [statsResponse, usersResponse] = await Promise.all([
           adminApi.get('/admin/stats'),
-          adminApi.get('/admin/users/recent')
+          // [NEXUS REPAIR] Se corrige el endpoint. El backend no tiene '/users/recent'.
+          // Usamos el endpoint '/users' que por defecto ordena por más recientes
+          // y le pasamos un límite para obtener solo los necesarios para el dashboard.
+          adminApi.get('/admin/users', { params: { limit: 5 } })
         ]);
         
         setStats({

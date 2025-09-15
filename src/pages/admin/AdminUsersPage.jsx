@@ -1,7 +1,7 @@
-// frontend/src/pages/admin/AdminUsersPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
+// frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS" CONECTADA)
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta a todas las importaciones.
+// [NEXUS CONNECTION] Importamos 'useNavigate' para poder redirigir al detalle del usuario.
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import useAdminStore from '@/store/adminStore';
@@ -9,7 +9,6 @@ import Loader from '@/components/common/Loader';
 import Pagination from '@/components/common/Pagination';
 import PromoteAdminModal from '@/pages/admin/components/PromoteAdminModal';
 import ResetPasswordModal from '@/pages/admin/components/ResetPasswordModal';
-// La importación de UsersTable se elimina porque la tabla está ahora definida dentro de este mismo archivo.
 import { HiOutlineUserGroup, HiOutlineMagnifyingGlass, HiOutlineShieldCheck, HiOutlineLockClosed, HiOutlineNoSymbol, HiOutlineCheckCircle } from 'react-icons/hi2';
 
 const SUPER_ADMIN_TELEGRAM_ID = import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
@@ -25,6 +24,9 @@ const AdminUsersPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const currentPage = Number(searchParams.get('page')) || 1;
     const currentSearch = searchParams.get('search') || '';
+    
+    // [NEXUS CONNECTION] Instanciamos el hook de navegación.
+    const navigate = useNavigate();
 
     const { admin } = useAdminStore();
     const isSuperAdmin = admin?.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID;
@@ -43,6 +45,7 @@ const AdminUsersPage = () => {
     const handleSearch = (e) => { e.preventDefault(); setSearchParams({ search: e.target.elements.search.value, page: 1 }); };
     const handlePageChange = (newPage) => { setSearchParams({ search: currentSearch, page: newPage }); };
 
+    // ... (resto de funciones de handlers sin cambios) ...
     const handlePromote = async (userId, password) => {
         const promise = adminApi.post('/admin/admins/promote', { userId, password }); // Corregido el endpoint
         toast.promise(promise, {
@@ -71,17 +74,22 @@ const AdminUsersPage = () => {
         });
     };
 
+
     const ActionsCell = ({ user }) => {
-        if (!isSuperAdmin) return null;
+        // [NEXUS CONNECTION] Se detiene la propagación del evento para que al hacer clic en un botón, no navegue.
+        const stopPropagation = (e) => e.stopPropagation();
+
+        if (!isSuperAdmin) return <td className="p-3 text-center"></td>;
+        
+        let content;
         if (user.role !== 'admin') {
-            return (
+            content = (
                 <button onClick={() => { setSelectedUser(user); setIsPromoteModalOpen(true); }} title="Promover a Administrador" className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-full">
                     <HiOutlineShieldCheck className="w-5 h-5" />
                 </button>
             );
-        }
-        if (user.role === 'admin') {
-            return (
+        } else {
+             content = (
                 <div className="flex justify-center items-center gap-2">
                     <button onClick={() => { setSelectedUser(user); setIsResetPasswordModalOpen(true); }} title="Resetear Contraseña" className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-full">
                         <HiOutlineLockClosed className="w-5 h-5" />
@@ -98,12 +106,14 @@ const AdminUsersPage = () => {
                 </div>
             );
         }
-        return null;
+        return <td className="p-3 text-center" onClick={stopPropagation}>{content}</td>;
     };
+
 
     return (
         <>
             <div className="space-y-6">
+                 {/* ... (Cabecera y búsqueda sin cambios) ... */}
                 <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
                     <h1 className="text-2xl font-semibold flex items-center gap-3"><HiOutlineUserGroup /> Gestión de Usuarios</h1>
                     <p className="text-text-secondary mt-1">Busca, edita y gestiona los permisos de los usuarios.</p>
@@ -114,6 +124,7 @@ const AdminUsersPage = () => {
                         <button type="submit" className="p-2 bg-accent-start rounded-md text-white"><HiOutlineMagnifyingGlass className="w-6 h-6" /></button>
                     </form>
                 </div>
+
                 {isLoading ? <div className="flex justify-center"><Loader /></div> : (
                     <div className="bg-dark-secondary rounded-lg border border-white/10 overflow-hidden">
                         <div className="overflow-x-auto">
@@ -128,11 +139,12 @@ const AdminUsersPage = () => {
                                 </thead>
                                 <tbody className="divide-y divide-white/10">
                                     {usersData.users.map((user) => (
-                                        <tr key={user._id}>
+                                        // [NEXUS CONNECTION] Se añade onClick a la fila y clases para feedback visual.
+                                        <tr key={user._id} onClick={() => navigate(`/admin/users/${user._id}`)} className="cursor-pointer hover:bg-dark-tertiary/50 transition-colors">
                                             <td className="p-3 font-medium">{user.username} ({user.telegramId})</td>
                                             <td className="p-3"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-blue-500/20 text-blue-300' : 'bg-gray-500/20 text-gray-300'}`}>{user.role}</span></td>
                                             <td className="p-3"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{user.status}</span></td>
-                                            <td className="p-3 text-center"><ActionsCell user={user} /></td>
+                                            <ActionsCell user={user} />
                                         </tr>
                                     ))}
                                 </tbody>
