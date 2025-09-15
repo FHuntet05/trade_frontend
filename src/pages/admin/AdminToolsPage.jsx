@@ -1,33 +1,41 @@
-// RUTA: admin-frontend/src/pages/admin/AdminToolsPage.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
-// ARQUITECTURA: Página de gestión para las Fábricas (VIPs), adaptada y mejorada.
+// RUTA: frontend/src/pages/admin/AdminToolsPage.jsx (VERSIÓN "NEXUS" INTEGRADA)
+// ARQUITECTURA: Página de gestión de Fábricas/VIPs, validada y robustecida.
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import api from '../../api/axiosConfig';
+// [NEXUS VALIDATION] La ruta de importación de la API es correcta.
+import api from '../../api/axiosConfig'; 
 import toast from 'react-hot-toast';
 
 // --- Componentes Reutilizables y de UI ---
 import Loader from '../../components/common/Loader';
-import ToolFormModal from './components/ToolFormModal'; // Usamos el nombre del modal de su imagen
-import ToolsTable from './components/ToolsTable'; // Usaremos una tabla específica
+import ToolFormModal from './components/ToolFormModal';
+import ToolsTable from './components/ToolsTable';
 import { HiOutlineWrenchScrewdriver, HiPlus } from 'react-icons/hi2';
 
 const AdminToolsPage = () => {
-    // --- Estado de la Página ---
-    const [tools, setTools] = useState([]); // Almacenará la lista de Fábricas/Herramientas
+    // [NEXUS VALIDATION] El estado inicial como array vacío [] es la práctica correcta para prevenir errores de renderizado.
+    const [tools, setTools] = useState([]); 
     const [isLoading, setIsLoading] = useState(true);
     
-    // --- Estado para el Modal de Edición/Creación ---
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingTool, setEditingTool] = useState(null); // Si no es null, estamos editando
+    const [editingTool, setEditingTool] = useState(null);
 
-    // --- Carga de Datos ---
     const fetchTools = useCallback(async () => {
         setIsLoading(true);
         try {
-            // [BLOCKSPHERE] Llamamos al endpoint estandarizado '/admin/factories'.
             const { data } = await api.get('/admin/factories');
-            setTools(data);
+            
+            // [NEXUS INTEGRATION] Se añade una capa de validación.
+            // Esto protege el componente si la API alguna vez devuelve algo que no sea un array.
+            if (Array.isArray(data)) {
+                setTools(data);
+            } else {
+                console.error("Respuesta inesperada de la API, se esperaba un array:", data);
+                toast.error('Error: Formato de datos incorrecto desde el servidor.');
+                setTools([]); // Aseguramos que el estado siga siendo un array vacío.
+            }
+
         } catch (error) {
             toast.error(error.response?.data?.message || 'Error al cargar las fábricas.');
         } finally {
@@ -39,9 +47,8 @@ const AdminToolsPage = () => {
         fetchTools();
     }, [fetchTools]);
 
-    // --- Handlers para el Modal ---
     const handleOpenModal = (tool = null) => {
-        setEditingTool(tool); // Si pasamos una 'tool', la estamos editando. Si es null, creamos una nueva.
+        setEditingTool(tool);
         setIsModalOpen(true);
     };
 
@@ -50,33 +57,30 @@ const AdminToolsPage = () => {
         setIsModalOpen(false);
     };
 
-    // --- Lógica de la API para Guardar (Crear o Actualizar) ---
     const handleSaveTool = async (formData, toolId) => {
         const isEditing = !!toolId;
         const request = isEditing 
-            ? api.put(`/admin/factories/${toolId}`, formData) // Actualizar
-            : api.post('/admin/factories', formData);       // Crear
+            ? api.put(`/admin/factories/${toolId}`, formData)
+            : api.post('/admin/factories', formData);
 
         toast.promise(request, {
             loading: 'Guardando datos...',
             success: () => {
                 handleCloseModal();
-                fetchTools(); // Recargar la lista.
+                fetchTools();
                 return `Fábrica ${isEditing ? 'actualizada' : 'creada'} correctamente.`;
             },
             error: (err) => err.response?.data?.message || 'Error al guardar los datos.',
         });
     };
 
-    // --- Lógica de la API para Eliminar ---
     const handleDeleteTool = async (toolId) => {
-        // Usamos una confirmación nativa del navegador por simplicidad y seguridad.
         if (window.confirm('¿Seguro que quieres eliminar esta fábrica? Esta acción es irreversible.')) {
             const promise = api.delete(`/admin/factories/${toolId}`);
             toast.promise(promise, {
                 loading: 'Eliminando fábrica...',
                 success: () => {
-                    fetchTools(); // Recargar la lista.
+                    fetchTools();
                     return 'Fábrica eliminada con éxito.';
                 },
                 error: (err) => err.response?.data?.message || 'No se pudo eliminar la fábrica.',
@@ -116,11 +120,9 @@ const AdminToolsPage = () => {
                 )}
             </div>
 
-            {/* --- Modal de Formulario --- */}
             <AnimatePresence>
             {isModalOpen && (
                 <ToolFormModal 
-                    // El key es importante para que React remonte el componente si cambia el item a editar.
                     key={editingTool ? editingTool._id : 'new'} 
                     factory={editingTool}
                     onSave={handleSaveTool}
