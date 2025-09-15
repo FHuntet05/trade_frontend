@@ -1,12 +1,13 @@
-// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (FASE "REMEDIATIO" - RUTA CON ALIAS CORREGIDA)
+// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (VERSIÓN "NEXUS SYNC")
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplica el alias de ruta.
 import adminApi from '@/pages/admin/api/adminApi';
 import { HiOutlineCog6Tooth } from 'react-icons/hi2';
+import Loader from '@/components/common/Loader';
 
+// --- COMPONENTES INTERNOS (sin cambios) ---
 const SettingsCard = ({ title, description, children }) => (
     <div className="bg-dark-secondary rounded-lg border border-white/10">
         <div className="p-6 border-b border-white/10">
@@ -43,15 +44,17 @@ const SettingsToggle = ({ name, label, register }) => (
 
 const AdminSettingsPage = () => {
     const { register, handleSubmit, reset, formState: { isSubmitting, isDirty } } = useForm();
+    const [isLoading, setIsLoading] = useState(true);
 
     const loadSettings = useCallback(async () => {
-        const toastId = toast.loading('Cargando ajustes...');
         try {
+            // [NEXUS SYNC - VALIDATED] Esta llamada ahora funciona gracias a la reparación del backend.
             const { data } = await adminApi.get('/admin/settings');
             reset(data);
-            toast.success('Ajustes cargados.', { id: toastId });
         } catch (error) {
-            toast.error(error.response?.data?.message || 'No se pudo cargar la configuración.', { id: toastId });
+            toast.error(error.response?.data?.message || 'No se pudo cargar la configuración.');
+        } finally {
+            setIsLoading(false);
         }
     }, [reset]);
 
@@ -70,11 +73,15 @@ const AdminSettingsPage = () => {
             error: (err) => err.response?.data?.message || 'Error al guardar.',
         });
     };
+    
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-full"><Loader text="Cargando ajustes..." /></div>;
+    }
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="bg-dark-secondary p-6 rounded-lg border border-white/10 flex-grow">
                     <h1 className="text-2xl font-semibold flex items-center gap-3">
                         <HiOutlineCog6Tooth /> Ajustes Generales
                     </h1>
@@ -83,7 +90,7 @@ const AdminSettingsPage = () => {
                 <button 
                     type="submit" 
                     disabled={isSubmitting || !isDirty}
-                    className="px-6 py-2 font-bold bg-accent-start text-white rounded-lg hover:bg-accent-end disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                    className="px-6 py-3 font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors w-full md:w-auto"
                 >
                     {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
                 </button>
@@ -91,21 +98,25 @@ const AdminSettingsPage = () => {
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-6">
-                    <SettingsCard title="Controles Principales" description="Activa o desactiva funcionalidades críticas del sistema.">
+                    <SettingsCard title="Controles Principales" description="Activa o desactiva funcionalidades críticas.">
                         <SettingsToggle name="maintenanceMode" label="Modo Mantenimiento" register={register} />
                         <SettingsToggle name="withdrawalsEnabled" label="Habilitar Retiros para Usuarios" register={register} />
                     </SettingsCard>
                     <SettingsCard title="Ajustes de Retiros" description="Configura las reglas para las solicitudes de retiro.">
-                        <SettingsInput name="minWithdrawal" label="Monto Mínimo de Retiro (USDT)" type="number" step="0.01" register={register} />
+                        <SettingsInput name="minimumWithdrawal" label="Monto Mínimo de Retiro (USDT)" type="number" step="0.01" register={register} />
                         <SettingsInput name="withdrawalFeePercent" label="Comisión por Retiro (%)" type="number" step="0.1" register={register} />
                     </SettingsCard>
                 </div>
 
                 <div className="space-y-6">
-                    <SettingsCard title="Comisiones por Referidos" description="Define el porcentaje de comisión para cada nivel de referido.">
+                    <SettingsCard title="Comisiones por Referidos" description="Define el porcentaje de comisión para cada nivel.">
                         <SettingsInput name="commissionLevel1" label="Comisión Nivel 1 (%)" type="number" step="0.1" register={register} />
                         <SettingsInput name="commissionLevel2" label="Comisión Nivel 2 (%)" type="number" step="0.1" register={register} />
                         <SettingsInput name="commissionLevel3" label="Comisión Nivel 3 (%)" type="number" step="0.1" register={register} />
+                    </SettingsCard>
+                     <SettingsCard title="Ajustes de Swap" description="Configura las reglas para los swaps de NTX a USDT.">
+                        <SettingsInput name="minimumSwap" label="Monto Mínimo de Swap (NTX)" type="number" step="1" register={register} />
+                        <SettingsInput name="swapFeePercent" label="Comisión por Swap (%)" type="number" step="0.1" register={register} />
                     </SettingsCard>
                 </div>
             </div>

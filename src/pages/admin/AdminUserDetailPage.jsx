@@ -1,15 +1,16 @@
-// RUTA: frontend/src/pages/admin/AdminUserDetailPage.jsx (RECONSTRUIDO)
+// RUTA: frontend/src/pages/admin/AdminUserDetailPage.jsx (VERSIÓN "NEXUS SYNC")
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../../api/axiosConfig';
+// [NEXUS SYNC] Se estandariza la importación de la API para que coincida con otros archivos.
+import api from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
-import Loader from '../../components/common/Loader';
+import Loader from '@/components/common/Loader';
 import { HiArrowLeft, HiOutlinePencil, HiOutlinePlusCircle } from 'react-icons/hi2';
 import EditUserModal from './components/EditUserModal';
 import AdjustBalanceModal from './components/AdjustBalanceModal';
 
-// --- COMPONENTES INTERNOS ---
+// --- COMPONENTES INTERNOS (sin cambios) ---
 const UserInfoCard = ({ user, onEdit, onAdjustBalance }) => (
     <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
         <div className="flex justify-between items-start">
@@ -51,28 +52,28 @@ const UserWalletsCard = ({ wallets }) => (
     </div>
 );
 
-const TransactionsTable = ({ userId }) => {
-    const [transactions, setTransactions] = useState({ items: [], page: 1, totalPages: 1 });
-    const [isLoading, setIsLoading] = useState(true);
-
-    const fetchTransactions = useCallback(async (page = 1) => {
+// [NEXUS SYNC - REPAIR] Se modifica la llamada a la API para paginar las transacciones.
+const TransactionsTable = ({ userId, initialTransactions }) => {
+    const [transactions, setTransactions] = useState(initialTransactions || { items: [], page: 1, totalPages: 1 });
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // El componente ahora espera las transacciones iniciales, pero puede paginar por su cuenta.
+    const fetchTransactionsPage = useCallback(async (page = 1) => {
         setIsLoading(true);
         try {
-            const { data } = await api.get(`/admin/users/${userId}/details?page=${page}`);
+            // Hacemos una llamada al mismo endpoint, pero pasamos el parámetro 'page'.
+            const { data } = await api.get(`/admin/users/${userId}`, { params: { page } });
             setTransactions(data.transactions);
         } catch (error) { toast.error("No se pudieron cargar las transacciones."); }
         finally { setIsLoading(false); }
     }, [userId]);
 
-    useEffect(() => { fetchTransactions(1); }, [fetchTransactions]);
-
-     return (
+    return (
     <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
         <h3 className="text-xl font-semibold mb-4">Historial de Transacciones</h3>
         {isLoading && <div className="flex justify-center p-4"><Loader /></div>}
         {!isLoading && transactions.items.length === 0 ? <p className="text-text-secondary text-center py-4">No hay transacciones.</p> : (
             <>
-            {/* --- INICIO DE LA CORRECCIÓN: TABLA ROTA --- */}
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead className="text-xs text-text-secondary uppercase bg-dark-tertiary">
@@ -95,11 +96,10 @@ const TransactionsTable = ({ userId }) => {
                     </tbody>
                 </table>
             </div>
-            {/* --- FIN DE LA CORRECCIÓN --- */}
             <div className="flex justify-between items-center mt-4 text-sm">
-                <button onClick={() => fetchTransactions(transactions.page - 1)} disabled={transactions.page <= 1} className="px-3 py-1 rounded bg-dark-tertiary disabled:opacity-50">Anterior</button>
+                <button onClick={() => fetchTransactionsPage(transactions.page - 1)} disabled={transactions.page <= 1} className="px-3 py-1 rounded bg-dark-tertiary disabled:opacity-50">Anterior</button>
                 <span>Página {transactions.page} de {transactions.totalPages}</span>
-                <button onClick={() => fetchTransactions(transactions.page + 1)} disabled={transactions.page >= transactions.totalPages} className="px-3 py-1 rounded bg-dark-tertiary disabled:opacity-50">Siguiente</button>
+                <button onClick={() => fetchTransactionsPage(transactions.page + 1)} disabled={transactions.page >= transactions.totalPages} className="px-3 py-1 rounded bg-dark-tertiary disabled:opacity-50">Siguiente</button>
             </div>
             </>
         )}
@@ -118,13 +118,19 @@ const AdminUserDetailPage = () => {
     const fetchAllDetails = useCallback(async () => {
         setIsLoading(true);
         try {
-            const { data } = await api.get(`/admin/users/${id}/details`);
+            // [NEXUS SYNC - REPAIR] Se elimina el segmento "/details" del endpoint.
+            // Esta es la corrección crítica que evita el error 401 y el deslogueo.
+            const { data } = await api.get(`/admin/users/${id}`);
             setUserData(data);
-        } catch (error) { toast.error(error.response?.data?.message || "No se pudieron cargar los datos."); }
+        } catch (error) { 
+            toast.error(error.response?.data?.message || "No se pudieron cargar los datos del usuario."); 
+        }
         finally { setIsLoading(false); }
     }, [id]);
 
-    useEffect(() => { fetchAllDetails(); }, [fetchAllDetails]);
+    useEffect(() => {
+        fetchAllDetails();
+    }, [fetchAllDetails]);
 
     const handleSaveUser = async (userId, formData) => {
         const promise = api.put(`/admin/users/${userId}`, formData);
@@ -136,7 +142,8 @@ const AdminUserDetailPage = () => {
     };
 
     const handleAdjustBalance = async (userId, formData) => {
-        const promise = api.post(`/admin/users/${userId}/adjust-balance`, formData);
+        // [NEXUS SYNC - REPAIR] El endpoint correcto es '/adjust-balance/:id'.
+        const promise = api.post(`/admin/users/adjust-balance/${userId}`, formData);
         toast.promise(promise, {
             loading: 'Procesando ajuste...',
             success: () => { setIsAdjustModalOpen(false); fetchAllDetails(); return 'Saldo ajustado.'; },
@@ -156,7 +163,8 @@ const AdminUserDetailPage = () => {
                     <UserInfoCard user={userData.user} onEdit={() => setIsEditModalOpen(true)} onAdjustBalance={() => setIsAdjustModalOpen(true)} />
                     <UserWalletsCard wallets={userData.cryptoWallets} />
                 </div>
-                <TransactionsTable userId={id} />
+                {/* [NEXUS SYNC] Se pasan las transacciones iniciales a la tabla. */}
+                <TransactionsTable userId={id} initialTransactions={userData.transactions} />
             </div>
             
             {isEditModalOpen && <EditUserModal user={userData.user} onSave={handleSaveUser} onClose={() => setIsEditModalOpen(false)} />}

@@ -1,6 +1,5 @@
-// frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS" CONECTADA)
+// frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS - MÓDULO 2 COMPLETO")
 import React, { useState, useEffect, useCallback } from 'react';
-// [NEXUS CONNECTION] Importamos 'useNavigate' para poder redirigir al detalle del usuario.
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
@@ -25,9 +24,7 @@ const AdminUsersPage = () => {
     const currentPage = Number(searchParams.get('page')) || 1;
     const currentSearch = searchParams.get('search') || '';
     
-    // [NEXUS CONNECTION] Instanciamos el hook de navegación.
     const navigate = useNavigate();
-
     const { admin } = useAdminStore();
     const isSuperAdmin = admin?.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID;
 
@@ -45,9 +42,8 @@ const AdminUsersPage = () => {
     const handleSearch = (e) => { e.preventDefault(); setSearchParams({ search: e.target.elements.search.value, page: 1 }); };
     const handlePageChange = (newPage) => { setSearchParams({ search: currentSearch, page: newPage }); };
 
-    // ... (resto de funciones de handlers sin cambios) ...
     const handlePromote = async (userId, password) => {
-        const promise = adminApi.post('/admin/admins/promote', { userId, password }); // Corregido el endpoint
+        const promise = adminApi.post('/admin/admins/promote', { userId, password });
         toast.promise(promise, {
             loading: `Promoviendo usuario...`,
             success: () => { setIsPromoteModalOpen(false); fetchUsersAndAdmins(currentPage, currentSearch); return `Usuario promovido a administrador.`; },
@@ -55,31 +51,50 @@ const AdminUsersPage = () => {
         });
     };
 
+    // [NEXUS MÓDULO 2 - REPAIR]
     const handleToggleAdminBan = (adminId, currentStatus) => {
         const newStatus = currentStatus === 'active' ? 'banned' : 'active';
-        const promise = adminApi.put(`/admin/admins/${adminId}/status`, { status: newStatus });
-        toast.promise(promise, {
-            loading: `${newStatus === 'banned' ? 'Baneando' : 'Desbaneando'} administrador...`,
-            success: () => { fetchUsersAndAdmins(currentPage, currentSearch); return 'Estado del administrador actualizado.'; },
-            error: (err) => err.response?.data?.message || 'Error al cambiar el estado del admin.',
-        });
+        const actionText = newStatus === 'banned' ? 'banear' : 'desbanear';
+        
+        // Se añade una confirmación nativa para seguridad.
+        if (window.confirm(`¿Seguro que quieres ${actionText} a este administrador?`)) {
+            // Se corrige el endpoint para usar la ruta genérica de actualización de usuario, que es la correcta.
+            const promise = adminApi.put(`/admin/users/${adminId}`, { status: newStatus });
+            toast.promise(promise, {
+                loading: `${actionText.charAt(0).toUpperCase() + actionText.slice(1)}ndo administrador...`,
+                success: () => { fetchUsersAndAdmins(currentPage, currentSearch); return 'Estado del administrador actualizado.'; },
+                error: (err) => err.response?.data?.message || 'Error al cambiar el estado del admin.',
+            });
+        }
     };
     
+    // [NEXUS MÓDULO 2 - REPAIR]
     const handleResetPassword = async (adminId) => {
-        const promise = adminApi.post(`/admin/admins/${adminId}/reset-password`);
+        // Se corrige la llamada para enviar el ID en el cuerpo (body) de la petición, como espera el backend.
+        const promise = adminApi.post('/admin/admins/reset-password', { adminId });
         toast.promise(promise, {
             loading: 'Reseteando contraseña...',
-            success: (res) => { setIsResetPasswordModalOpen(false); alert(`Contraseña reseteada. La nueva contraseña temporal es: ${res.data.newPassword}`); return 'Contraseña actualizada.'; },
+            success: (res) => {
+                setIsResetPasswordModalOpen(false);
+                // Se corrige la propiedad de 'newPassword' a 'temporaryPassword' para que coincida con la respuesta de la API.
+                // Usamos prompt para asegurar que la contraseña se pueda copiar fácilmente.
+                window.prompt(
+                    `Contraseña reseteada. Comunica esta nueva contraseña temporal al administrador (Cópiala con CTRL+C):`,
+                    res.data.temporaryPassword
+                );
+                return 'Contraseña actualizada.';
+            },
             error: (err) => err.response?.data?.message || 'Error al resetear la contraseña.',
         });
     };
 
-
     const ActionsCell = ({ user }) => {
-        // [NEXUS CONNECTION] Se detiene la propagación del evento para que al hacer clic en un botón, no navegue.
         const stopPropagation = (e) => e.stopPropagation();
 
-        if (!isSuperAdmin) return <td className="p-3 text-center"></td>;
+        if (!isSuperAdmin || user.telegramId.toString() === SUPER_ADMIN_TELEGRAM_ID) {
+            // El Super Admin no puede realizar acciones sobre sí mismo.
+            return <td className="p-3 text-center"></td>;
+        }
         
         let content;
         if (user.role !== 'admin') {
@@ -113,7 +128,6 @@ const AdminUsersPage = () => {
     return (
         <>
             <div className="space-y-6">
-                 {/* ... (Cabecera y búsqueda sin cambios) ... */}
                 <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
                     <h1 className="text-2xl font-semibold flex items-center gap-3"><HiOutlineUserGroup /> Gestión de Usuarios</h1>
                     <p className="text-text-secondary mt-1">Busca, edita y gestiona los permisos de los usuarios.</p>
@@ -139,9 +153,11 @@ const AdminUsersPage = () => {
                                 </thead>
                                 <tbody className="divide-y divide-white/10">
                                     {usersData.users.map((user) => (
-                                        // [NEXUS CONNECTION] Se añade onClick a la fila y clases para feedback visual.
                                         <tr key={user._id} onClick={() => navigate(`/admin/users/${user._id}`)} className="cursor-pointer hover:bg-dark-tertiary/50 transition-colors">
-                                            <td className="p-3 font-medium">{user.username} ({user.telegramId})</td>
+                                            <td className="p-3 font-medium flex items-center gap-3">
+                                                <img src={user.photoUrl} alt="avatar" className="w-8 h-8 rounded-full bg-dark-primary" />
+                                                {user.username} ({user.telegramId})
+                                            </td>
                                             <td className="p-3"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-blue-500/20 text-blue-300' : 'bg-gray-500/20 text-gray-300'}`}>{user.role}</span></td>
                                             <td className="p-3"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{user.status}</span></td>
                                             <ActionsCell user={user} />

@@ -1,4 +1,4 @@
-// frontend/src/pages/ToolsPage.jsx (v21.22 - i18n)
+// RUTA: frontend/src/pages/ToolsPage.jsx (VERSIÓN "NEXUS - CONDICIONAL")
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useToolsStore from '../store/toolsStore';
@@ -14,7 +14,10 @@ import Loader from '../components/common/Loader';
 import PurchaseModal from '../components/tools/PurchaseModal';
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
-const SINGLE_PURCHASE_TOOL_NAMES = ["VIP 1", "VIP 2", "VIP 3"];
+
+// [NEXUS CONDICIONAL] Nombres de herramientas que solo se pueden comprar una vez.
+// Esto debería venir de la API en el futuro, pero por ahora se mantiene aquí.
+const SINGLE_PURCHASE_TOOL_NAMES = ["VIP 1", "VIP 2", "VIP 3"]; 
 
 const StatCard = ({ label, value }) => (
   <div className="bg-dark-secondary p-3 rounded-lg border border-white/10 text-center">
@@ -26,7 +29,8 @@ const StatCard = ({ label, value }) => (
 const ToolsPage = () => {
   const { t } = useTranslation();
   const { tools, loading, error, fetchTools } = useToolsStore();
-  const { user } = useUserStore();
+  // [NEXUS CONDICIONAL] Necesitamos la función 'updateUser' para actualizar el estado tras la compra.
+  const { user, updateUser } = useUserStore();
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('all_tools');
@@ -47,21 +51,30 @@ const ToolsPage = () => {
   }, [user]);
 
   const handleBuyClick = (tool) => setSelectedTool(tool);
-  const handleCloseAllModals = () => setSelectedTool(null);
+  const handleCloseModal = () => setSelectedTool(null);
+  
+  // [NEXUS CONDICIONAL - NUEVA FUNCIÓN]
+  // Esta función se pasa al modal y se ejecuta cuando el usuario tiene saldo suficiente.
+  const handlePurchaseWithBalance = async (toolId, quantity) => {
+    const toastId = 'purchase_toast';
+    toast.loading(t('toolsPage.toasts.processing'), { id: toastId });
+    try {
+      const response = await api.post('/tools/purchase-with-balance', { toolId, quantity });
+      updateUser(response.data.user); // Actualizamos el usuario en el store global.
+      toast.success(response.data.message, { id: toastId });
+      handleCloseModal();
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('common.error'), { id: toastId });
+    }
+  };
 
-  const handleStartCryptoPayment = async (quantity) => {
-    if (!selectedTool) return;
-    const totalCost = selectedTool.price * quantity;
-    const pricesPromise = api.get('/payment/prices');
-    toast.promise(pricesPromise, {
-        loading: t('profilePage.toasts.loadingPrices'),
-        success: (response) => {
-            navigate('/crypto-selection', { state: { totalCost: totalCost, cryptoPrices: response.data } });
-            handleCloseAllModals();
-            return t('profilePage.toasts.selectCoin');
-        },
-        error: (err) => err.response?.data?.message || t('common.error'),
-    });
+  // [NEXUS CONDICIONAL - NUEVA FUNCIÓN]
+  // Esta función se pasa al modal y se ejecuta cuando el usuario NO tiene saldo.
+  const handleRedirectToDeposit = (amountNeeded) => {
+    // Cerramos el modal antes de navegar.
+    handleCloseModal();
+    // Navegamos a la página de selección de cripto, pasando el monto necesario como estado.
+    navigate('/crypto-selection', { state: { amountNeeded } });
   };
   
   const TabButton = ({ tabName, label, badgeCount }) => (
@@ -106,7 +119,15 @@ const ToolsPage = () => {
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {selectedTool && (<PurchaseModal tool={selectedTool} onClose={handleCloseAllModals} onSelectCrypto={handleStartCryptoPayment} />)}
+        {selectedTool && (
+          <PurchaseModal 
+            tool={selectedTool} 
+            onClose={handleCloseModal}
+            // [NEXUS CONDICIONAL] Pasamos las nuevas funciones al modal.
+            onPurchaseWithBalance={handlePurchaseWithBalance}
+            onRedirectToDeposit={handleRedirectToDeposit}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

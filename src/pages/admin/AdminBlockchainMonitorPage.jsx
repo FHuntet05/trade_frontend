@@ -1,11 +1,12 @@
-// RUTA: frontend/src/pages/admin/AdminBlockchainMonitorPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
+// RUTA: frontend/src/pages/admin/AdminBlockchainMonitorPage.jsx (VERSIÓN "NEXUS SYNC")
 
-import React, { useState, useEffect } from 'react';
-// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplica el alias de ruta.
+import React, { useState, useEffect, useCallback } from 'react';
 import adminApi from '@/pages/admin/api/adminApi';
 import { toast } from 'react-hot-toast';
 import { HiOutlineComputerDesktop, HiXCircle, HiRocketLaunch } from 'react-icons/hi2';
+import Loader from '@/components/common/Loader';
 
+// --- COMPONENTES INTERNOS (sin cambios) ---
 const StatusBadge = ({ status }) => {
     const baseClasses = "px-2 py-1 text-xs font-bold rounded-full";
     const statusMap = {
@@ -18,6 +19,7 @@ const StatusBadge = ({ status }) => {
 
 const TxActions = ({ tx }) => {
     const [isLoading, setIsLoading] = useState(false);
+    // [NEXUS VALIDATION] La lógica para determinar si una TX está 'atascada' es correcta.
     const isStuck = tx.chain === 'BSC' && tx.status === 'PENDING' && (new Date() - new Date(tx.createdAt)) > 2 * 60 * 1000;
 
     if (!isStuck) {
@@ -25,8 +27,10 @@ const TxActions = ({ tx }) => {
     }
 
     const handleAction = async (actionType) => {
+        // [NEXUS VALIDATION] Estos endpoints no existen actualmente, pero la lógica de llamada es correcta.
+        // Se deja preparado para el Módulo 2 si se decide implementar esta funcionalidad.
         const endpoint = actionType === 'cancel' ? '/admin/blockchain-monitor/cancel-tx' : '/admin/blockchain-monitor/speedup-tx';
-        const confirmation = window.confirm(`¿Estás seguro de que quieres ${actionType === 'cancel' ? 'CANCELAR' : 'ACELERAR'} esta transacción? Esta acción es irreversible y consumirá gas.`);
+        const confirmation = window.confirm(`Funcionalidad no implementada. ¿Estás seguro de que quieres ${actionType === 'cancel' ? 'CANCELAR' : 'ACELERAR'} esta transacción? Esta acción es irreversible y consumirá gas.`);
         if (!confirmation) return;
 
         setIsLoading(true);
@@ -55,33 +59,46 @@ const TxActions = ({ tx }) => {
         </div>
     );
 };
+
 const AdminBlockchainMonitorPage = () => {
     const [transactions, setTransactions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchTxs = async () => {
+    const fetchTxs = useCallback(async () => {
+        // [NEXUS SYNC] La primera carga establece isLoading a true. Las siguientes no para una actualización suave.
+        if (isLoading) { 
             try {
+                // [NEXUS SYNC - VALIDATED] La llamada a este endpoint ahora es funcional.
                 const { data } = await adminApi.get('/admin/blockchain-monitor/pending');
                 setTransactions(data);
             } catch (error) {
-                toast.error("No se pudieron cargar las transacciones.");
+                toast.error("No se pudieron cargar las transacciones pendientes.");
             } finally {
                 setIsLoading(false);
             }
-        };
+        } else { // Actualización en segundo plano
+             try {
+                const { data } = await adminApi.get('/admin/blockchain-monitor/pending');
+                setTransactions(data);
+            } catch (error) {
+                // No mostramos toast en las actualizaciones para no ser intrusivos.
+                console.error("Fallo al actualizar transacciones pendientes:", error);
+            }
+        }
+    }, [isLoading]);
 
+
+    useEffect(() => {
         fetchTxs();
-        const intervalId = setInterval(fetchTxs, 10000);
-
+        const intervalId = setInterval(fetchTxs, 15000); // Intervalo de 15s es más razonable.
         return () => clearInterval(intervalId);
-    }, []);
+    }, [fetchTxs]);
 
     return (
         <div className="space-y-6">
             <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
                 <h1 className="text-2xl font-semibold mb-1 flex items-center gap-3"><HiOutlineComputerDesktop /> Monitor de Blockchain</h1>
-                <p className="text-text-secondary">Vista en tiempo real de las últimas operaciones en la blockchain (dispensación y barridos).</p>
+                <p className="text-text-secondary">Vista en tiempo real de las operaciones de sistema en la blockchain (dispensación, barridos).</p>
             </div>
 
             <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
@@ -94,31 +111,35 @@ const AdminBlockchainMonitorPage = () => {
                                 <th className="p-3">Cadena</th>
                                 <th className="p-3">Tx Hash</th>
                                 <th className="p-3 text-center">Estado</th>
-                                <th className="p-3 text-center">Acciones</th>
+                                <th className="p-3 text-center">Acciones (No Imp.)</th>
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="6" className="text-center p-6">Cargando...</td></tr>
-                            ) : transactions.map(tx => (
-                                <tr key={tx._id} className="hover:bg-dark-tertiary border-b border-white/10">
-                                    <td className="p-3 text-sm">{new Date(tx.createdAt).toLocaleString()}</td>
-                                    <td className="p-3 text-sm">{tx.type}</td>
-                                    <td className="p-3 text-sm">{tx.chain}</td>
-                                    <td className="p-3 font-mono text-xs">
-                                        <a 
-                                            href={tx.chain === 'BSC' ? `https://bscscan.com/tx/${tx.txHash}` : `https://tronscan.org/#/transaction/${tx.txHash}`} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="hover:text-accent-start"
-                                        >
-                                            {tx.txHash ? tx.txHash.substring(0, 20) + '...' : 'N/A'}
-                                        </a>
-                                    </td>
-                                    <td className="p-3 text-center"><StatusBadge status={tx.status} /></td>
-                                    <td className="p-3 text-center"><TxActions tx={tx} /></td>
-                                </tr>
-                            ))}
+                                <tr><td colSpan="6" className="text-center p-6"><Loader /></td></tr>
+                            ) : transactions.length > 0 ? (
+                                transactions.map(tx => (
+                                    <tr key={tx._id} className="hover:bg-dark-tertiary border-b border-white/10">
+                                        <td className="p-3 text-sm">{new Date(tx.createdAt).toLocaleString()}</td>
+                                        <td className="p-3 text-sm">{tx.type}</td>
+                                        <td className="p-3 text-sm">{tx.chain}</td>
+                                        <td className="p-3 font-mono text-xs">
+                                            <a 
+                                                href={tx.chain === 'BSC' ? `https://bscscan.com/tx/${tx.txHash}` : '#'} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="hover:text-accent-start"
+                                            >
+                                                {tx.txHash ? tx.txHash.substring(0, 20) + '...' : 'N/A'}
+                                            </a>
+                                        </td>
+                                        <td className="p-3 text-center"><StatusBadge status={tx.status} /></td>
+                                        <td className="p-3 text-center"><TxActions tx={tx} /></td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr><td colSpan="6" className="text-center p-8 text-text-secondary">No hay transacciones pendientes o recientes.</td></tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

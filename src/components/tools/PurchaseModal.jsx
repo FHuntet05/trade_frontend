@@ -1,4 +1,4 @@
-// frontend/src/components/tools/PurchaseModal.jsx (COMPLETO Y REPARADO v21.21)
+// RUTA: frontend/src/components/tools/PurchaseModal.jsx (VERSIÓN "NEXUS - CONDICIONAL")
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { HiXMark, HiOutlineCreditCard, HiOutlineCurrencyDollar, HiMinus, HiPlus } from 'react-icons/hi2';
@@ -6,8 +6,13 @@ import useUserStore from '../../store/userStore';
 import toast from 'react-hot-toast';
 import api from '../../api/axiosConfig';
 
-const PurchaseModal = ({ tool, onClose, onSelectCrypto }) => {
-  const { user, updateUser } = useUserStore();
+// [NEXUS CONDICIONAL]
+// El modal ahora necesita tres callbacks para manejar todos los escenarios:
+// 1. onClose: para cerrar el modal.
+// 2. onPurchaseWithBalance: para ejecutar la compra directa.
+// 3. onRedirectToDeposit: para navegar a la página de pago.
+const PurchaseModal = ({ tool, onClose, onPurchaseWithBalance, onRedirectToDeposit }) => {
+  const { user } = useUserStore(); // Solo necesitamos leer el usuario, no actualizarlo desde aquí.
   const [isProcessing, setIsProcessing] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const MAX_QUANTITY = 20;
@@ -24,30 +29,28 @@ const PurchaseModal = ({ tool, onClose, onSelectCrypto }) => {
   const userBalance = user?.balance?.usdt || 0;
   const canPayWithBalance = userBalance >= totalCost;
 
+  // [NEXUS CONDICIONAL] La lógica de la compra con saldo ahora es un callback del padre.
+  // Esto mantiene la lógica de API en la página principal, que es una mejor práctica.
   const handlePayWithBalance = async () => {
     setIsProcessing(true);
-    toast.loading('Procesando compra...', { id: 'payment' });
-    try {
-      // --- INICIO DE LA CORRECCIÓN DEFINITIVA ---
-      // Se llama al endpoint CORRECTO, que contiene la lógica para resetear el contador.
-      const response = await api.post('/tools/purchase-with-balance', {
-      // --- FIN DE LA CORRECCIÓN DEFINITIVA ---
-        toolId: tool._id,
-        quantity: quantity,
-      });
-      updateUser(response.data.user);
-      toast.success(response.data.message, { id: 'payment' });
-      onClose();
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error al procesar el pago.';
-      toast.error(errorMessage, { id: 'payment' });
-    } finally {
-      setIsProcessing(false);
-    }
+    // Pasamos el toolId y la quantity para que la página se encargue de la llamada a la API.
+    await onPurchaseWithBalance(tool._id, quantity);
+    setIsProcessing(false);
   };
-
-  const handlePayWithCrypto = () => {
-    onSelectCrypto(quantity); 
+  
+  // [NEXUS CONDICIONAL] La redirección también es un callback.
+  const handleRedirect = () => {
+    // Pasamos el costo total para que la página de pago sepa cuánto se necesita.
+    onRedirectToDeposit(totalCost); 
+  };
+  
+  // Lógica unificada del botón principal.
+  const handlePrimaryAction = () => {
+    if (canPayWithBalance) {
+      handlePayWithBalance();
+    } else {
+      handleRedirect();
+    }
   };
 
   return (
@@ -86,12 +89,13 @@ const PurchaseModal = ({ tool, onClose, onSelectCrypto }) => {
         
           <div className="mt-6">
             <button 
-              onClick={canPayWithBalance ? handlePayWithBalance : handlePayWithCrypto}
+              onClick={handlePrimaryAction}
               disabled={isProcessing}
               className="w-full flex items-center justify-center gap-3 p-3 rounded-full bg-gradient-to-r from-accent-start to-accent-end text-white font-bold disabled:bg-gray-600 disabled:opacity-50 transition-all"
             >
               {canPayWithBalance ? <HiOutlineCurrencyDollar className="w-6 h-6" /> : <HiOutlineCreditCard className="w-6 h-6" />}
-              <span>Compra Ya ({totalCost.toFixed(2)} USDT)</span>
+              {/* [NEXUS CONDICIONAL] El texto del botón ahora es dinámico. */}
+              <span>{canPayWithBalance ? `Comprar Ahora (${totalCost.toFixed(2)} USDT)` : `Depositar para Comprar`}</span>
             </button>
           </div>
       </motion.div>

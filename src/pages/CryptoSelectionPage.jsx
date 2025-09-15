@@ -1,31 +1,24 @@
-// frontend/src/pages/CryptoSelectionPage.jsx (RECONSTRUCCIÓN DE LAYOUT v24.0)
-import React, { useState } from 'react';
+// RUTA: frontend/src/pages/CryptoSelectionPage.jsx (VERSIÓN "NEXUS - HÍBRIDA")
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion'; // Se importa motion
-import api from '../api/axiosConfig'; 
+import { motion } from 'framer-motion';
+import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import Loader from '../components/common/Loader';
-import DirectDepositModal from '../components/modals/DirectDepositModal';
-import { HiArrowLeft, HiChevronRight } from 'react-icons/hi2';
+import { HiChevronRight } from 'react-icons/hi2';
 import StaticPageLayout from '../components/layout/StaticPageLayout';
-const SUPPORTED_CURRENCIES = [
-  { name: 'BEP20-USDT', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png', chain: 'BSC', currency: 'USDT' },
-  { name: 'TRC20-USDT', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/825.png', chain: 'TRON', currency: 'USDT' },
-  { name: 'TRX', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1958.png', chain: 'TRON', currency: 'TRX' },
-  { name: 'BNB', logo: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png', chain: 'BSC', currency: 'BNB' },
-];
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 
-const CurrencyItem = ({ currency, onSelect, disabled }) => (
+// Componente para cada item en la lista de pago, basado en su imagen de referencia.
+const DepositOptionItem = ({ option, onSelect }) => (
   <motion.button
     variants={itemVariants}
-    onClick={() => onSelect(currency)}
-    disabled={disabled}
-    className="w-full flex items-center p-4 bg-dark-tertiary/50 rounded-lg hover:bg-dark-tertiary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    onClick={() => onSelect(option)}
+    className="w-full flex items-center p-4 bg-dark-secondary rounded-lg hover:bg-dark-tertiary transition-colors"
   >
-    <img src={currency.logo} alt={currency.name} className="w-10 h-10 rounded-full mr-4" />
-    <span className="font-bold text-white text-lg">{currency.name}</span>
+    <img src={option.logo} alt={option.name} className="w-10 h-10 rounded-full mr-4" />
+    <span className="font-bold text-white text-lg">{option.name}</span>
     <HiChevronRight className="w-6 h-6 text-text-secondary ml-auto" />
   </motion.button>
 );
@@ -34,91 +27,77 @@ const CryptoSelectionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const hasValidState = location.state && typeof location.state.totalCost !== 'undefined' && location.state.cryptoPrices;
-  
-  const [isLoading, setIsLoading] = useState(false);
-  const [paymentInfo, setPaymentInfo] = useState(null);
+  // El 'amountNeeded' puede venir de ToolsPage (si el saldo es insuficiente) o ser nulo (si se accede desde el perfil).
+  const { amountNeeded } = location.state || { amountNeeded: 0 };
 
-  if (!hasValidState) {
-    // Esta pantalla de error es correcta y se mantiene.
-    return (
-        <div className="flex flex-col h-full items-center justify-center text-center p-4">
-            <h1 className="text-xl text-red-400 font-bold mb-2">Error de Flujo de Pago</h1>
-            <p className="text-text-secondary mb-4">No se recibieron los datos necesarios. Por favor, inicia el proceso de compra de nuevo.</p>
-            <button onClick={() => navigate('/tools')} className="mt-4 px-4 py-2 bg-accent-start rounded-lg font-semibold text-white">Volver a Herramientas</button>
-        </div>
-    );
-  }
-  
-  const { totalCost, cryptoPrices } = location.state;
-  
-  const handleCurrencySelected = async (selectedCurrency) => {
-    setIsLoading(true);
-    try {
-      const response = await api.post('/payment/generate-address', { chain: selectedCurrency.chain });
-      const { address } = response.data;
-      let amountToSend = totalCost;
-      const price = cryptoPrices[selectedCurrency.currency];
-      if (selectedCurrency.currency !== 'USDT' && price > 0) {
-        amountToSend = totalCost / price;
-      }
-      setPaymentInfo({
-          paymentAddress: address,
-          paymentAmount: amountToSend.toFixed(8),
-          currency: `${selectedCurrency.currency} (${selectedCurrency.chain})`
-      });
-    } catch (error) {
-        toast.error(error.response?.data?.message || 'Error al generar la dirección de pago.');
-    } finally {
+  const [depositOptions, setDepositOptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [prices, setPrices] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Hacemos ambas llamadas a la API en paralelo para eficiencia.
+        const [optionsResponse, pricesResponse] = await Promise.all([
+          api.get('/payment/deposit-options'),
+          api.get('/payment/prices')
+        ]);
+        setDepositOptions(optionsResponse.data);
+        setPrices(pricesResponse.data);
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Error al cargar las opciones de depósito.');
+      } finally {
         setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleOptionSelected = (option) => {
+    let amountToSend = amountNeeded;
+    const price = prices[option.chain]; // Usamos la cadena como clave (BNB, TRX, LTC)
+    
+    // Si se necesita un monto específico y la moneda no es USDT, calculamos el equivalente.
+    if (amountToSend > 0 && option.name !== 'BEP20-USDT' && option.name !== 'TRC20-USDT' && price > 0) {
+      amountToSend = amountNeeded / price;
     }
+
+    // Navegamos a una nueva página de detalles, pasando toda la información necesaria.
+    navigate('/deposit-details', { 
+      state: { 
+        option, 
+        amountToSend: amountToSend > 0 ? amountToSend : null // Si no hay monto, pasamos null
+      } 
+    });
   };
-  
-  // =======================================================================
-  // === INICIO DE LA CORRECCIÓN DE LAYOUT (OPERACIÓN ESTABILIDAD TOTAL) ===
-  //
-  // JUSTIFICACIÓN: Se adopta la misma estructura de contenedor que 'TeamPage.jsx'
-  // y otras páginas principales. Se usa 'flex flex-col h-full' para asegurar que
-  // la página ocupe toda la altura y herede el fondo del layout padre.
-  // Se añade 'motion.div' para una animación de entrada consistente.
-  //
+
   return (
-    <>
-      <StaticPageLayout title="Seleccionar Criptomoneda">
-          <motion.div 
-              key="content" 
-              initial="hidden" 
-              animate="visible" 
-              variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
-              className="space-y-3"
-          >
-              {isLoading 
-              ? <div className="flex justify-center pt-10"><Loader text="Generando dirección..." /></div>
-              : SUPPORTED_CURRENCIES.map((currency) => (
-                  <CurrencyItem 
-                      key={currency.name} 
-                      currency={currency} 
-                      onSelect={handleCurrencySelected}
-                      disabled={isLoading}
-                  />
-              ))
-              }
-          </motion.div>
-      </StaticPageLayout>
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
-      
-      <AnimatePresence>
-        {paymentInfo && (
-          <DirectDepositModal 
-            paymentInfo={paymentInfo}
-            onClose={() => setPaymentInfo(null)}
-          />
-        )}
-      </AnimatePresence>
-    </>
+    <StaticPageLayout title="Recargar Saldo">
+        <motion.div 
+            key="content" 
+            initial="hidden" 
+            animate="visible" 
+            variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } }}
+            className="space-y-3"
+        >
+            <motion.p variants={itemVariants} className="text-sm text-text-secondary px-1 pb-2">
+              Selecciona una moneda para realizar tu depósito.
+            </motion.p>
+
+            {isLoading 
+            ? <div className="flex justify-center pt-10"><Loader text="Cargando opciones..." /></div>
+            : depositOptions.map((option) => (
+                <DepositOptionItem 
+                    key={option.id} 
+                    option={option} 
+                    onSelect={handleOptionSelected}
+                />
+            ))
+            }
+        </motion.div>
+    </StaticPageLayout>
   );
-  // === FIN DE LA CORRECCIÓN DE LAYOUT ===
-  // =======================================================================
 };
 
 export default CryptoSelectionPage;

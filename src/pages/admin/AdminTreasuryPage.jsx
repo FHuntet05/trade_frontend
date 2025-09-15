@@ -1,6 +1,5 @@
-// frontend/src/pages/admin/AdminTreasuryPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
+// RUTA: frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN "NEXUS SYNC")
 import React, { useState, useEffect, useCallback } from 'react';
-// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta.
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import useAdminStore from '@/store/adminStore';
@@ -12,6 +11,7 @@ import { HiOutlineBanknotes, HiOutlineCpuChip, HiOutlineArrowDownTray, HiOutline
 
 const SUPER_ADMIN_TELEGRAM_ID = import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
 
+// --- COMPONENTES INTERNOS (sin cambios) ---
 const SummaryCard = ({ title, amount, currency, icon }) => (
   <div className="bg-dark-tertiary p-4 rounded-lg border border-white/10 flex items-center gap-4">
     <div className="p-3 bg-dark-secondary rounded-full">{icon}</div>
@@ -39,7 +39,8 @@ const AdminTreasuryPage = () => {
     const fetchTreasuryData = useCallback(async (page) => {
         setIsLoading(true);
         try {
-            const { data: responseData } = await adminApi.get(`/admin/treasury/wallets-list`, { params: { page, limit: 15 }});
+            // [NEXUS SYNC - REPAIR] Se corrige el endpoint de 'wallets-list' a 'wallets'.
+            const { data: responseData } = await adminApi.get(`/admin/treasury/wallets`, { params: { page, limit: 15 }});
             setData(responseData);
         } catch (error) { 
             toast.error(error.response?.data?.message || 'Error al obtener los datos de tesorería.'); 
@@ -54,6 +55,7 @@ const AdminTreasuryPage = () => {
     const handleWalletSelection = (address) => { setSelectedWallets(prev => { const newSelection = new Set(prev); if (newSelection.has(address)) newSelection.delete(address); else newSelection.add(address); return newSelection; }); };
     const handleSelectAllOnPage = (e) => { if (e.target.checked) { setSelectedWallets(new Set(data.wallets.map(w => w.address))); } else { setSelectedWallets(new Set()); } };
     
+    // [NEXUS SYNC] Se corrigen los endpoints de barrido para que coincidan con la nueva estructura de rutas.
     const handleOpenUsdtSweepModal = () => {
         if (selectedWallets.size === 0) return toast.error(`Seleccione las wallets que desea barrer.`);
         const walletsCandidatas = data.wallets.filter(w => selectedWallets.has(w.address) && w.chain === 'BSC' && w.usdtBalance > 0.000001 && w.gasBalance >= w.estimatedRequiredGas);
@@ -66,7 +68,7 @@ const AdminTreasuryPage = () => {
     const handleSweepConfirm = async () => {
         setIsSweepModalOpen(false);
         const payload = { walletsToSweep: sweepContext.walletsCandidatas.map(w => w.address) };
-        const sweepPromise = adminApi.post('/admin/sweep-funds', payload);
+        const sweepPromise = adminApi.post('/admin/treasury/sweep-funds', payload);
         toast.promise(sweepPromise, {
           loading: `Ejecutando barrido de ${payload.walletsToSweep.length} wallets...`,
           success: (res) => { setSweepReport(res.data); setIsReportModalOpen(true); setSelectedWallets(new Set()); fetchTreasuryData(currentPage); return 'Operación de barrido USDT completada.'; },
@@ -77,7 +79,7 @@ const AdminTreasuryPage = () => {
     const handleSweepGas = async () => {
         if (selectedWallets.size === 0) return toast.error("Selecciona al menos una wallet.");
         const payload = { walletsToSweep: Array.from(selectedWallets) };
-        const sweepGasPromise = adminApi.post('/admin/sweep-gas', payload);
+        const sweepGasPromise = adminApi.post('/admin/treasury/sweep-gas', payload);
         toast.promise(sweepGasPromise, {
             loading: `Barriendo gas BNB de ${payload.walletsToSweep.length} wallets...`,
             success: (res) => { setSweepReport(res.data); setIsReportModalOpen(true); setSelectedWallets(new Set()); fetchTreasuryData(currentPage); return `Operación de barrido de gas BNB completada.`; },
@@ -128,7 +130,7 @@ const AdminTreasuryPage = () => {
                                     <th className="p-3 text-right">Gas Requerido (Est.)</th>
                                 </tr>
                             </thead>
-                            {isLoading ? <tbody><tr><td colSpan="6"><Loader /></td></tr></tbody> : (
+                            {isLoading ? <tbody><tr><td colSpan="6"><div className="flex justify-center p-4"><Loader /></div></td></tr></tbody> : (
                                 <tbody className="divide-y divide-white/10">
                                     {data.wallets.map((wallet) => (
                                         <tr key={wallet.address} className={`hover:bg-dark-tertiary ${selectedWallets.has(wallet.address) ? 'bg-blue-900/50' : ''}`}>
@@ -144,7 +146,7 @@ const AdminTreasuryPage = () => {
                             )}
                         </table>
                     </div>
-                    {!isLoading && <Pagination currentPage={currentPage} totalPages={data.pagination.totalPages} onPageChange={handlePageChange} />}
+                    {!isLoading && <Pagination currentPage={currentPage} totalPages={data.pagination.totalPages || 1} onPageChange={handlePageChange} />}
                 </div>
             </div>
             <SweepConfirmationModal isOpen={isSweepModalOpen} onClose={() => setIsSweepModalOpen(false)} onConfirm={handleSweepConfirm} context={sweepContext} />

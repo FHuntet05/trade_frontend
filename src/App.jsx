@@ -1,4 +1,4 @@
-// frontend/src/App.jsx (VERSIÓN SIMPLIFICADA - SOLO BOT)
+// RUTA: frontend/src/App.jsx (VERSIÓN "NEXUS - CON NUEVAS RUTAS")
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
@@ -18,6 +18,9 @@ import AboutPage from './pages/AboutPage';
 import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 import CryptoSelectionPage from './pages/CryptoSelectionPage';
+// [NEXUS HÍBRIDO] Importamos la nueva página de detalles de depósito.
+import DepositDetailsPage from './pages/DepositDetailsPage';
+
 
 const AppInitializer = () => { const { isAuthenticated, syncUserWithBackend } = useUserStore(); useEffect(() => { if (isAuthenticated) return; const tg = window.Telegram?.WebApp; if (tg?.initDataUnsafe?.user?.id) { syncUserWithBackend(tg.initDataUnsafe.user); } }, [isAuthenticated, syncUserWithBackend]); return null; };
 const UserGatekeeper = ({ children }) => { const { isAuthenticated, isLoadingAuth } = useUserStore(); if (isLoadingAuth) { return ( <div className="w-full h-screen flex items-center justify-center bg-dark-primary"><Loader text="Autenticando..." /></div> ); } if (!isAuthenticated) { return ( <div className="w-full h-screen flex items-center justify-center p-4 bg-dark-primary">Error de autenticación. Por favor, reinicia la app desde Telegram.</div> ); } return children; };
@@ -38,6 +41,8 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/history" element={<FinancialHistoryPage />} />
             <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
+             {/* [NEXUS HÍBRIDO] Añadimos la nueva ruta para la página de detalles. */}
+            <Route path="/deposit-details" element={<DepositDetailsPage />} />
           </Route>
           <Route path="/language" element={<LanguagePage />} />
           <Route path="/faq" element={<FaqPage />} />

@@ -1,14 +1,13 @@
-// frontend/src/pages/admin/AdminTransactionsPage.jsx (RUTA DE API DEFINITIVA CORREGIDA)
+// RUTA: frontend/src/pages/admin/AdminTransactionsPage.jsx (VERSIÓN "NEXUS SYNC")
 
 import React, { useState, useEffect, useCallback } from 'react';
-// [SOLUCIÓN DEFINITIVA] Se corrige la ruta para que coincida con la estructura de carpetas real.
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import { useDebounce } from 'use-debounce';
 
 import TransactionsTable from '@/pages/admin/components/TransactionsTable';
 import Loader from '@/components/common/Loader';
-import { HiOutlineSearch } from 'react-icons/hi';
+import { HiOutlineMagnifyingGlass } from 'react-icons/hi2'; // Corregido de HiOutlineSearch a HiOutlineMagnifyingGlass para consistencia
 
 const transactionTypes = [
   { value: '', label: 'Todos los tipos' },
@@ -19,50 +18,54 @@ const transactionTypes = [
   { value: 'mining_claim', label: 'Reclamo' },
   { value: 'referral_commission', label: 'Comisión' },
   { value: 'task_reward', label: 'Recompensa' },
+  { value: 'admin_credit', label: 'Crédito Admin'},
+  { value: 'admin_debit', label: 'Débito Admin'},
 ];
 
 const AdminTransactionsPage = () => {
-  const [transactions, setTransactions] = useState([]);
+  const [data, setData] = useState({ transactions: [], page: 1, pages: 1, totalTransactions: 0 });
   const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalTransactions, setTotalTransactions] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
 
-  const fetchTransactions = useCallback(async () => {
+  const fetchTransactions = useCallback(async (pageToFetch) => {
     setIsLoading(true);
     try {
       const params = { 
-        page, 
+        page: pageToFetch, 
         search: debouncedSearchTerm, 
         type: selectedType 
       };
+      // No enviar parámetros vacíos a la API
       if (!params.search) delete params.search;
       if (!params.type) delete params.type;
 
-      const { data } = await adminApi.get('/admin/transactions', { params });
-      
-      setTransactions(data.transactions);
-      setPage(data.page);
-      setTotalPages(data.pages);
-      setTotalTransactions(data.totalTransactions);
+      // [NEXUS SYNC - VALIDATED] La llamada a /admin/transactions ahora es funcional gracias a los cambios en el backend.
+      const { data: responseData } = await adminApi.get('/admin/transactions', { params });
+      setData(responseData);
+      setCurrentPage(responseData.page);
+
     } catch (error) {
       toast.error(error.response?.data?.message || 'No se pudieron cargar las transacciones.');
     } finally {
       setIsLoading(false);
     }
-  }, [page, debouncedSearchTerm, selectedType]);
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
-
-  useEffect(() => {
-    setPage(1);
   }, [debouncedSearchTerm, selectedType]);
+
+  useEffect(() => {
+    // Inicia la carga cuando cambian los filtros
+    fetchTransactions(1);
+  }, [debouncedSearchTerm, selectedType, fetchTransactions]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= data.pages) {
+      setCurrentPage(newPage);
+      fetchTransactions(newPage);
+    }
+  };
 
   return (
     <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
@@ -72,20 +75,20 @@ const AdminTransactionsPage = () => {
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="bg-black/20 border border-white/10 text-white text-sm rounded-lg focus:ring-accent-start focus:border-accent-start block w-full md:w-48 p-2.5"
+            className="bg-dark-primary border border-white/10 text-white text-sm rounded-lg focus:ring-accent-start focus:border-accent-start block w-full md:w-48 p-2.5"
           >
             {transactionTypes.map(type => (
               <option key={type.value} value={type.value}>{type.label}</option>
             ))}
           </select>
           <div className="relative w-full md:w-64">
-            <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
+            <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
             <input 
               type="text"
               placeholder="Buscar por usuario o ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-black/20 text-white rounded-lg border-2 border-transparent focus:border-accent-start focus:outline-none"
+              className="w-full pl-10 pr-4 py-2 bg-dark-primary text-white rounded-lg border border-white/10 focus:border-accent-start focus:outline-none"
             />
           </div>
         </div>
@@ -96,19 +99,19 @@ const AdminTransactionsPage = () => {
       ) : (
           <>
               <div className="mb-4 text-sm text-text-secondary">
-                  Mostrando {transactions.length} de {totalTransactions.toLocaleString('es-ES')} transacciones
+                  Mostrando {data.transactions.length} de {data.totalTransactions.toLocaleString('es-ES')} transacciones
               </div>
-              <TransactionsTable transactions={transactions} />
-              {totalPages > 0 && (
+              <TransactionsTable transactions={data.transactions} />
+              {data.pages > 1 && (
                 <div className="flex justify-between items-center mt-4">
-                    <span className="text-sm text-text-secondary">Página {page} de {totalPages}</span>
+                    <span className="text-sm text-text-secondary">Página {currentPage} de {data.pages}</span>
                     <div className="flex gap-2">
-                        <button onClick={() => setPage(p => p - 1)} disabled={page <= 1} className="px-4 py-2 text-sm font-medium bg-black/20 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
-                        <button onClick={() => setPage(p => p + 1)} disabled={page >= totalPages} className="px-4 py-2 text-sm font-medium bg-black/20 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Siguiente</button>
+                        <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1} className="px-4 py-2 text-sm font-medium bg-dark-tertiary rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+                        <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= data.pages} className="px-4 py-2 text-sm font-medium bg-dark-tertiary rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Siguiente</button>
                     </div>
                 </div>
               )}
-              {transactions.length === 0 && !isLoading && (
+              {data.transactions.length === 0 && !isLoading && (
                 <div className="text-center py-16 text-text-secondary">
                   <p>No se encontraron transacciones que coincidan con los filtros.</p>
                 </div>
