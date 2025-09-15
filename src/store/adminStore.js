@@ -1,16 +1,25 @@
-// frontend/src/store/adminStore.js (ACTUALIZADO PARA GUARDAR EL OBJETO ADMIN COMPLETO)
+// RUTA: frontend/src/store/adminStore.js (VERSIÓN "NEXUS - AUTH FIX")
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+// [NEXUS AUTH FIX] - Se refactoriza el estado inicial para ser más claro.
+const initialState = {
+  admin: null,
+  token: null,
+  isAuthenticated: false,
+  isLoading: false, // isLoading debe ser parte del estado inicial, pero no persistido.
+};
+
 const useAdminStore = create(
   persist(
-    (set) => ({
-      admin: null,
-      token: null,
-      isAuthenticated: false,
-      isLoading: false,
+    (set, get) => ({
+      ...initialState,
 
-      setAdminAndToken: (token, adminData) => {
+      // [NEXUS AUTH FIX] - Simplificamos la acción de login.
+      // La página (AdminLoginPage) ahora es responsable de la llamada a la API.
+      // El store solo se encarga de GUARDAR el estado exitoso.
+      // Esto desacopla el store de la capa de API.
+      loginSuccess: (token, adminData) => {
         set({
           token: token,
           admin: adminData,
@@ -19,64 +28,62 @@ const useAdminStore = create(
         });
       },
 
-      login: async (username, password, api) => {
-        set({ isLoading: true });
-        try {
-          const { data } = await api.post('/auth/login/admin', { username, password });
-          if (data.passwordResetRequired) {
-             set({ token: data.token, isLoading: false });
-             return { success: true, passwordResetRequired: true };
-          }
-          if (data.twoFactorRequired) {
-            set({ isLoading: false });
-            return { success: true, twoFactorRequired: true, userId: data.userId };
-          }
-          set({
-            admin: data.admin, 
-            token: data.token,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-          return { success: true };
-        } catch (error) {
-          const message = error.response?.data?.message || 'Error al iniciar sesión.';
-          set({ isLoading: false, token: null });
-          return { success: false, message };
-        }
+      // [NEXUS AUTH FIX] - Acción para manejar el inicio de una petición.
+      setLoading: (loadingState) => {
+        set({ isLoading: loadingState });
       },
-
-      completeTwoFactorLogin: async (userId, token2fa, api) => {
-        set({ isLoading: true });
-        try {
-          const { data } = await api.post('/auth/2fa/verify-login', { userId, token: token2fa });
-          set({
-            admin: data.admin,
-            token: data.token,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-          return { success: true };
-        } catch (error) {
-          const message = error.response?.data?.message || 'Error al verificar el token.';
-          set({ isLoading: false });
-          return { success: false, message };
-        }
+      
+      // [NEXUS AUTH FIX] - Acción para manejar un fallo de login.
+      loginFail: () => {
+        set({
+          token: null,
+          admin: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
       },
 
       logout: () => {
-        set({ admin: null, token: null, isAuthenticated: false });
+        // Al hacer logout, reseteamos al estado inicial completo.
+        set(initialState);
       },
     }),
     {
-      name: 'neuro-link-admin-storage',
+      name: 'neuro-link-admin-storage', // El nombre de la clave en localStorage.
       storage: createJSONStorage(() => localStorage),
+
+      // [NEXUS AUTH FIX - CORRECCIÓN CRÍTICA]
+      // Solo persistimos el token y la información del admin.
+      // isAuthenticated se derivará de la existencia del token al cargar la app.
+      // isLoading NUNCA debe ser persistido.
       partialize: (state) => ({ 
         token: state.token, 
         admin: state.admin, 
-        isAuthenticated: state.isAuthenticated 
       }),
+
+      // [NEXUS AUTH FIX - NUEVA FUNCIÓN]
+      // Esta función se ejecuta DESPUÉS de que el estado ha sido rehidratado desde localStorage.
+      // Es el lugar perfecto para sincronizar el resto del estado.
+      onRehydrateStorage: (state) => {
+        console.log('[adminStore] Estado rehidratado desde localStorage.');
+        // Si tenemos un token después de rehidratar, entonces estamos autenticados.
+        if (state.token) {
+          state.isAuthenticated = true;
+        }
+      }
     }
   )
 );
+
+// Sincronización inicial fuera del componente de React.
+// Esto asegura que al recargar la página, el estado de 'isAuthenticated' se establezca correctamente.
+const unsub = useAdminStore.persist.onRehydrateStorage((state) => {
+  if (state.token && state.admin) {
+    useAdminStore.setState({ isAuthenticated: true });
+    console.log('[adminStore] Sincronización post-rehidratación completa. Autenticado.');
+  }
+  unsub(); // Nos desuscribimos para que solo se ejecute una vez.
+});
+
 
 export default useAdminStore;
