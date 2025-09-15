@@ -1,4 +1,4 @@
-// RUTA: frontend/src/store/adminStore.js (VERSIÓN "NEXUS - REHYDRATE FIX")
+// RUTA: frontend/src/store/adminStore.js (VERSIÓN "NEXUS - HYDRATION AWARE")
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -7,6 +7,7 @@ const initialState = {
   token: null,
   isAuthenticated: false,
   isLoading: false,
+  _hasHydrated: false, // [NEXUS HYDRATION AWARE] Nuevo estado para rastrear la rehidratación.
 };
 
 const useAdminStore = create(
@@ -28,16 +29,18 @@ const useAdminStore = create(
       },
       
       loginFail: () => {
-        set({
-          token: null,
-          admin: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
+        set({ ...initialState, _hasHydrated: true }); // Mantenemos el estado de hidratación
       },
 
       logout: () => {
-        set(initialState);
+        set({ ...initialState, _hasHydrated: true }); // Mantenemos el estado de hidratación
+      },
+      
+      // [NEXUS HYDRATION AWARE] Nueva acción para ser llamada cuando la hidratación termina.
+      setHasHydrated: (state) => {
+        set({
+          _hasHydrated: state,
+        });
       },
     }),
     {
@@ -49,41 +52,21 @@ const useAdminStore = create(
         admin: state.admin, 
       }),
       
-      // [NEXUS REHYDRATE FIX - CORRECCIÓN CRÍTICA]
-      // Se elimina la sintaxis incorrecta 'onRehydrateStorage' del objeto de configuración.
-      // La forma correcta de manejar la rehidratación se hace fuera de la creación del store.
+      // [NEXUS HYDRATION AWARE] Usamos la API onRehydrateStorage del middleware.
+      // Se ejecuta una vez que los datos de localStorage se cargan en el store.
+      onRehydrateStorage: () => (state) => {
+        console.log('[adminStore] Rehidratación desde localStorage completada.');
+        state.setHasHydrated(true);
+      },
     }
   )
 );
 
-// [NEXUS REHYDRATE FIX - IMPLEMENTACIÓN CORRECTA]
-// Zustand permite escuchar cambios en el store. El middleware 'persist' tiene una propiedad
-// 'hasHydrated' que nos dice si ya cargó los datos del localStorage.
-// Creamos un listener que se ejecuta cada vez que el estado cambia.
-useAdminStore.subscribe((state, prevState) => {
-  // Verificamos si la rehidratación acaba de ocurrir y si el estado de autenticación cambió.
-  const hasHydrated = useAdminStore.persist.hasHydrated();
-  const wasAuthenticated = prevState.isAuthenticated;
-  const isAuthenticated = !!state.token; // Derivamos el estado de autenticación directamente del token.
-
-  // Si la rehidratación ha ocurrido y el estado de autenticación es diferente al anterior, lo sincronizamos.
-  if (hasHydrated && isAuthenticated !== wasAuthenticated) {
-    useAdminStore.setState({ isAuthenticated: isAuthenticated });
-    if(isAuthenticated) {
-      console.log('[adminStore] Estado rehidratado y sincronizado. Autenticado.');
-    }
-  }
-});
-
-// Forzamos una verificación inicial al cargar la aplicación.
-// Esto asegura que si el usuario ya tenía datos en localStorage, el estado 'isAuthenticated' se establezca correctamente.
-const initialSync = () => {
-  const state = useAdminStore.getState();
-  if (state.token && state.admin) {
+// Sincronización del estado de autenticación después de la rehidratación.
+useAdminStore.subscribe((state) => {
+  if (state._hasHydrated && state.token && !state.isAuthenticated) {
     useAdminStore.setState({ isAuthenticated: true });
   }
-};
-initialSync();
-
+});
 
 export default useAdminStore;
