@@ -1,13 +1,12 @@
-// RUTA: frontend/src/store/adminStore.js (VERSIÓN "NEXUS - AUTH FIX")
+// RUTA: frontend/src/store/adminStore.js (VERSIÓN "NEXUS - REHYDRATE FIX")
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-// [NEXUS AUTH FIX] - Se refactoriza el estado inicial para ser más claro.
 const initialState = {
   admin: null,
   token: null,
   isAuthenticated: false,
-  isLoading: false, // isLoading debe ser parte del estado inicial, pero no persistido.
+  isLoading: false,
 };
 
 const useAdminStore = create(
@@ -15,10 +14,6 @@ const useAdminStore = create(
     (set, get) => ({
       ...initialState,
 
-      // [NEXUS AUTH FIX] - Simplificamos la acción de login.
-      // La página (AdminLoginPage) ahora es responsable de la llamada a la API.
-      // El store solo se encarga de GUARDAR el estado exitoso.
-      // Esto desacopla el store de la capa de API.
       loginSuccess: (token, adminData) => {
         set({
           token: token,
@@ -28,12 +23,10 @@ const useAdminStore = create(
         });
       },
 
-      // [NEXUS AUTH FIX] - Acción para manejar el inicio de una petición.
       setLoading: (loadingState) => {
         set({ isLoading: loadingState });
       },
       
-      // [NEXUS AUTH FIX] - Acción para manejar un fallo de login.
       loginFail: () => {
         set({
           token: null,
@@ -44,46 +37,53 @@ const useAdminStore = create(
       },
 
       logout: () => {
-        // Al hacer logout, reseteamos al estado inicial completo.
         set(initialState);
       },
     }),
     {
-      name: 'neuro-link-admin-storage', // El nombre de la clave en localStorage.
+      name: 'neuro-link-admin-storage',
       storage: createJSONStorage(() => localStorage),
 
-      // [NEXUS AUTH FIX - CORRECCIÓN CRÍTICA]
-      // Solo persistimos el token y la información del admin.
-      // isAuthenticated se derivará de la existencia del token al cargar la app.
-      // isLoading NUNCA debe ser persistido.
       partialize: (state) => ({ 
         token: state.token, 
         admin: state.admin, 
       }),
-
-      // [NEXUS AUTH FIX - NUEVA FUNCIÓN]
-      // Esta función se ejecuta DESPUÉS de que el estado ha sido rehidratado desde localStorage.
-      // Es el lugar perfecto para sincronizar el resto del estado.
-      onRehydrateStorage: (state) => {
-        console.log('[adminStore] Estado rehidratado desde localStorage.');
-        // Si tenemos un token después de rehidratar, entonces estamos autenticados.
-        if (state.token) {
-          state.isAuthenticated = true;
-        }
-      }
+      
+      // [NEXUS REHYDRATE FIX - CORRECCIÓN CRÍTICA]
+      // Se elimina la sintaxis incorrecta 'onRehydrateStorage' del objeto de configuración.
+      // La forma correcta de manejar la rehidratación se hace fuera de la creación del store.
     }
   )
 );
 
-// Sincronización inicial fuera del componente de React.
-// Esto asegura que al recargar la página, el estado de 'isAuthenticated' se establezca correctamente.
-const unsub = useAdminStore.persist.onRehydrateStorage((state) => {
+// [NEXUS REHYDRATE FIX - IMPLEMENTACIÓN CORRECTA]
+// Zustand permite escuchar cambios en el store. El middleware 'persist' tiene una propiedad
+// 'hasHydrated' que nos dice si ya cargó los datos del localStorage.
+// Creamos un listener que se ejecuta cada vez que el estado cambia.
+useAdminStore.subscribe((state, prevState) => {
+  // Verificamos si la rehidratación acaba de ocurrir y si el estado de autenticación cambió.
+  const hasHydrated = useAdminStore.persist.hasHydrated();
+  const wasAuthenticated = prevState.isAuthenticated;
+  const isAuthenticated = !!state.token; // Derivamos el estado de autenticación directamente del token.
+
+  // Si la rehidratación ha ocurrido y el estado de autenticación es diferente al anterior, lo sincronizamos.
+  if (hasHydrated && isAuthenticated !== wasAuthenticated) {
+    useAdminStore.setState({ isAuthenticated: isAuthenticated });
+    if(isAuthenticated) {
+      console.log('[adminStore] Estado rehidratado y sincronizado. Autenticado.');
+    }
+  }
+});
+
+// Forzamos una verificación inicial al cargar la aplicación.
+// Esto asegura que si el usuario ya tenía datos en localStorage, el estado 'isAuthenticated' se establezca correctamente.
+const initialSync = () => {
+  const state = useAdminStore.getState();
   if (state.token && state.admin) {
     useAdminStore.setState({ isAuthenticated: true });
-    console.log('[adminStore] Sincronización post-rehidratación completa. Autenticado.');
   }
-  unsub(); // Nos desuscribimos para que solo se ejecute una vez.
-});
+};
+initialSync();
 
 
 export default useAdminStore;
