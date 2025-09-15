@@ -1,9 +1,8 @@
-// RUTA: frontend/src/components/layout/AdminLayout.jsx (VERSIÓN FINAL CON RUTAS DEFINITIVAS)
+// RUTA: frontend/src/components/layout/AdminLayout.jsx (FASE "PERFECTIO" - PROPS CORREGIDAS)
 
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
-// [SOLUCIÓN DEFINITIVA] - Rutas absolutas con alias, basadas en la estructura de archivos real.
 import Sidebar from '@/pages/admin/components/Sidebar';
 import AdminHeaderMobile from '@/pages/admin/components/AdminHeaderMobile';
 import MobileDrawer from '@/pages/admin/components/MobileDrawer';
@@ -30,14 +29,24 @@ const AdminLayout = () => {
     };
 
     const currentPageTitle = getPageTitle(location.pathname);
+    
+    // [PERFECTIO - CORRECCIÓN]
+    // Se define la función para cerrar el drawer una sola vez.
+    const closeDrawer = () => setIsDrawerOpen(false);
 
     return (
         <div className="flex min-h-screen bg-dark-primary text-white font-sans">
             
-            <MobileDrawer isOpen={isDrawerOpen} setIsOpen={setIsOpen} />
+            {/* Se le pasa la función para que el drawer pueda cerrarse a sí mismo */}
+            <MobileDrawer isOpen={isDrawerOpen} setIsOpen={setIsDrawerOpen} />
 
+            {/* --- SIDEBAR PARA VISTA DE ESCRITORIO --- */}
             <div className="hidden md:flex md:flex-shrink-0">
-                <Sidebar />
+                {/* [PERFECTIO - CORRECCIÓN]
+                    Aunque en escritorio no es estrictamente necesario, es una buena práctica
+                    pasar la función por consistencia. En este caso, no hará nada visualmente.
+                */}
+                <Sidebar onLinkClick={() => {}} />
             </div>
 
             <div className="flex-grow flex flex-col w-full md:w-0">
