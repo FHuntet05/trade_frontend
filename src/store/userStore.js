@@ -1,36 +1,50 @@
-// RUTA: frontend/src/store/userStore.js (v3.3 - VERIFICACIÓN ABSOLUTA)
+// frontend/src/store/userStore.js (VERSIÓN FINAL v32.0 - SIMPLE Y COMPLETA)
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
-const guestUser = {
-  activeTools: [],
-  referrals: [],
-};
-
-const initialState = {
-  user: guestUser,
-  token: null,
-  settings: null,
-  isAuthenticated: false,
-  isLoadingAuth: true,
-  isMaintenanceMode: false,
-  maintenanceMessage: '',
-  isHydrated: false,
-};
+// Interceptores (SIN CAMBIOS)
+api.interceptors.request.use(
+  (config) => {
+    const token = useUserStore.getState().token;
+    if (token) config.headers['Authorization'] = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response && error.response.status === 401) {
+      const useUserStore = (await import('./userStore')).default;
+      useUserStore.getState().logout();
+    }
+    return Promise.reject(error);
+  }
+);
 
 const useUserStore = create(
   persist(
-    (set, get) => ({
-      ...initialState,
-
+    (set) => ({
+      // --- ESTADOS DEL STORE ---
+      user: null, 
+      token: null, 
+      isAuthenticated: false, 
+      isLoadingAuth: true, 
+      settings: null,
+      
+      /**
+       * Sincroniza los datos del usuario de Telegram con el backend.
+       * Esta función NO envía ningún código de referido.
+       * @param {object} telegramUser - El objeto `user` de `window.Telegram.WebApp.initDataUnsafe`.
+       */
       syncUserWithBackend: async (telegramUser) => {
-        if (!get().isLoadingAuth) {
-            set({ isLoadingAuth: true });
-        }
+        set({ isLoadingAuth: true });
         try {
+          console.log('[Store] Enviando datos de usuario al backend para sincronizar...');
           const response = await api.post('/auth/sync', { telegramUser });
+          
           const { token, user, settings } = response.data;
           
           set({ 
@@ -38,86 +52,51 @@ const useUserStore = create(
               token, 
               isAuthenticated: true, 
               settings, 
-              isLoadingAuth: false,
-              isMaintenanceMode: false,
-              maintenanceMessage: ''
-          });
+              isLoadingAuth: false 
+            });
+          console.log('[Store] Sincronización completada con éxito.');
 
         } catch (error) {
-          console.error('[Store] Error durante la sincronización:', error.response?.data?.message || error.message);
-          
-          if (error.response && error.response.status === 503) {
-            set({
-              isLoadingAuth: false,
-              isAuthenticated: false,
-              isMaintenanceMode: true,
-              maintenanceMessage: error.response.data.maintenanceMessage || 'El sistema está en mantenimiento.',
-              user: guestUser,
-              token: null,
-            });
-          } else {
-            set({ 
-              user: guestUser, 
+          console.error('Error fatal al sincronizar usuario:', error);
+          set({ 
+              user: null, 
               token: null, 
               isAuthenticated: false, 
-              isLoadingAuth: false,
-              settings: null,
-              isMaintenanceMode: false,
-              maintenanceMessage: ''
+              isLoadingAuth: false 
             });
-          }
-        }
-      },
-      
-      refreshUserData: async () => {
-        if (!get().isAuthenticated) return;
-
-        try {
-          const response = await api.get('/auth/profile'); 
-          const { user: updatedUser, settings: updatedSettings } = response.data;
-          
-          set({ user: updatedUser, settings: updatedSettings });
-          console.log('[Store] Datos de usuario refrescados en segundo plano.');
-        } catch (error) {
-          console.error('[Store] Fallo al refrescar los datos del usuario:', error.response?.data?.message || error.message);
         }
       },
 
-      setUser: (newUserObject) => {
-        set({ user: newUserObject });
+      /**
+       * Actualiza parcialmente el estado del usuario.
+       * Útil para operaciones que devuelven un objeto de usuario actualizado,
+       * como reclamar recompensas o comprar mejoras.
+       * @param {object} newUserData - Los nuevos campos para fusionar con el usuario existente.
+       */
+      updateUser: (newUserData) => {
+        set((state) => ({
+          user: state.user ? { ...state.user, ...newUserData } : newUserData,
+        }));
       },
       
+      /**
+       * Limpia el estado de autenticación del usuario.
+       */
       logout: () => {
-        set({ ...initialState, isLoadingAuth: false });
-        console.log('[Store] Sesión cerrada.');
-      },
-      
-      _setHydrated: () => {
-        set({ isHydrated: true });
-      },
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoadingAuth: false
+        })
+      }
     }),
     {
-      name: 'mega-fabrica-auth-storage',
+      name: 'neuro-link-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token }),
-      // [CORRECCIÓN SINTÁCTICA CRÍTICA A VERIFICAR]
-      // Esta es la línea que resuelve el error. Debe ser una función directa.
-      onRehydrateStorage: (state) => {
-        if (state) {
-          state._setHydrated();
-        }
-      }
     }
   )
-);
-
-useUserStore.subscribe(
-  (state) => state.token,
-  (token) => {
-    if (api.defaults.headers.common) {
-        api.defaults.headers.common['Authorization'] = token ? `Bearer ${token}` : '';
-    }
-  }
 );
 
 export default useUserStore;
