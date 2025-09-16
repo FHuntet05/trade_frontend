@@ -1,9 +1,6 @@
-// RUTA: frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS - AUTH FIX")
+// RUTA: frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS - PERMISSIONS FIX")
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-// [NEXUS AUTH FIX - CORRECCIÓN CRÍTICA]
-// Se cambia la importación al cliente de API del administrador.
-// Esta es la causa principal de la corrupción del estado de autenticación.
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import useAdminStore from '@/store/adminStore';
@@ -19,7 +16,6 @@ const AdminUsersPage = () => {
     const [usersData, setUsersData] = useState({ users: [], pages: 1 });
     const [isLoading, setIsLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null);
-    
     const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
     const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
 
@@ -30,6 +26,8 @@ const AdminUsersPage = () => {
     const navigate = useNavigate();
     const { admin } = useAdminStore();
     const isSuperAdmin = admin?.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID;
+    // [NEXUS PERMISSIONS FIX] Nueva variable para saber si el usuario logueado es al menos un admin.
+    const isAdmin = admin?.role === 'admin';
 
     const fetchUsersAndAdmins = useCallback(async (page, search) => {
         setIsLoading(true);
@@ -45,6 +43,7 @@ const AdminUsersPage = () => {
     const handleSearch = (e) => { e.preventDefault(); setSearchParams({ search: e.target.elements.search.value, page: 1 }); };
     const handlePageChange = (newPage) => { setSearchParams({ search: currentSearch, page: newPage }); };
 
+    // ... (el resto de los handlers no necesitan cambios)
     const handlePromote = async (userId, password) => {
         const promise = adminApi.post('/admin/admins/promote', { userId, password });
         toast.promise(promise, {
@@ -53,11 +52,9 @@ const AdminUsersPage = () => {
             error: (err) => err.response?.data?.message || 'No se pudo promover al usuario.',
         });
     };
-
     const handleToggleAdminBan = (adminId, currentStatus) => {
         const newStatus = currentStatus === 'active' ? 'banned' : 'active';
         const actionText = newStatus === 'banned' ? 'banear' : 'desbanear';
-        
         if (window.confirm(`¿Seguro que quieres ${actionText} a este administrador?`)) {
             const promise = adminApi.put(`/admin/users/${adminId}`, { status: newStatus });
             toast.promise(promise, {
@@ -67,61 +64,77 @@ const AdminUsersPage = () => {
             });
         }
     };
-    
     const handleResetPassword = async (adminId) => {
         const promise = adminApi.post('/admin/admins/reset-password', { adminId });
         toast.promise(promise, {
             loading: 'Reseteando contraseña...',
             success: (res) => {
                 setIsResetPasswordModalOpen(false);
-                window.prompt(
-                    `Contraseña reseteada. Comunica esta nueva contraseña temporal al administrador (Cópiala con CTRL+C):`,
-                    res.data.temporaryPassword
-                );
+                window.prompt( `Contraseña reseteada. Comunica esta nueva contraseña temporal al administrador (Cópiala con CTRL+C):`, res.data.temporaryPassword );
                 return 'Contraseña actualizada.';
             },
             error: (err) => err.response?.data?.message || 'Error al resetear la contraseña.',
         });
     };
 
+    // [NEXUS PERMISSIONS FIX] - Lógica de renderizado de acciones completamente refactorizada.
     const ActionsCell = ({ user }) => {
         const stopPropagation = (e) => e.stopPropagation();
 
-        if (!isSuperAdmin || user.telegramId.toString() === SUPER_ADMIN_TELEGRAM_ID) {
+        // Nadie puede realizar acciones sobre el Super Admin.
+        if (user.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID) {
             return <td className="p-3 text-center"></td>;
         }
-        
-        let content;
-        if (user.role !== 'admin') {
-            content = (
-                <button onClick={() => { setSelectedUser(user); setIsPromoteModalOpen(true); }} title="Promover a Administrador" className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-full">
-                    <HiOutlineShieldCheck className="w-5 h-5" />
-                </button>
-            );
-        } else {
-             content = (
+
+        // Si el admin logueado no es Super Admin, no puede actuar sobre otros admins.
+        if (!isSuperAdmin && user.role === 'admin') {
+            return <td className="p-3 text-center"></td>;
+        }
+
+        return (
+            <td className="p-3 text-center" onClick={stopPropagation}>
                 <div className="flex justify-center items-center gap-2">
-                    <button onClick={() => { setSelectedUser(user); setIsResetPasswordModalOpen(true); }} title="Resetear Contraseña" className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-full">
-                        <HiOutlineLockClosed className="w-5 h-5" />
-                    </button>
-                    {user.status === 'active' ? (
-                        <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Banear Administrador" className="p-2 text-red-400 hover:bg-red-500/20 rounded-full">
-                            <HiOutlineNoSymbol className="w-5 h-5" />
-                        </button>
-                    ) : (
-                        <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Desbanear Administrador" className="p-2 text-green-400 hover:bg-green-500/20 rounded-full">
-                            <HiOutlineCheckCircle className="w-5 h-5" />
+                    {/* ACCIÓN: Promover (Solo Super Admin sobre usuarios normales) */}
+                    {isSuperAdmin && user.role !== 'admin' && (
+                        <button onClick={() => { setSelectedUser(user); setIsPromoteModalOpen(true); }} title="Promover a Administrador" className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-full">
+                            <HiOutlineShieldCheck className="w-5 h-5" />
                         </button>
                     )}
-                </div>
-            );
-        }
-        return <td className="p-3 text-center" onClick={stopPropagation}>{content}</td>;
-    };
 
+                    {/* ACCIONES: Resetear Contraseña (Solo Super Admin sobre otros admins) */}
+                    {isSuperAdmin && user.role === 'admin' && (
+                        <button onClick={() => { setSelectedUser(user); setIsResetPasswordModalOpen(true); }} title="Resetear Contraseña" className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-full">
+                            <HiOutlineLockClosed className="w-5 h-5" />
+                        </button>
+                    )}
+
+                    {/* ACCIONES: Banear/Desbanear (Cualquier Admin sobre usuarios normales, o Super Admin sobre otros admins) */}
+                    {isAdmin && user.role === 'admin' ? (
+                        // Lógica para Super Admin sobre otros Admins
+                        isSuperAdmin && (
+                            user.status === 'active' ? (
+                                <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Banear Administrador" className="p-2 text-red-400 hover:bg-red-500/20 rounded-full">
+                                    <HiOutlineNoSymbol className="w-5 h-5" />
+                                </button>
+                            ) : (
+                                <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Desbanear Administrador" className="p-2 text-green-400 hover:bg-green-500/20 rounded-full">
+                                    <HiOutlineCheckCircle className="w-5 h-5" />
+                                </button>
+                            )
+                        )
+                    ) : (
+                       // Lógica para cualquier Admin sobre usuarios normales (no implementado aún, pero preparado)
+                       // Por ahora, esta sección está vacía según su directiva.
+                       null
+                    )}
+                </div>
+            </td>
+        );
+    };
 
     return (
         <>
+            {/* ... (el resto del JSX no necesita cambios) ... */}
             <div className="space-y-6">
                 <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
                     <h1 className="text-2xl font-semibold flex items-center gap-3"><HiOutlineUserGroup /> Gestión de Usuarios</h1>
@@ -143,7 +156,7 @@ const AdminUsersPage = () => {
                                         <th className="p-3">Usuario</th>
                                         <th className="p-3">Rol</th>
                                         <th className="p-3">Estado</th>
-                                        <th className="p-3 text-center">Acciones Super Admin</th>
+                                        <th className="p-3 text-center">Acciones de Admin</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/10">
@@ -165,7 +178,7 @@ const AdminUsersPage = () => {
                     </div>
                 )}
             </div>
-            {isPromoteModalOpen && <PromoteModal user={selectedUser} onClose={() => setIsPromoteModalOpen(false)} onPromote={handlePromote} />}
+            {isPromoteModalOpen && <PromoteAdminModal user={selectedUser} onClose={() => setIsPromoteModalOpen(false)} onPromote={handlePromote} />}
             {isResetPasswordModalOpen && <ResetPasswordModal user={selectedUser} onClose={() => setIsResetPasswordModalOpen(false)} onConfirm={handleResetPassword} />}
         </>
     );
