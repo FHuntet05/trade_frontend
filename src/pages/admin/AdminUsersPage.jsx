@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS - PERMISSIONS FIX")
+// RUTA: frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS - HYDRATION FIX FINAL")
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import adminApi from '@/pages/admin/api/adminApi';
@@ -24,10 +24,13 @@ const AdminUsersPage = () => {
     const currentSearch = searchParams.get('search') || '';
     
     const navigate = useNavigate();
-    const { admin } = useAdminStore();
-    const isSuperAdmin = admin?.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID;
-    // [NEXUS PERMISSIONS FIX] Nueva variable para saber si el usuario logueado es al menos un admin.
-    const isAdmin = admin?.role === 'admin';
+    
+    // [NEXUS HYDRATION FIX] Nos suscribimos al estado completo, incluyendo el estado de hidratación.
+    const { admin, _hasHydrated } = useAdminStore();
+    
+    // El cálculo de los permisos ahora depende de que el estado esté hidratado.
+    const isSuperAdmin = _hasHydrated && admin?.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID;
+    const isAdmin = _hasHydrated && admin?.role === 'admin';
 
     const fetchUsersAndAdmins = useCallback(async (page, search) => {
         setIsLoading(true);
@@ -38,12 +41,17 @@ const AdminUsersPage = () => {
         finally { setIsLoading(false); }
     }, []);
 
-    useEffect(() => { fetchUsersAndAdmins(currentPage, currentSearch); }, [currentPage, currentSearch, fetchUsersAndAdmins]);
+    useEffect(() => {
+        // [NEXUS HYDRATION FIX] Solo ejecutamos la llamada a la API DESPUÉS de que el store se haya hidratado.
+        if (_hasHydrated) {
+            fetchUsersAndAdmins(currentPage, currentSearch);
+        }
+    }, [currentPage, currentSearch, fetchUsersAndAdmins, _hasHydrated]); // Añadimos _hasHydrated a las dependencias.
     
     const handleSearch = (e) => { e.preventDefault(); setSearchParams({ search: e.target.elements.search.value, page: 1 }); };
     const handlePageChange = (newPage) => { setSearchParams({ search: currentSearch, page: newPage }); };
 
-    // ... (el resto de los handlers no necesitan cambios)
+    // ... (los handlers de promote, ban, reset no cambian)
     const handlePromote = async (userId, password) => {
         const promise = adminApi.post('/admin/admins/promote', { userId, password });
         toast.promise(promise, {
@@ -77,64 +85,39 @@ const AdminUsersPage = () => {
         });
     };
 
-    // [NEXUS PERMISSIONS FIX] - Lógica de renderizado de acciones completamente refactorizada.
     const ActionsCell = ({ user }) => {
         const stopPropagation = (e) => e.stopPropagation();
-
-        // Nadie puede realizar acciones sobre el Super Admin.
-        if (user.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID) {
-            return <td className="p-3 text-center"></td>;
-        }
-
-        // Si el admin logueado no es Super Admin, no puede actuar sobre otros admins.
-        if (!isSuperAdmin && user.role === 'admin') {
-            return <td className="p-3 text-center"></td>;
-        }
-
+        if (user.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID) return <td className="p-3 text-center"></td>;
+        if (!isSuperAdmin && user.role === 'admin') return <td className="p-3 text-center"></td>;
         return (
             <td className="p-3 text-center" onClick={stopPropagation}>
                 <div className="flex justify-center items-center gap-2">
-                    {/* ACCIÓN: Promover (Solo Super Admin sobre usuarios normales) */}
                     {isSuperAdmin && user.role !== 'admin' && (
-                        <button onClick={() => { setSelectedUser(user); setIsPromoteModalOpen(true); }} title="Promover a Administrador" className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-full">
-                            <HiOutlineShieldCheck className="w-5 h-5" />
-                        </button>
+                        <button onClick={() => { setSelectedUser(user); setIsPromoteModalOpen(true); }} title="Promover a Administrador" className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-full"> <HiOutlineShieldCheck className="w-5 h-5" /> </button>
                     )}
-
-                    {/* ACCIONES: Resetear Contraseña (Solo Super Admin sobre otros admins) */}
                     {isSuperAdmin && user.role === 'admin' && (
-                        <button onClick={() => { setSelectedUser(user); setIsResetPasswordModalOpen(true); }} title="Resetear Contraseña" className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-full">
-                            <HiOutlineLockClosed className="w-5 h-5" />
-                        </button>
+                        <button onClick={() => { setSelectedUser(user); setIsResetPasswordModalOpen(true); }} title="Resetear Contraseña" className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-full"> <HiOutlineLockClosed className="w-5 h-5" /> </button>
                     )}
-
-                    {/* ACCIONES: Banear/Desbanear (Cualquier Admin sobre usuarios normales, o Super Admin sobre otros admins) */}
                     {isAdmin && user.role === 'admin' ? (
-                        // Lógica para Super Admin sobre otros Admins
-                        isSuperAdmin && (
-                            user.status === 'active' ? (
-                                <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Banear Administrador" className="p-2 text-red-400 hover:bg-red-500/20 rounded-full">
-                                    <HiOutlineNoSymbol className="w-5 h-5" />
-                                </button>
+                        isSuperAdmin && ( user.status === 'active' ? (
+                                <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Banear Administrador" className="p-2 text-red-400 hover:bg-red-500/20 rounded-full"> <HiOutlineNoSymbol className="w-5 h-5" /> </button>
                             ) : (
-                                <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Desbanear Administrador" className="p-2 text-green-400 hover:bg-green-500/20 rounded-full">
-                                    <HiOutlineCheckCircle className="w-5 h-5" />
-                                </button>
+                                <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Desbanear Administrador" className="p-2 text-green-400 hover:bg-green-500/20 rounded-full"> <HiOutlineCheckCircle className="w-5 h-5" /> </button>
                             )
                         )
-                    ) : (
-                       // Lógica para cualquier Admin sobre usuarios normales (no implementado aún, pero preparado)
-                       // Por ahora, esta sección está vacía según su directiva.
-                       null
-                    )}
+                    ) : null }
                 </div>
             </td>
         );
     };
 
+    // [NEXUS HYDRATION FIX] - No renderizamos nada hasta que el estado esté listo.
+    if (!_hasHydrated) {
+        return <div className="flex justify-center p-10"><Loader text="Cargando estado de usuario..." /></div>;
+    }
+
     return (
         <>
-            {/* ... (el resto del JSX no necesita cambios) ... */}
             <div className="space-y-6">
                 <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
                     <h1 className="text-2xl font-semibold flex items-center gap-3"><HiOutlineUserGroup /> Gestión de Usuarios</h1>
@@ -146,7 +129,6 @@ const AdminUsersPage = () => {
                         <button type="submit" className="p-2 bg-accent-start rounded-md text-white"><HiOutlineMagnifyingGlass className="w-6 h-6" /></button>
                     </form>
                 </div>
-
                 {isLoading ? <div className="flex justify-center"><Loader /></div> : (
                     <div className="bg-dark-secondary rounded-lg border border-white/10 overflow-hidden">
                         <div className="overflow-x-auto">
