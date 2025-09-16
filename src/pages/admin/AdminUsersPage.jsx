@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS - HYDRATION FIX FINAL")
+// RUTA: frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS - DATA TYPE FIX")
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import adminApi from '@/pages/admin/api/adminApi';
@@ -10,28 +10,26 @@ import PromoteAdminModal from '@/pages/admin/components/PromoteAdminModal';
 import ResetPasswordModal from '@/pages/admin/components/ResetPasswordModal';
 import { HiOutlineUserGroup, HiOutlineMagnifyingGlass, HiOutlineShieldCheck, HiOutlineLockClosed, HiOutlineNoSymbol, HiOutlineCheckCircle } from 'react-icons/hi2';
 
-const SUPER_ADMIN_TELEGRAM_ID = import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
+// No es necesario importar la variable de entorno aquí directamente.
+// const SUPER_ADMIN_TELEGRAM_ID = import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
 
 const AdminUsersPage = () => {
+    // ... (estados no cambian)
     const [usersData, setUsersData] = useState({ users: [], pages: 1 });
     const [isLoading, setIsLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null);
     const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
     const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
-
     const [searchParams, setSearchParams] = useSearchParams();
     const currentPage = Number(searchParams.get('page')) || 1;
     const currentSearch = searchParams.get('search') || '';
-    
     const navigate = useNavigate();
     
-    // [NEXUS HYDRATION FIX] Nos suscribimos al estado completo, incluyendo el estado de hidratación.
-    const { admin, _hasHydrated } = useAdminStore();
-    
-    // El cálculo de los permisos ahora depende de que el estado esté hidratado.
-    const isSuperAdmin = _hasHydrated && admin?.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID;
+    // [NEXUS DATA TYPE FIX] - Nos suscribimos al estado y a la nueva función de verificación.
+    const { admin, _hasHydrated, isSuperAdmin } = useAdminStore();
     const isAdmin = _hasHydrated && admin?.role === 'admin';
 
+    // ... (useEffect y handlers no cambian)
     const fetchUsersAndAdmins = useCallback(async (page, search) => {
         setIsLoading(true);
         try {
@@ -42,16 +40,14 @@ const AdminUsersPage = () => {
     }, []);
 
     useEffect(() => {
-        // [NEXUS HYDRATION FIX] Solo ejecutamos la llamada a la API DESPUÉS de que el store se haya hidratado.
         if (_hasHydrated) {
             fetchUsersAndAdmins(currentPage, currentSearch);
         }
-    }, [currentPage, currentSearch, fetchUsersAndAdmins, _hasHydrated]); // Añadimos _hasHydrated a las dependencias.
+    }, [currentPage, currentSearch, fetchUsersAndAdmins, _hasHydrated]);
     
     const handleSearch = (e) => { e.preventDefault(); setSearchParams({ search: e.target.elements.search.value, page: 1 }); };
     const handlePageChange = (newPage) => { setSearchParams({ search: currentSearch, page: newPage }); };
 
-    // ... (los handlers de promote, ban, reset no cambian)
     const handlePromote = async (userId, password) => {
         const promise = adminApi.post('/admin/admins/promote', { userId, password });
         toast.promise(promise, {
@@ -87,19 +83,24 @@ const AdminUsersPage = () => {
 
     const ActionsCell = ({ user }) => {
         const stopPropagation = (e) => e.stopPropagation();
-        if (user.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID) return <td className="p-3 text-center"></td>;
-        if (!isSuperAdmin && user.role === 'admin') return <td className="p-3 text-center"></td>;
+        
+        // [NEXUS DATA TYPE FIX] - Usamos la función isSuperAdmin() del store.
+        const currentUserIsSuperAdmin = useAdminStore.getState().isSuperAdmin();
+
+        // La lógica de permisos ahora usa la función centralizada
+        if (user.telegramId?.toString() === import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID.trim()) return <td className="p-3 text-center"></td>;
+        if (!currentUserIsSuperAdmin && user.role === 'admin') return <td className="p-3 text-center"></td>;
         return (
             <td className="p-3 text-center" onClick={stopPropagation}>
                 <div className="flex justify-center items-center gap-2">
-                    {isSuperAdmin && user.role !== 'admin' && (
+                    {currentUserIsSuperAdmin && user.role !== 'admin' && (
                         <button onClick={() => { setSelectedUser(user); setIsPromoteModalOpen(true); }} title="Promover a Administrador" className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-full"> <HiOutlineShieldCheck className="w-5 h-5" /> </button>
                     )}
-                    {isSuperAdmin && user.role === 'admin' && (
+                    {currentUserIsSuperAdmin && user.role === 'admin' && (
                         <button onClick={() => { setSelectedUser(user); setIsResetPasswordModalOpen(true); }} title="Resetear Contraseña" className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-full"> <HiOutlineLockClosed className="w-5 h-5" /> </button>
                     )}
                     {isAdmin && user.role === 'admin' ? (
-                        isSuperAdmin && ( user.status === 'active' ? (
+                        currentUserIsSuperAdmin && ( user.status === 'active' ? (
                                 <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Banear Administrador" className="p-2 text-red-400 hover:bg-red-500/20 rounded-full"> <HiOutlineNoSymbol className="w-5 h-5" /> </button>
                             ) : (
                                 <button onClick={() => handleToggleAdminBan(user._id, user.status)} title="Desbanear Administrador" className="p-2 text-green-400 hover:bg-green-500/20 rounded-full"> <HiOutlineCheckCircle className="w-5 h-5" /> </button>
@@ -111,13 +112,13 @@ const AdminUsersPage = () => {
         );
     };
 
-    // [NEXUS HYDRATION FIX] - No renderizamos nada hasta que el estado esté listo.
     if (!_hasHydrated) {
         return <div className="flex justify-center p-10"><Loader text="Cargando estado de usuario..." /></div>;
     }
 
     return (
         <>
+            {/* ... (el resto del JSX no cambia) ... */}
             <div className="space-y-6">
                 <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
                     <h1 className="text-2xl font-semibold flex items-center gap-3"><HiOutlineUserGroup /> Gestión de Usuarios</h1>
