@@ -1,51 +1,58 @@
-// RUTA: frontend/src/components/layout/Layout.jsx (VERSIÓN "NEXUS - SAFE AREA FIX")
+// RUTA: frontend/src/components/layout/Layout.jsx (v2.0 - NEXUS FLEXBOX REBUILD)
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
 import BottomNavBar from './BottomNavBar';
 import FloatingSupportButton from '../common/FloatingSupportButton';
 
-// Nota: La lógica de Loader y UserGatekeeper se ha movido a App.jsx,
-// por lo que este componente ahora es más simple y se enfoca solo en el layout.
-
 const Layout = () => {
+  const dragContainerRef = useRef(null);
+  
+  // --- CORRECCIÓN ARQUITECTÓNICA ---
+  // Se eliminan las comprobaciones de 'isAuthenticated' y 'isLoadingAuth'.
+  // Esa responsabilidad ya ha sido gestionada por el componente 'UserGatekeeper' en App.jsx.
+  // El componente Layout ahora se centra en su única responsabilidad: la maquetación.
+
   return (
-    // [NEXUS SAFE AREA FIX] - 1. Contenedor principal de la aplicación.
-    // Usamos `h-[100dvh]` para una altura de viewport dinámica y precisa en móviles.
-    // `pb-[env(safe-area-inset-bottom)]` es la clave: añade un padding automático
-    // en la parte inferior solo en dispositivos como iPhone para evitar la barra de gestos.
-    <div className="h-[100dvh] w-screen flex justify-center bg-black">
+    <div className="h-screen w-screen flex justify-center bg-black">
+      {/* 
+        --- CORRECCIÓN DE MAQUETACIÓN (FLEXBOX) ---
+        1. Se añaden 'flex' y 'flex-col' para convertir este div en un contenedor Flexbox vertical.
+           Esto permite un control preciso sobre sus hijos.
+      */}
       <div 
-        className="h-full w-full max-w-lg relative font-sans bg-dark-primary text-text-primary overflow-hidden"
+        ref={dragContainerRef} 
+        className="h-full w-full max-w-lg relative font-sans bg-background text-text-primary flex flex-col"
       >
-        {/* 
-          [NEXUS SAFE AREA FIX] - 2. Contenedor del contenido de la página.
-          `pb-16` asegura que el contenido scrolleable siempre tenga espacio
-          para no quedar oculto detrás del BottomNavBar (que tiene altura h-16).
+        {/*
+          2. El 'main' ya no necesita 'h-full'.
+          3. Se añade 'flex-1' para que este elemento "crezca" y ocupe todo el espacio vertical
+             disponible, empujando la barra de navegación hacia abajo.
+          4. 'overflow-y-auto' es crucial para que solo esta área de contenido tenga scroll.
         */}
-        <main className="h-full w-full overflow-y-auto no-scrollbar pb-16">
+        <main className="flex-1 w-full overflow-y-auto no-scrollbar">
           <Outlet />
         </main>
         
         {/* 
-          [NEXUS SAFE AREA FIX] - 3. El BottomNavBar se mantiene igual, pero el padding
-          en el contenedor padre le dará el espacio necesario en la parte inferior.
+          3. El BottomNavBar ahora se posicionará correctamente al final del contenedor flex.
         */}
         <BottomNavBar />
-        
-        <FloatingSupportButton />
+        <FloatingSupportButton dragRef={dragContainerRef} />
         
         <Toaster
           position="top-center"
           reverseOrder={false}
           toastOptions={{
             style: {
-              background: '#1F2937', // bg-dark-secondary
-              color: '#E5E7EB', // text-text-primary
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              background: 'var(--color-card)',
+              color: 'var(--color-text-primary)',
+              border: '1px solid var(--color-border)',
             },
+            success: { iconTheme: { primary: 'var(--color-status-success)', secondary: 'var(--color-card)' } },
+            error: { iconTheme: { primary: 'var(--color-status-danger)', secondary: 'var(--color-card)' } }
           }}
         />
       </div>
