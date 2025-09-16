@@ -1,16 +1,18 @@
-// RUTA: frontend/src/App.jsx (VERSIÓN "NEXUS - AUTH FLOW FIX")
+// RUTA: frontend/src/App.jsx (VERSIÓN "NEXUS - STABLE AUTH")
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import useUserStore from './store/userStore';
+import { Toaster } from 'react-hot-toast';
 
 // --- IMPORTS ---
 import Layout from './components/layout/Layout';
 import Loader from './components/common/Loader';
 import MaintenanceScreen from './components/MaintenanceScreen';
 import HomePage from './pages/HomePage';
-import ToolsPage from './pages/ToolsPage'; // Corregido de FactoriesPage
-import DepositHistoryPage from './pages/DepositHistoryPage'; // Corregido el nombre del componente
+import ToolsPage from './pages/ToolsPage';
+// [NEXUS STABLE AUTH - FIX] Se corrige la ruta de importación.
+import FinancialHistoryPage from './pages/FinancialHistoryPage';
 import TeamPage from './pages/TeamPage';
 import ProfilePage from './pages/ProfilePage';
 import LanguagePage from './pages/LanguagePage';
@@ -18,44 +20,64 @@ import NotFoundPage from './pages/NotFoundPage';
 import FaqPage from './pages/FaqPage';
 import AboutPage from './pages/AboutPage';
 import SupportPage from './pages/SupportPage';
-import FinancialHistoryPage from './pages/FinancialHistoryPage';
 import CryptoSelectionPage from './pages/CryptoSelectionPage';
 import DepositDetailsPage from './pages/DepositDetailsPage';
 import AdminApp from './admin/AdminApp';
 
-// [NEXUS AUTH FLOW FIX] - Se refactoriza completamente el inicializador.
+// Este componente ahora solo se encarga de disparar la sincronización una vez.
 const AppInitializer = () => {
-    const { syncUserWithBackend } = useUserStore();
-    // Usamos useRef para asegurar que la sincronización se ejecute solo una vez.
-    const hasSynced = useRef(false);
-
+    const { syncUserWithBackend, token } = useUserStore();
     useEffect(() => {
-        if (hasSynced.current) return;
-        
         const tg = window.Telegram?.WebApp;
-        if (tg?.initDataUnsafe?.user?.id) {
-            hasSynced.current = true;
+        if (!token && tg?.initDataUnsafe?.user?.id) {
             syncUserWithBackend(tg.initDataUnsafe.user);
-        } else {
-          // Si no hay datos de Telegram, podríamos querer desloguear o mostrar un error.
-          // Por ahora, asumimos que esto solo ocurre en desarrollo.
-          console.warn("No se encontraron datos de usuario de Telegram.");
-          // Para evitar un bloqueo en desarrollo, forzamos la finalización de la carga.
+        } else if (token) {
+          // Si ya tenemos token de localStorage, terminamos la carga.
           useUserStore.setState({ isLoadingAuth: false });
         }
-    }, [syncUserWithBackend]);
-
-    return null; // Este componente no renderiza nada.
+    }, [token, syncUserWithBackend]);
+    return null;
 };
 
-function App() {
-  const { isAuthenticated, isLoadingAuth, isMaintenanceMode, maintenanceMessage } = useUserStore();
+// Rutas protegidas de la aplicación de usuario
+const UserRoutes = () => (
+    <>
+        <Route element={<Layout />}>
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/tools" element={<ToolsPage />} />
+            <Route path="/history" element={<FinancialHistoryPage />} />
+            <Route path="/team" element={<TeamPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
+            <Route path="/deposit-details" element={<DepositDetailsPage />} />
+        </Route>
+        <Route path="/language" element={<LanguagePage />} />
+        <Route path="/faq" element={<FaqPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/support" element={<SupportPage />} />
+        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
+    </>
+);
 
-  // Renderizado condicional basado en el estado del store.
+function App() {
+  const { isAuthenticated, isLoadingAuth, isMaintenanceMode, maintenanceMessage, _hasHydrated } = useUserStore();
+  
+  // Caso 0: Aún no hemos leído desde localStorage. Mostramos un loader genérico.
+  if (!_hasHydrated) {
+    return (
+        <div className="w-full h-screen flex items-center justify-center bg-dark-primary">
+            <Loader text="Inicializando..." />
+        </div>
+    );
+  }
+
+  // Caso 1: Modo Mantenimiento.
   if (isMaintenanceMode) {
     return <MaintenanceScreen message={maintenanceMessage} />;
   }
   
+  // Caso 2: Autenticación inicial en proceso.
   if (isLoadingAuth) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-dark-primary">
@@ -66,29 +88,13 @@ function App() {
 
   return (
     <Router>
+      <Toaster position="top-center" />
       <AppInitializer />
       <Routes>
         <Route path="/admin/*" element={<AdminApp />} />
         
         {isAuthenticated ? (
-          <>
-            <Route element={<Layout />}>
-              <Route path="/home" element={<HomePage />} />
-              <Route path="/tools" element={<ToolsPage />} />
-              <Route path="/deposit-history" element={<DepositHistoryPage />} />
-              <Route path="/team" element={<TeamPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/history" element={<FinancialHistoryPage />} />
-              <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
-              <Route path="/deposit-details" element={<DepositDetailsPage />} />
-            </Route>
-            <Route path="/language" element={<LanguagePage />} />
-            <Route path="/faq" element={<FaqPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/support" element={<SupportPage />} />
-            <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </>
+          <UserRoutes />
         ) : (
           <Route path="*" element={
             <div className="w-full h-screen flex items-center justify-center p-4 bg-dark-primary text-text-secondary text-center">
