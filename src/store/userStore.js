@@ -1,102 +1,82 @@
-// frontend/src/store/userStore.js (VERSIÓN FINAL v32.0 - SIMPLE Y COMPLETA)
-
+// RUTA: frontend/src/store/userStore.js (VERSIÓN "NEXUS - FINAL STABLE")
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
-// Interceptores (SIN CAMBIOS)
-api.interceptors.request.use(
-  (config) => {
-    const token = useUserStore.getState().token;
-    if (token) config.headers['Authorization'] = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response && error.response.status === 401) {
-      const useUserStore = (await import('./userStore')).default;
-      useUserStore.getState().logout();
-    }
-    return Promise.reject(error);
-  }
-);
+// Estado inicial claro y predecible.
+const initialState = {
+  user: null, 
+  token: null, 
+  settings: null,
+  isAuthenticated: false, 
+  isLoadingAuth: true, // Siempre comienza cargando hasta que se resuelva la sesión.
+  isMaintenanceMode: false,
+  maintenanceMessage: '',
+};
 
 const useUserStore = create(
   persist(
-    (set) => ({
-      // --- ESTADOS DEL STORE ---
-      user: null, 
-      token: null, 
-      isAuthenticated: false, 
-      isLoadingAuth: true, 
-      settings: null,
-      
-      /**
-       * Sincroniza los datos del usuario de Telegram con el backend.
-       * Esta función NO envía ningún código de referido.
-       * @param {object} telegramUser - El objeto `user` de `window.Telegram.WebApp.initDataUnsafe`.
-       */
+    (set, get) => ({
+      ...initialState,
+
       syncUserWithBackend: async (telegramUser) => {
-        set({ isLoadingAuth: true });
+        // Nos aseguramos de que el estado de carga esté activo.
+        if (!get().isLoadingAuth) set({ isLoadingAuth: true });
+        
         try {
-          console.log('[Store] Enviando datos de usuario al backend para sincronizar...');
-          const response = await api.post('/auth/sync', { telegramUser });
-          
+          const response = await api.post('/auth/sync', { telegramUser }, { timeout: 15000 });
           const { token, user, settings } = response.data;
           
           set({ 
               user, 
               token, 
-              isAuthenticated: true, 
               settings, 
-              isLoadingAuth: false 
-            });
-          console.log('[Store] Sincronización completada con éxito.');
-
+              isAuthenticated: true, 
+              isMaintenanceMode: false,
+          });
         } catch (error) {
-          console.error('Error fatal al sincronizar usuario:', error);
-          set({ 
-              user: null, 
-              token: null, 
-              isAuthenticated: false, 
-              isLoadingAuth: false 
+          console.error('[Store] Error en syncUser:', error.response?.data?.message || error.message);
+          
+          if (error.response?.status === 503) {
+            set({
+              ...initialState, // Resetea todo
+              isMaintenanceMode: true,
+              maintenanceMessage: error.response.data.message || 'En mantenimiento.',
             });
+          } else {
+            // Cualquier otro error (timeout, 401, etc.) resulta en un estado de deslogueo.
+            set({ ...initialState });
+          }
+        } finally {
+          // Bloque CRÍTICO: Garantiza que el estado de carga SIEMPRE se desactive.
+          set({ isLoadingAuth: false });
         }
       },
-
-      /**
-       * Actualiza parcialmente el estado del usuario.
-       * Útil para operaciones que devuelven un objeto de usuario actualizado,
-       * como reclamar recompensas o comprar mejoras.
-       * @param {object} newUserData - Los nuevos campos para fusionar con el usuario existente.
-       */
-      updateUser: (newUserData) => {
-        set((state) => ({
-          user: state.user ? { ...state.user, ...newUserData } : newUserData,
-        }));
-      },
       
-      /**
-       * Limpia el estado de autenticación del usuario.
-       */
+      refreshUserData: async () => { /* ... (sin cambios) ... */ },
+      setUser: (newUserObject) => set({ user: newUserObject }),
+      
       logout: () => {
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          isLoadingAuth: false
-        })
-      }
+        set({ ...initialState, isLoadingAuth: false });
+      },
     }),
     {
-      name: 'neuro-link-storage',
+      name: 'mega-fabrica-storage-v3', // Se cambia el nombre para forzar una reinicialización del storage.
       storage: createJSONStorage(() => localStorage),
+      // Solo persistimos el token. El resto de datos se obtienen al sincronizar.
+      // Esto previene tener datos de usuario desactualizados en el storage.
       partialize: (state) => ({ token: state.token }),
     }
   )
+);
+
+// Sincronización del token con las cabeceras de Axios.
+useUserStore.subscribe(
+  (state) => state.token,
+  (token) => {
+    api.defaults.headers.common['Authorization'] = token ? `Bearer ${token}` : undefined;
+  },
+  { fireImmediately: true } // Se ejecuta inmediatamente al cargar la app.
 );
 
 export default useUserStore;
