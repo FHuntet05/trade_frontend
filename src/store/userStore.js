@@ -4,15 +4,11 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
-// [PRINCIPIO DE ESTADO RESILIENTE] - Esencial para la estabilidad de la UI.
 const guestUser = {
   activeTools: [],
   referrals: [],
-  // Añadir aquí cualquier otra propiedad que sea un array o un objeto
-  // para evitar errores 'TypeError: Cannot read properties of null'.
 };
 
-// [ESTADO INICIAL REFORZADO] - 'user' nunca es 'null'.
 const initialState = {
   user: guestUser,
   token: null,
@@ -52,13 +48,12 @@ const useUserStore = create(
           
           if (error.response && error.response.status === 503) {
             set({
-              ...initialState, // Volvemos a un estado inicial seguro
+              ...initialState,
               isLoadingAuth: false,
               isMaintenanceMode: true,
               maintenanceMessage: error.response.data.maintenanceMessage || 'El sistema está en mantenimiento.',
             });
           } else {
-            // Reemplazamos 'null' con 'guestUser'.
             set({ 
               ...initialState,
               isLoadingAuth: false,
@@ -96,7 +91,7 @@ const useUserStore = create(
       name: 'mega-fabrica-auth-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token }),
-      // [CORRECCIÓN SINTÁCTICA CRÍTICA]
+      // [ESTA ES LA LÍNEA QUE CORRIGE EL ERROR DE FORMA DEFINITIVA]
       onRehydrateStorage: (state) => {
         if (state) {
           state._setHydrated();
