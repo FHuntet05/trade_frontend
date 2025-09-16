@@ -1,4 +1,4 @@
-// RUTA: frontend/src/store/userStore.js (VERSIÓN "NEXUS - HTTP METHOD FIX")
+// RUTA: frontend/src/store/userStore.js (VERSIÓN "NEXUS - STABILITY PATCH v1.0")
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
@@ -18,17 +18,17 @@ const useUserStore = create(
       ...initialState,
 
       fetchUserSession: async (telegramUser) => {
-        set({ isLoadingAuth: true });
+        // [MODIFICACIÓN INICIO] - Se limpia el estado de mantenimiento previo al inicio de la petición.
+        // Esto asegura que si el modo mantenimiento se desactiva, el usuario pueda re-autenticarse.
+        set({ isLoadingAuth: true, isMaintenanceMode: false }); 
+        
         try {
           const hasToken = !!get().token;
           let response;
 
-          // [NEXUS HTTP METHOD FIX] - CORRECCIÓN CRÍTICA
           if (hasToken) {
-            // Si tenemos token, usamos GET para refrescar el perfil.
             response = await api.get('/auth/profile', { timeout: 15000 });
           } else {
-            // Si no hay token, usamos POST para el primer login/sincronización.
             response = await api.post('/auth/sync', { telegramUser }, { timeout: 15000 });
           }
           
@@ -40,31 +40,52 @@ const useUserStore = create(
               token: token || get().token,
               isAuthenticated: true, 
               isLoadingAuth: false,
-              isMaintenanceMode: false,
+              isMaintenanceMode: false, // Aseguramos que está en false en caso de éxito.
           });
 
         } catch (error) {
           console.error('[Store] Fallo en la sesión:', error.response?.data?.message || error.message);
+          
+          // [MODIFICACIÓN CRÍTICA] - Lógica de manejo de errores atómica y explícita.
           if (error.response?.status === 503) {
-            set({ ...initialState, isMaintenanceMode: true, isLoadingAuth: false });
+            // Transición específica al estado de MANTENIMIENTO.
+            // No usamos ...initialState. Declaramos explícitamente la nueva forma del estado.
+            set({
+              isMaintenanceMode: true, // El flag importante.
+              isAuthenticated: false,    // El acceso está denegado.
+              user: null,                // No hay datos de usuario.
+              token: null,               // El token (si lo hubiera) ya no es válido para acceder.
+              isLoadingAuth: false,      // La carga ha finalizado.
+            });
           } else {
-            set({ ...initialState, isLoadingAuth: false });
+            // Transición específica al estado de FALLO DE AUTENTICACIÓN GENÉRICO.
+            // Limpiamos todo excepto el flag de mantenimiento.
+            set({
+              isAuthenticated: false,
+              user: null,
+              token: null,
+              isLoadingAuth: false,
+              isMaintenanceMode: false,
+            });
           }
+          // [MODIFICACIÓN FIN]
         }
       },
       
       logout: () => {
+        // La función de logout ahora es más simple, solo resetea a un estado inicial limpio.
         set({ ...initialState, isLoadingAuth: false });
       },
     }),
     {
-      name: 'mega-fabrica-storage-v5', // Cambiado para forzar reinicio.
+      name: 'mega-fabrica-storage-v5',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token }),
     }
   )
 );
 
+// El subscriber se mantiene igual, es correcto.
 useUserStore.subscribe(
   (state) => state.token,
   (token) => {
