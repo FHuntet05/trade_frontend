@@ -1,12 +1,24 @@
-// frontend/src/pages/admin/AdminWithdrawalsPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
+// RUTA: frontend/src/pages/admin/AdminWithdrawalsPage.jsx (VERSIÓN "NEXUS - ENHANCED UI")
 import React, { useState, useEffect, useCallback } from 'react';
-// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplican los alias de ruta.
-import useAdminStore from '@/store/adminStore';
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import Loader from '@/components/common/Loader';
-import { HiOutlineClipboardDocument, HiOutlineClipboardDocumentCheck } from 'react-icons/hi2';
+import Pagination from '@/components/common/Pagination'; // Usamos el componente de paginación estándar
+import { HiOutlineClipboardDocument, HiOutlineClipboardDocumentCheck, HiOutlineReceiptRefund } from 'react-icons/hi2';
 
+// Sub-componente para la celda de montos, mostrando un desglose completo.
+const AmountCell = ({ withdrawal }) => {
+  const { grossAmount, feeAmount, netAmount } = withdrawal;
+  return (
+    <div className="font-mono">
+      <p className="font-bold text-lg text-green-400">{netAmount?.toFixed(2) || 'N/A'}</p>
+      <p className="text-xs text-text-secondary mt-1">Solicitado: {grossAmount?.toFixed(2) || 'N/A'}</p>
+      <p className="text-xs text-text-secondary">Comisión: -{feeAmount?.toFixed(2) || 'N/A'}</p>
+    </div>
+  );
+};
+
+// Componente para la tabla, ahora más limpio y reutilizable.
 const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
   const [copiedAddress, setCopiedAddress] = useState('');
 
@@ -19,39 +31,37 @@ const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
   };
 
   return (
-    <div className="overflow-x-auto bg-dark-secondary rounded-lg border border-white/10">
-      <table className="min-w-full text-sm text-left text-gray-300">
-        <thead className="text-xs text-text-secondary uppercase bg-black/20">
+    <div className="overflow-x-auto">
+      <table className="w-full text-left">
+        <thead className="text-xs text-text-secondary uppercase bg-dark-tertiary">
           <tr>
-            <th className="px-6 py-3">Usuario</th>
-            <th className="px-6 py-3">Monto (USDT)</th>
-            <th className="px-6 py-3">Dirección de Retiro</th>
-            <th className="px-6 py-3">Fecha Solicitud</th>
-            <th className="px-6 py-3 text-center">Acciones</th>
+            <th className="p-3">Usuario</th>
+            <th className="p-3">Monto a Pagar (USDT)</th>
+            <th className="p-3">Dirección de Retiro</th>
+            <th className="p-3">Fecha</th>
+            <th className="p-3 text-center">Acciones</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-white/10">
           {withdrawals.map((tx) => (
-            <tr key={tx._id} className="border-b border-dark-primary hover:bg-white/5">
-              <td className="px-6 py-4">
+            <tr key={tx._id} className="hover:bg-dark-tertiary">
+              <td className="p-3">
                 <div className="flex items-center gap-3">
-                  <img className="w-8 h-8 rounded-full" src={tx.user?.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="avatar" />
-                  <span>{tx.user?.username || 'Usuario no encontrado'}</span>
+                  <img className="w-8 h-8 rounded-full" src={tx.user?.photoUrl} alt="avatar" />
+                  <span>{tx.user?.username}</span>
                 </div>
               </td>
-              <td className="px-6 py-4 font-mono">{tx.netAmount.toFixed(2)}</td>
-              <td className="px-6 py-4 font-mono text-text-secondary">
+              <td className="p-3"><AmountCell withdrawal={tx} /></td>
+              <td className="p-3 font-mono text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="truncate max-w-xs">{tx.walletAddress || 'N/A'}</span>
-                  {tx.walletAddress && (
-                    <button onClick={() => handleCopy(tx.walletAddress)} className="text-gray-400 hover:text-white">
-                      {copiedAddress === tx.walletAddress ? <HiOutlineClipboardDocumentCheck className="w-5 h-5 text-green-400" /> : <HiOutlineClipboardDocument className="w-5 h-5" />}
-                    </button>
-                  )}
+                  <span className="truncate max-w-xs">{tx.walletAddress}</span>
+                  <button onClick={() => handleCopy(tx.walletAddress)} className="text-gray-400 hover:text-white">
+                    {copiedAddress === tx.walletAddress ? <HiOutlineClipboardDocumentCheck className="w-5 h-5 text-green-400" /> : <HiOutlineClipboardDocument className="w-5 h-5" />}
+                  </button>
                 </div>
               </td>
-              <td className="px-6 py-4">{new Date(tx.createdAt).toLocaleString('es-ES')}</td>
-              <td className="px-6 py-4 text-center">
+              <td className="p-3 text-sm text-text-secondary whitespace-nowrap">{new Date(tx.createdAt).toLocaleString()}</td>
+              <td className="p-3 text-center">
                 <div className="flex justify-center gap-2">
                   <button onClick={() => onProcess(tx._id, 'completed')} disabled={!!processingId} className="px-3 py-1.5 text-xs font-bold text-white bg-green-500 rounded-md hover:bg-green-600 disabled:opacity-50">
                     {processingId === tx._id ? 'Procesando...' : 'Aprobar'}
@@ -69,28 +79,19 @@ const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
   );
 };
 
-
 const AdminWithdrawalsPage = () => {
-  const [withdrawals, setWithdrawals] = useState([]);
-  const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(1);
+  const [data, setData] = useState({ withdrawals: [], page: 1, pages: 1 });
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [processingId, setProcessingId] = useState(null);
 
-  const fetchWithdrawals = useCallback(async (targetPage = 1) => {
+  const fetchWithdrawals = useCallback(async (pageToFetch = 1) => {
     setIsLoading(true);
-    setError(null);
     try {
-      const { data } = await adminApi.get(`/admin/withdrawals?page=${targetPage}`);
-      setWithdrawals(data.withdrawals);
-      setPage(data.page);
-      setPages(data.pages);
+      // Endpoint corregido para ser consistente con el backend
+      const { data: responseData } = await adminApi.get('/admin/withdrawals', { params: { page: pageToFetch } });
+      setData(responseData);
     } catch (err) {
-      const errorMessage = `Error al cargar las solicitudes de retiro.`;
-      console.error("Error al obtener retiros:", err);
-      setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error(err.response?.data?.message || "Error al cargar las solicitudes.");
     } finally {
       setIsLoading(false);
     }
@@ -105,62 +106,54 @@ const AdminWithdrawalsPage = () => {
     let notes = '';
     
     if (status === 'rejected') {
-      notes = window.prompt("Por favor, introduce el motivo del rechazo (se devolverán los fondos al usuario):");
+      notes = window.prompt("Introduce el motivo del rechazo (los fondos serán devueltos):");
       if (notes === null) {
         setProcessingId(null);
         return;
       }
     } else if (status === 'completed') {
-      if (!window.confirm("¿Estás SEGURO de que quieres APROBAR este retiro? Esta acción es para confirmar que ya has enviado los fondos manualmente. La acción es IRREVERSIBLE.")) {
+      if (!window.confirm("CONFIRMACIÓN: ¿Ya ha enviado los fondos manualmente? Esta acción es irreversible.")) {
         setProcessingId(null);
         return;
       }
     }
     
-    const processPromise = adminApi.put(`/admin/withdrawals/${txId}/process`, { status, adminNotes: notes });
+    const promise = adminApi.put(`/admin/withdrawals/${txId}/process`, { status, adminNotes: notes });
 
-    try {
-        await toast.promise(processPromise, {
-            loading: 'Actualizando estado en la base de datos...',
-            success: (res) => {
-                fetchWithdrawals(page);
-                return res.data.message || `Retiro procesado como "${status}".`;
-            },
-            error: (err) => err.response?.data?.message || 'No se pudo procesar el retiro.'
-        });
-    } catch (error) {
-        console.error("Error al procesar retiro:", error);
-    } finally {
-        setProcessingId(null);
-    }
-  };
+    toast.promise(promise, {
+        loading: 'Procesando solicitud...',
+        success: (res) => {
+            fetchWithdrawals(data.page); // Recargar la página actual
+            return res.data.message || `Retiro procesado.`;
+        },
+        error: (err) => err.response?.data?.message || 'No se pudo procesar el retiro.'
+    });
 
-  const renderContent = () => {
-    if (isLoading) {
-      return <div className="flex justify-center items-center h-96"><Loader text="Cargando solicitudes..." /></div>;
-    }
-    if (error) {
-      return <div className="text-center py-16 text-red-400"><p className="font-mono bg-black/20 p-4 rounded-lg">{error}</p></div>;
-    }
-    if (withdrawals.length > 0) {
-      return (
-        <>
-          <WithdrawalsTable withdrawals={withdrawals} onProcess={handleProcessWithdrawal} processingId={processingId} />
-          {/* Aquí se podría implementar la paginación si se necesita */}
-        </>
-      );
-    }
-    return (
-      <div className="text-center py-16 text-text-secondary">
-        <p>¡Buen trabajo! No hay solicitudes de retiro pendientes.</p>
-      </div>
-    );
+    setProcessingId(null);
   };
 
   return (
-    <div className="bg-dark-secondary p-6 rounded-lg border border-white/10 text-white">
-      <h1 className="text-2xl font-semibold mb-4">Solicitudes de Retiro Pendientes</h1>
-      {renderContent()}
+    <div className="space-y-6">
+      <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
+        <h1 className="text-2xl font-semibold mb-1 flex items-center gap-3"><HiOutlineReceiptRefund /> Retiros Pendientes</h1>
+        <p className="text-text-secondary">Aprueba o rechaza las solicitudes de retiro de los usuarios.</p>
+      </div>
+
+      <div className="bg-dark-secondary rounded-lg border border-white/10 p-4">
+        {isLoading ? <div className="flex justify-center items-center h-96"><Loader text="Cargando solicitudes..." /></div>
+        : data.withdrawals.length > 0 ? (
+            <>
+              <WithdrawalsTable withdrawals={data.withdrawals} onProcess={handleProcessWithdrawal} processingId={processingId} />
+              <Pagination currentPage={data.page} totalPages={data.pages} onPageChange={fetchWithdrawals} />
+            </>
+          )
+        : (
+            <div className="text-center py-16 text-text-secondary">
+              <p>¡Excelente! No hay solicitudes de retiro pendientes.</p>
+            </div>
+          )
+        }
+      </div>
     </div>
   );
 };

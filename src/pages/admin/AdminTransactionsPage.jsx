@@ -1,123 +1,150 @@
-// RUTA: frontend/src/pages/admin/AdminTransactionsPage.jsx (VERSIÓN "NEXUS SYNC")
-
+// RUTA: frontend/src/pages/admin/AdminTransactionsPage.jsx (VERSIÓN "NEXUS - ENHANCED UI")
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
-import { useDebounce } from 'use-debounce';
-
-import TransactionsTable from '@/pages/admin/components/TransactionsTable';
 import Loader from '@/components/common/Loader';
-import { HiOutlineMagnifyingGlass } from 'react-icons/hi2'; // Corregido de HiOutlineSearch a HiOutlineMagnifyingGlass para consistencia
+import Pagination from '@/components/common/Pagination';
+import { HiOutlineReceiptRefund, HiMagnifyingGlass } from 'react-icons/hi2';
 
-const transactionTypes = [
-  { value: '', label: 'Todos los tipos' },
-  { value: 'deposit', label: 'Depósito' },
-  { value: 'withdrawal', label: 'Retiro' },
-  { value: 'purchase', label: 'Compra' },
-  { value: 'swap_ntx_to_usdt', label: 'Swap' },
-  { value: 'mining_claim', label: 'Reclamo' },
-  { value: 'referral_commission', label: 'Comisión' },
-  { value: 'task_reward', label: 'Recompensa' },
-  { value: 'admin_credit', label: 'Crédito Admin'},
-  { value: 'admin_debit', label: 'Débito Admin'},
-];
+// Mapeo de colores y textos para los tipos de transacción.
+const transactionTypeInfo = {
+  deposit: { label: 'Depósito', color: 'bg-green-500/20 text-green-300' },
+  withdrawal: { label: 'Retiro', color: 'bg-red-500/20 text-red-300' },
+  purchase: { label: 'Compra', color: 'bg-blue-500/20 text-blue-300' },
+  mining_claim: { label: 'Reclamo Minería', color: 'bg-teal-500/20 text-teal-300' },
+  referral_commission: { label: 'Comisión Ref.', color: 'bg-purple-500/20 text-purple-300' },
+  task_reward: { label: 'Recompensa Tarea', color: 'bg-indigo-500/20 text-indigo-300' },
+  admin_credit: { label: 'Crédito Admin', color: 'bg-sky-500/20 text-sky-300' },
+  admin_debit: { label: 'Débito Admin', color: 'bg-orange-500/20 text-orange-300' },
+  swap_ntx_to_usdt: { label: 'Swap NTX > USDT', color: 'bg-cyan-500/20 text-cyan-300' },
+  default: { label: 'Desconocido', color: 'bg-gray-500/20 text-gray-300' }
+};
+
+const TransactionTypeBadge = ({ type }) => {
+  const { label, color } = transactionTypeInfo[type] || transactionTypeInfo.default;
+  return <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${color}`}>{label}</span>;
+};
 
 const AdminTransactionsPage = () => {
-  const [data, setData] = useState({ transactions: [], page: 1, pages: 1, totalTransactions: 0 });
+  const [data, setData] = useState({ transactions: [], page: 1, pages: 1 });
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
-
-  const fetchTransactions = useCallback(async (pageToFetch) => {
+  const fetchTransactions = useCallback(async () => {
     setIsLoading(true);
     try {
+      const page = searchParams.get('page') || 1;
+      const search = searchParams.get('search') || '';
+      const type = searchParams.get('type') || '';
+      
       const params = { 
-        page: pageToFetch, 
-        search: debouncedSearchTerm, 
-        type: selectedType 
+        page, 
+        ...(search && { search }), 
+        ...(type && { type }) 
       };
-      // No enviar parámetros vacíos a la API
-      if (!params.search) delete params.search;
-      if (!params.type) delete params.type;
 
-      // [NEXUS SYNC - VALIDATED] La llamada a /admin/transactions ahora es funcional gracias a los cambios en el backend.
       const { data: responseData } = await adminApi.get('/admin/transactions', { params });
       setData(responseData);
-      setCurrentPage(responseData.page);
-
     } catch (error) {
-      toast.error(error.response?.data?.message || 'No se pudieron cargar las transacciones.');
+      toast.error(error.response?.data?.message || 'Error al obtener las transacciones.');
     } finally {
       setIsLoading(false);
     }
-  }, [debouncedSearchTerm, selectedType]);
+  }, [searchParams]);
 
   useEffect(() => {
-    // Inicia la carga cuando cambian los filtros
-    fetchTransactions(1);
-  }, [debouncedSearchTerm, selectedType, fetchTransactions]);
+    fetchTransactions();
+  }, [fetchTransactions]);
 
+  const handleFilterChange = (key, value) => {
+    setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set('page', '1');
+        if (value) {
+            newParams.set(key, value);
+        } else {
+            newParams.delete(key);
+        }
+        return newParams;
+    });
+  };
+  
   const handlePageChange = (newPage) => {
-    if (newPage > 0 && newPage <= data.pages) {
-      setCurrentPage(newPage);
-      fetchTransactions(newPage);
-    }
+    handleFilterChange('page', newPage.toString());
   };
 
   return (
-    <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
-        <h1 className="text-2xl font-semibold">Historial de Transacciones</h1>
-        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="bg-dark-primary border border-white/10 text-white text-sm rounded-lg focus:ring-accent-start focus:border-accent-start block w-full md:w-48 p-2.5"
-          >
-            {transactionTypes.map(type => (
-              <option key={type.value} value={type.value}>{type.label}</option>
-            ))}
-          </select>
-          <div className="relative w-full md:w-64">
-            <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
-            <input 
-              type="text"
-              placeholder="Buscar por usuario o ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-dark-primary text-white rounded-lg border border-white/10 focus:border-accent-start focus:outline-none"
-            />
-          </div>
+    <div className="space-y-6">
+        <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
+            <h1 className="text-2xl font-semibold mb-1 flex items-center gap-3"><HiOutlineReceiptRefund /> Historial de Transacciones</h1>
+            <p className="text-text-secondary">Revisa todas las transacciones financieras que ocurren en la plataforma.</p>
         </div>
-      </div>
-      
-      {isLoading ? (
-          <div className="flex justify-center items-center h-96"><Loader text="Cargando transacciones..." /></div>
-      ) : (
-          <>
-              <div className="mb-4 text-sm text-text-secondary">
-                  Mostrando {data.transactions.length} de {data.totalTransactions.toLocaleString('es-ES')} transacciones
-              </div>
-              <TransactionsTable transactions={data.transactions} />
-              {data.pages > 1 && (
-                <div className="flex justify-between items-center mt-4">
-                    <span className="text-sm text-text-secondary">Página {currentPage} de {data.pages}</span>
-                    <div className="flex gap-2">
-                        <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1} className="px-4 py-2 text-sm font-medium bg-dark-tertiary rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
-                        <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= data.pages} className="px-4 py-2 text-sm font-medium bg-dark-tertiary rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Siguiente</button>
+
+        <div className="bg-dark-secondary p-4 rounded-lg border border-white/10">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="relative w-full md:max-w-xs">
+                    <HiMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
+                    <input 
+                        type="text" 
+                        placeholder="Buscar por usuario..." 
+                        defaultValue={searchParams.get('search') || ''}
+                        onChange={(e) => handleFilterChange('search', e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 bg-dark-primary text-white rounded-lg border border-white/10" 
+                    />
+                </div>
+                <select 
+                    onChange={(e) => handleFilterChange('type', e.target.value)} 
+                    value={searchParams.get('type') || ''} 
+                    className="w-full md:w-auto bg-dark-primary p-2 rounded-lg border border-white/10"
+                >
+                    <option value="">Todos los Tipos</option>
+                    {Object.entries(transactionTypeInfo).filter(([key]) => key !== 'default').map(([key, { label }]) => (
+                        <option key={key} value={key}>{label}</option>
+                    ))}
+                </select>
+            </div>
+        </div>
+
+        <div className="bg-dark-secondary rounded-lg border border-white/10 overflow-hidden">
+            {isLoading ? <div className="h-96 flex items-center justify-center"><Loader text="Cargando transacciones..." /></div> : (
+                <>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="text-xs text-text-secondary uppercase bg-dark-tertiary">
+                                <tr>
+                                    <th className="p-3">Usuario</th>
+                                    <th className="p-3">Tipo</th>
+                                    <th className="p-3 text-right">Monto</th>
+                                    <th className="p-3">Descripción</th>
+                                    <th className="p-3">Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/10">
+                                {data.transactions.length > 0 ? data.transactions.map((tx) => (
+                                    <tr key={tx._id} className="hover:bg-dark-tertiary">
+                                        <td className="p-3 font-medium">
+                                          {tx.user ? (
+                                            <Link to={`/admin/users/${tx.user._id}`} className="hover:text-accent-start">{tx.user.username}</Link>
+                                          ) : ( 'Sistema' )}
+                                        </td>
+                                        <td className="p-3"><TransactionTypeBadge type={tx.type} /></td>
+                                        <td className={`p-3 text-right font-mono ${tx.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                            {tx.amount >= 0 ? '+' : ''}{tx.amount.toFixed(2)} {tx.currency}
+                                        </td>
+                                        <td className="p-3 text-sm text-text-secondary">{tx.description}</td>
+                                        <td className="p-3 text-sm text-text-secondary whitespace-nowrap">{new Date(tx.createdAt).toLocaleString()}</td>
+                                    </tr>
+                                )) : (
+                                    <tr><td colSpan="5" className="text-center p-8 text-text-secondary">No se encontraron transacciones.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-              )}
-              {data.transactions.length === 0 && !isLoading && (
-                <div className="text-center py-16 text-text-secondary">
-                  <p>No se encontraron transacciones que coincidan con los filtros.</p>
-                </div>
-              )}
-          </>
-      )}
+                    <Pagination currentPage={data.page} totalPages={data.pages} onPageChange={handlePageChange} />
+                </>
+            )}
+        </div>
     </div>
   );
 };
