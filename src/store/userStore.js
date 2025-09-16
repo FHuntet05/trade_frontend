@@ -1,19 +1,14 @@
-// RUTA: frontend/src/store/userStore.js (v3.2 - NEXUS RESILIENCY MERGE)
+// RUTA: frontend/src/store/userStore.js (v3.3 - NEXUS FINAL STABILITY PATCH)
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
-// [PRINCIPIO DE ESTADO RESILIENTE] - Esencial para la estabilidad de la UI.
-// Definimos un objeto de usuario "invitado" con una estructura válida pero vacía.
 const guestUser = {
   activeTools: [],
   referrals: [],
-  // Añadir aquí cualquier otra propiedad que sea un array o un objeto
-  // para evitar errores 'TypeError: Cannot read properties of null'.
 };
 
-// [ESTADO INICIAL REFORZADO] - 'user' nunca es 'null'.
 const initialState = {
   user: guestUser,
   token: null,
@@ -57,11 +52,10 @@ const useUserStore = create(
               isAuthenticated: false,
               isMaintenanceMode: true,
               maintenanceMessage: error.response.data.maintenanceMessage || 'El sistema está en mantenimiento.',
-              user: guestUser, // [CORRECCIÓN] Aseguramos un estado de usuario válido.
-              token: null,     // [CORRECCIÓN] Limpiamos el token.
+              user: guestUser,
+              token: null,
             });
           } else {
-            // [CORRECCIÓN CRÍTICA] - Reemplazamos 'null' con 'guestUser'.
             set({ 
               user: guestUser, 
               token: null, 
@@ -75,7 +69,6 @@ const useUserStore = create(
         }
       },
       
-      // Su nueva acción se mantiene, es correcta.
       refreshUserData: async () => {
         if (!get().isAuthenticated) return;
 
@@ -95,7 +88,6 @@ const useUserStore = create(
       },
       
       logout: () => {
-        // [CORRECCIÓN CRÍTICA] - Usamos el estado inicial resiliente para el logout.
         set({ ...initialState, isLoadingAuth: false });
         console.log('[Store] Sesión cerrada.');
       },
@@ -108,7 +100,10 @@ const useUserStore = create(
       name: 'mega-fabrica-auth-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token }),
-      onRehydrateStorage: () => (state) => {
+      // [CORRECCIÓN SINTÁCTICA CRÍTICA]
+      // Se elimina la función de orden superior. Ahora es una función directa,
+      // que es lo que el middleware 'persist' espera.
+      onRehydrateStorage: (state) => {
         if (state) {
           state._setHydrated();
         }
