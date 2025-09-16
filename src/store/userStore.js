@@ -1,4 +1,4 @@
-// RUTA: frontend/src/store/userStore.js (v3.3 - NEXUS FINAL STABILITY PATCH)
+// RUTA: frontend/src/store/userStore.js (v3.3 - VERIFICACIÓN ABSOLUTA)
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -100,9 +100,8 @@ const useUserStore = create(
       name: 'mega-fabrica-auth-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token }),
-      // [CORRECCIÓN SINTÁCTICA CRÍTICA]
-      // Se elimina la función de orden superior. Ahora es una función directa,
-      // que es lo que el middleware 'persist' espera.
+      // [CORRECCIÓN SINTÁCTICA CRÍTICA A VERIFICAR]
+      // Esta es la línea que resuelve el error. Debe ser una función directa.
       onRehydrateStorage: (state) => {
         if (state) {
           state._setHydrated();
