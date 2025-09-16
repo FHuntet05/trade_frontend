@@ -1,17 +1,16 @@
-// RUTA: frontend/src/App.jsx (VERSIÓN "NEXUS - MAINTENANCE AWARE")
+// RUTA: frontend/src/App.jsx (VERSIÓN "NEXUS - AUTH FLOW FIX")
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import useUserStore from './store/userStore';
-import { Toaster } from 'react-hot-toast';
 
 // --- IMPORTS ---
 import Layout from './components/layout/Layout';
 import Loader from './components/common/Loader';
-import MaintenanceScreen from './components/MaintenanceScreen'; // <-- 1. Importar la nueva pantalla
+import MaintenanceScreen from './components/MaintenanceScreen';
 import HomePage from './pages/HomePage';
-import ToolsPage from './pages/ToolsPage'; // Se corrige de FactoriesPage a ToolsPage
-import RankingPage from './pages/RankingPage';
+import ToolsPage from './pages/ToolsPage'; // Corregido de FactoriesPage
+import DepositHistoryPage from './pages/DepositHistoryPage'; // Corregido el nombre del componente
 import TeamPage from './pages/TeamPage';
 import ProfilePage from './pages/ProfilePage';
 import LanguagePage from './pages/LanguagePage';
@@ -22,54 +21,61 @@ import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 import CryptoSelectionPage from './pages/CryptoSelectionPage';
 import DepositDetailsPage from './pages/DepositDetailsPage';
-
-// --- COMPONENTES DE ADMINISTRACIÓN (Se mantienen por si se necesita una ruta unificada en el futuro) ---
 import AdminApp from './admin/AdminApp';
 
-// [NEXUS MAINTENANCE AWARE] - Se refactoriza AppInitializer
-// Ahora solo se encarga de disparar la sincronización.
+// [NEXUS AUTH FLOW FIX] - Se refactoriza completamente el inicializador.
 const AppInitializer = () => {
-    const { isAuthenticated, syncUserWithBackend } = useUserStore();
+    const { syncUserWithBackend } = useUserStore();
+    // Usamos useRef para asegurar que la sincronización se ejecute solo una vez.
+    const hasSynced = useRef(false);
+
     useEffect(() => {
+        if (hasSynced.current) return;
+        
         const tg = window.Telegram?.WebApp;
-        if (!isAuthenticated && tg?.initDataUnsafe?.user?.id) {
+        if (tg?.initDataUnsafe?.user?.id) {
+            hasSynced.current = true;
             syncUserWithBackend(tg.initDataUnsafe.user);
+        } else {
+          // Si no hay datos de Telegram, podríamos querer desloguear o mostrar un error.
+          // Por ahora, asumimos que esto solo ocurre en desarrollo.
+          console.warn("No se encontraron datos de usuario de Telegram.");
+          // Para evitar un bloqueo en desarrollo, forzamos la finalización de la carga.
+          useUserStore.setState({ isLoadingAuth: false });
         }
-    }, [isAuthenticated, syncUserWithBackend]);
-    return null;
+    }, [syncUserWithBackend]);
+
+    return null; // Este componente no renderiza nada.
 };
 
 function App() {
-  // [NEXUS MAINTENANCE AWARE] - Lógica de renderizado principal movida aquí.
   const { isAuthenticated, isLoadingAuth, isMaintenanceMode, maintenanceMessage } = useUserStore();
 
-  // Caso 1: La app está en modo mantenimiento (detectado desde la API).
+  // Renderizado condicional basado en el estado del store.
   if (isMaintenanceMode) {
     return <MaintenanceScreen message={maintenanceMessage} />;
   }
   
-  // Caso 2: La app está en proceso de autenticación inicial.
-  if (isLoadingAuth) { 
+  if (isLoadingAuth) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-dark-primary">
         <Loader text="Autenticando..." />
       </div>
-    ); 
+    );
   }
 
-  // Caso 3: La autenticación ha finalizado.
   return (
     <Router>
-      <Toaster position="top-center" />
       <AppInitializer />
       <Routes>
+        <Route path="/admin/*" element={<AdminApp />} />
+        
         {isAuthenticated ? (
-          // Si está autenticado, muestra la aplicación completa.
           <>
             <Route element={<Layout />}>
               <Route path="/home" element={<HomePage />} />
               <Route path="/tools" element={<ToolsPage />} />
-              <Route path="/ranking" element={<RankingPage />} />
+              <Route path="/deposit-history" element={<DepositHistoryPage />} />
               <Route path="/team" element={<TeamPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/history" element={<FinancialHistoryPage />} />
@@ -84,16 +90,12 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
           </>
         ) : (
-          // Si no está autenticado (y no está cargando ni en mantenimiento), muestra un error.
           <Route path="*" element={
             <div className="w-full h-screen flex items-center justify-center p-4 bg-dark-primary text-text-secondary text-center">
               Error de autenticación.<br/>Por favor, reinicia la app desde Telegram.
             </div>
           } />
         )}
-        
-        {/* Las rutas de admin ahora se manejan en un archivo separado para mayor claridad */}
-        <Route path="/admin/*" element={<AdminApp />} />
       </Routes>
     </Router>
   );

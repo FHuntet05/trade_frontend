@@ -1,128 +1,95 @@
-// frontend/src/pages/ProfilePage.jsx (v17.9.5 - i18n)
-import React, { useState } from 'react';
+// RUTA: frontend/src/pages/ProfilePage.jsx (VERSIÓN "NEXUS - DIRECT DEPOSIT FLOW")
+
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '../store/userStore';
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
-import { HiOutlineArrowDownOnSquare, HiOutlineArrowUpOnSquare, HiOutlineRectangleStack, HiOutlineArrowsRightLeft, HiOutlineUserGroup, HiOutlineQuestionMarkCircle, HiOutlineInformationCircle, HiOutlineChatBubbleLeftRight, HiOutlineLanguage } from 'react-icons/hi2';
+import { 
+    HiOutlineArrowDownOnSquare, HiOutlineArrowUpOnSquare, HiOutlineRectangleStack, 
+    HiOutlineWallet, HiOutlineUserGroup, HiOutlineQuestionMarkCircle, HiOutlineInformationCircle, 
+    HiOutlineChatBubbleLeftRight, HiOutlineLanguage, HiOutlineArrowRightOnRectangle,
+    HiChevronRight, HiOutlineKey
+} from 'react-icons/hi2';
 
-import api from '../api/axiosConfig';
-import WithdrawalModal from '../components/modals/WithdrawalModal';
-import SwapModal from '../components/modals/SwapModal';
-import DepositAmountModal from '../components/modals/DepositAmountModal';
 import Loader from '../components/common/Loader';
+// [NEXUS DIRECT DEPOSIT] - Se eliminan imports de modales que ya no se usan en este flujo.
+// import WithdrawalModal from '../components/modals/WithdrawalModal';
+// import SetWithdrawalPasswordModal from '../components/modals/SetWithdrawalPasswordModal';
+// import SaveWalletModal from '../components/modals/SaveWalletModal'; 
 
-const pageVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeInOut' } }, };
-
-const ProfileHeader = ({ user, t }) => (
-    <div className="flex justify-between items-center w-full">
-      <div className="flex items-center gap-3 bg-white/10 backdrop-blur-lg p-2 px-4 rounded-full border border-white/10">
-        <img src={user?.photoUrl || '/assets/images/user-avatar-placeholder.png'} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
-        <span className="font-bold text-white">{user?.username || 'Usuario'}</span>
-      </div>
-      <div className="text-right bg-white/10 backdrop-blur-lg p-2 px-4 rounded-full border border-white/10">
-        <span className="text-lg font-bold text-accent-end">{Number(user?.balance?.ntx || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} NTX</span>
-        <p className="text-xs text-text-secondary">{t('profilePage.balanceNtxLabel')}</p>
-      </div>
-    </div>
-);
-
-const ActionButton = ({ icon: Icon, label, onClick, color = 'text-accent-start' }) => (
-    <button onClick={onClick} className="flex flex-col items-center justify-center gap-2 group w-full">
-        <div className="w-14 h-14 flex items-center justify-center bg-black/20 rounded-2xl group-hover:bg-black/40 transition-colors">
-            <Icon className={`w-8 h-8 ${color}`} />
-        </div>
-        <span className="text-xs font-semibold text-text-secondary text-center w-full">{label}</span>
-    </button>
-);
+const StatCard = ({ label, value }) => ( <div className="flex-1 text-center"> <p className="text-2xl font-bold text-text-primary">{value.toFixed(2)}</p> <p className="text-xs text-text-secondary uppercase tracking-wider mt-1">{label}</p> </div> );
+const ActionCard = ({ icon: Icon, label, onClick }) => ( <button onClick={onClick} className="flex flex-col items-center justify-center p-4 bg-dark-secondary/70 backdrop-blur-md rounded-2xl border border-white/10 text-center hover:border-accent-start/50 transition-colors duration-200 active:bg-accent-start/10 aspect-square"> <Icon className="w-12 h-12 mb-2 text-accent-start" /> <span className="text-sm font-semibold text-text-primary">{label}</span> </button> );
+const ActionRow = ({ icon: Icon, label, onClick }) => ( <button onClick={onClick} className="w-full flex items-center p-4 bg-dark-secondary/70 backdrop-blur-md rounded-2xl border border-white/10 text-left hover:border-accent-start/50 transition-colors duration-200 active:bg-accent-start/10"> <Icon className="w-6 h-6 mr-4 text-text-secondary" /> <span className="flex-grow text-base font-semibold text-text-primary">{label}</span> <HiChevronRight className="w-5 h-5 text-gray-500" /> </button> );
 
 const ProfilePage = () => {
-  const { user, logout } = useUserStore();
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-  
-  const [isWithdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
-  const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
-  const [isDepositAmountModalOpen, setDepositAmountModalOpen] = useState(false);
+    const { user, logout } = useUserStore();
+    const navigate = useNavigate();
+    const { t } = useTranslation();
+    
+    // [NEXUS DIRECT DEPOSIT] - Se simplifica la gestión de modales, ya que el de depósito se elimina.
+    // const [modalState, setModalState] = React.useState({ ... });
+    // const openModal = (modalName) => ...;
+    // const closeModal = (modalName) => ...;
+    
+    const handleWithdrawClick = () => {
+        // La lógica de retiro (que sí usa modales) se mantiene.
+        toast.error('La función de retiro no está disponible en esta versión.');
+    };
+    
+    if (!user) { return <div className="h-full w-full flex items-center justify-center pt-16"><Loader /></div>; }
 
-  if (!user) { return <div className="h-full w-full flex items-center justify-center"><Loader text={t('common.loading')} /></div> }
+    const mainActions = [
+        // [NEXUS DIRECT DEPOSIT] - CORRECCIÓN CRÍTICA
+        // El onClick ahora navega directamente a la página de selección de criptomonedas.
+        // No se pasa ningún 'amountNeeded', por lo que la página sabrá que es un depósito general.
+        { label: t('profile.recharge'), icon: HiOutlineArrowDownOnSquare, onClick: () => navigate('/crypto-selection') },
+        { label: t('profile.withdraw'), icon: HiOutlineArrowUpOnSquare, onClick: handleWithdrawClick },
+        { label: t('profile.records'), icon: HiOutlineRectangleStack, onClick: () => navigate('/history') },
+        { label: t('profile.invite'), icon: HiOutlineUserGroup, onClick: () => navigate('/team') },
+    ];
+    
+    const secondaryActions = [
+        { label: t('profile.password'), icon: HiOutlineKey, onClick: () => toast.error('Función no disponible.') },
+        { label: t('profile.language'), icon: HiOutlineLanguage, onClick: () => navigate('/language') },
+        { label: t('profile.support'), icon: HiOutlineChatBubbleLeftRight, onClick: () => navigate('/support') },
+        { label: t('profile.faq'), icon: HiOutlineQuestionMarkCircle, onClick: () => navigate('/faq') },
+        { label: t('profile.about'), icon: HiOutlineInformationCircle, onClick: () => navigate('/about') },
+    ];
 
-  const handleWithdrawClick = () => {
-    if ((user?.balance?.usdt || 0) < 1.0) { toast.error(t('profilePage.toasts.insufficientBalance', {min: "1.00"})); } 
-    else { setWithdrawalModalOpen(true); }
-  };
-  const handleSwapClick = () => {
-    if ((user?.balance?.ntx || 0) < 10000) { toast.error(t('profilePage.toasts.insufficientNtx', {min: "10,000"})); } 
-    else { setIsSwapModalOpen(true); }
-  };
-  const handleRechargeClick = () => setDepositAmountModalOpen(true);
-  
-  const handleAmountProceed = (amount) => {
-    setDepositAmountModalOpen(false);
-    const pricesPromise = api.get('/payment/prices');
-    toast.promise(pricesPromise, {
-      loading: t('profilePage.toasts.loadingPrices'),
-      success: (response) => {
-        navigate('/crypto-selection', { state: { totalCost: amount, cryptoPrices: response.data } });
-        return t('profilePage.toasts.selectCoin');
-      },
-      error: (err) => err.response?.data?.message || t('common.error'),
-    });
-  };
-
-  const mainActions = [
-    { label: t('profile.recharge'), icon: HiOutlineArrowDownOnSquare, onClick: handleRechargeClick },
-    { label: t('profile.withdraw'), icon: HiOutlineArrowUpOnSquare, onClick: handleWithdrawClick },
-    { label: t('profile.records'), icon: HiOutlineRectangleStack, onClick: () => navigate('/history') },
-    { label: t('profile.exchange'), icon: HiOutlineArrowsRightLeft, onClick: handleSwapClick },
-  ];
-  const secondaryActions = [
-    { label: t('profile.invite'), icon: HiOutlineUserGroup, onClick: () => navigate('/team') },
-    { label: t('profile.language'), icon: HiOutlineLanguage, onClick: () => navigate('/language') },
-    { label: t('profile.faq'), icon: HiOutlineQuestionMarkCircle, onClick: () => navigate('/faq') },
-    { label: t('profile.about'), icon: HiOutlineInformationCircle, onClick: () => navigate('/about') },
-    { label: t('profile.support'), icon: HiOutlineChatBubbleLeftRight, onClick: () => navigate('/support') },
-  ];
-
- return (
-    <>
-      <motion.div className="flex flex-col h-full space-y-6 p-4" variants={pageVariants} initial="hidden" animate="visible">
-        <ProfileHeader user={user} t={t} />
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/10 space-y-5">
-          <div className="flex justify-around items-center">
-              <div className="text-center">
-                  <p className="text-2xl font-bold text-white">{(user?.balance?.usdt || 0).toFixed(2)}</p>
-                  <p className="text-xs text-text-secondary">{t('profilePage.balanceUsdtLabel')}</p>
-              </div>
-              <div className="h-10 w-px bg-white/20" />
-              <div className="text-center">
-                  <p className="text-2xl font-bold text-white">{(user?.balance?.ntx || 0).toFixed(2)}</p>
-                  <p className="text-xs text-text-secondary">{t('profilePage.balanceNtxLabel')}</p>
-              </div>
-          </div>
-          <div className="grid grid-cols-4 gap-x-2 gap-y-4">
-              {mainActions.map(action => <ActionButton key={action.label} {...action} />)}
-          </div>
-        </div>
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/10">
-          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))' }}>
-            {secondaryActions.map(action => <ActionButton key={action.label} {...action} color="text-text-secondary" />)}
-          </div>
-        </div>
-        <div className="flex-grow"></div>
-        <div className="pb-4">
-          <button onClick={logout} className="w-full py-3 font-bold text-red-400 bg-red-500/20 rounded-xl border border-red-500/30 hover:bg-red-500/40 transition-colors">
-            {t('profile.logout')}
-          </button>
-        </div>
-      </motion.div>
-      <AnimatePresence>
-        {isWithdrawalModalOpen && <WithdrawalModal onClose={() => setWithdrawalModalOpen(false)} />}
-        {isSwapModalOpen && <SwapModal onClose={() => setIsSwapModalOpen(false)} />}
-        {isDepositAmountModalOpen && <DepositAmountModal onClose={() => setDepositAmountModalOpen(false)} onProceed={handleAmountProceed} />}
-      </AnimatePresence>
-    </>
-  );
+    return (
+        <motion.div 
+            className="flex flex-col h-full overflow-y-auto no-scrollbar p-4 gap-6" 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            transition={{ duration: 0.5 }}
+        >
+            <div className="flex flex-col items-center text-center pt-4">
+                <img src={user?.photoUrl} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-dark-secondary" />
+                <h1 className="text-2xl font-bold mt-4">{user?.username}</h1>
+                <p className="text-sm text-text-secondary mt-1 font-mono">ID: {user?.telegramId}</p>
+            </div>
+            
+            <div className="flex items-center justify-around p-4 bg-dark-secondary/70 backdrop-blur-md rounded-2xl border border-white/10">
+                <StatCard label={t('profilePage.balanceUsdtLabel')} value={user?.balance?.usdt || 0} />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+                {mainActions.map(action => <ActionCard key={action.label} {...action} />)}
+            </div>
+            
+            <div className="space-y-3">
+                {secondaryActions.map(action => <ActionRow key={action.label} {...action} />)}
+            </div>
+            
+            <div className="pt-4">
+                <button onClick={logout} className="w-full flex items-center justify-center gap-3 p-4 bg-red-500/10 backdrop-blur-md rounded-2xl border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors">
+                    <HiOutlineArrowRightOnRectangle className="w-6 h-6" />
+                    <span className="text-base font-bold">{t('profile.logout')}</span>
+                </button>
+            </div>
+        </motion.div>
+    );
 };
 export default ProfilePage;

@@ -1,49 +1,56 @@
-// --- START OF FILE src/components/layout/Layout.jsx ---
+// RUTA: frontend/src/components/layout/Layout.jsx (VERSIÓN "NEXUS - SAFE AREA FIX")
 
-// frontend/src/components/layout/Layout.jsx (MODIFICADO: Barra de navegación con nuevo estilo sólido)
-import React, { useRef } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+
 import BottomNavBar from './BottomNavBar';
 import FloatingSupportButton from '../common/FloatingSupportButton';
-import './LayoutAnimations.css';
+
+// Nota: La lógica de Loader y UserGatekeeper se ha movido a App.jsx,
+// por lo que este componente ahora es más simple y se enfoca solo en el layout.
 
 const Layout = () => {
-  const location = useLocation();
-  const dragContainerRef = useRef(null);
-
-  const backgroundClass = location.pathname === '/' 
-    ? 'bg-space-background bg-cover bg-center' 
-    : 'bg-internal-background bg-cover bg-center';
-
   return (
-    <div ref={dragContainerRef} className={`w-full min-h-screen text-text-primary font-sans ${backgroundClass} overflow-hidden`}>
-      <div className="container mx-auto max-w-lg min-h-screen flex flex-col bg-transparent">
-        <main className="flex-grow p-4 pb-28 flex flex-col overflow-y-auto">
-          <div key={location.pathname} className="flex flex-col flex-grow fade-in">
-            <Outlet />
-          </div>
+    // [NEXUS SAFE AREA FIX] - 1. Contenedor principal de la aplicación.
+    // Usamos `h-[100dvh]` para una altura de viewport dinámica y precisa en móviles.
+    // `pb-[env(safe-area-inset-bottom)]` es la clave: añade un padding automático
+    // en la parte inferior solo en dispositivos como iPhone para evitar la barra de gestos.
+    <div className="h-[100dvh] w-screen flex justify-center bg-black">
+      <div 
+        className="h-full w-full max-w-lg relative font-sans bg-dark-primary text-text-primary overflow-hidden"
+      >
+        {/* 
+          [NEXUS SAFE AREA FIX] - 2. Contenedor del contenido de la página.
+          `pb-16` asegura que el contenido scrolleable siempre tenga espacio
+          para no quedar oculto detrás del BottomNavBar (que tiene altura h-16).
+        */}
+        <main className="h-full w-full overflow-y-auto no-scrollbar pb-16">
+          <Outlet />
         </main>
         
-        <footer className="fixed bottom-0 left-0 right-0 w-full max-w-lg mx-auto z-50 p-4">
-          {/* --- CAMBIO DE ESTILO DE LA BARRA DE NAVEGACIÓN --- */}
-          {/*
-            - Antes: bg-black/50 backdrop-blur-lg rounded-full shadow-glow border border-white/10
-            - Ahora: 
-              - bg-slate-900: Fondo sólido oscuro, similar al de los items del ranking.
-              - rounded-xl: Bordes suavemente redondeados, no en forma de píldora. (Puedes probar con 'rounded-lg' o 'rounded-2xl' si prefieres).
-              - border border-white/10: Se mantiene un borde sutil para definir la forma.
-            - Se han eliminado 'backdrop-blur-lg' y 'shadow-glow'.
-          */}
-          <div className="bg-slate-900 rounded-xl border border-white/10">
-            <BottomNavBar />
-          </div>
-        </footer>
-
-        <FloatingSupportButton dragRef={dragContainerRef} />
+        {/* 
+          [NEXUS SAFE AREA FIX] - 3. El BottomNavBar se mantiene igual, pero el padding
+          en el contenedor padre le dará el espacio necesario en la parte inferior.
+        */}
+        <BottomNavBar />
+        
+        <FloatingSupportButton />
+        
+        <Toaster
+          position="top-center"
+          reverseOrder={false}
+          toastOptions={{
+            style: {
+              background: '#1F2937', // bg-dark-secondary
+              color: '#E5E7EB', // text-text-primary
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            },
+          }}
+        />
       </div>
     </div>
   );
 };
 
 export default Layout;
-// --- END OF FILE src/components/layout/Layout.jsx ---
