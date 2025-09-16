@@ -1,17 +1,15 @@
-// RUTA: frontend/src/store/userStore.js (VERSIÓN "NEXUS - FINAL STABLE")
+// RUTA: frontend/src/store/userStore.js (VERSIÓN "NEXUS - FINAL SIMPLIFIED")
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
-// Estado inicial claro y predecible.
 const initialState = {
   user: null, 
   token: null, 
   settings: null,
   isAuthenticated: false, 
-  isLoadingAuth: true, // Siempre comienza cargando hasta que se resuelva la sesión.
+  isLoadingAuth: true, // Siempre comienza cargando.
   isMaintenanceMode: false,
-  maintenanceMessage: '',
 };
 
 const useUserStore = create(
@@ -19,64 +17,57 @@ const useUserStore = create(
     (set, get) => ({
       ...initialState,
 
-      syncUserWithBackend: async (telegramUser) => {
-        // Nos aseguramos de que el estado de carga esté activo.
-        if (!get().isLoadingAuth) set({ isLoadingAuth: true });
-        
+      // Acción principal para obtener o actualizar los datos del usuario.
+      fetchUserSession: async (telegramUser) => {
+        set({ isLoadingAuth: true });
         try {
-          const response = await api.post('/auth/sync', { telegramUser }, { timeout: 15000 });
-          const { token, user, settings } = response.data;
+          // Si tenemos un token, usamos /auth/profile para una sincronización más ligera.
+          // Si no, usamos /auth/sync para crear/loguear al usuario.
+          const hasToken = !!get().token;
+          const endpoint = hasToken ? '/auth/profile' : '/auth/sync';
+          const payload = hasToken ? {} : { telegramUser };
+          
+          const response = await api.post(endpoint, payload, { timeout: 15000 });
+          const { user, settings, token } = response.data;
           
           set({ 
               user, 
-              token, 
               settings, 
+              token: token || get().token, // Usar el nuevo token si existe, si no, mantener el antiguo.
               isAuthenticated: true, 
+              isLoadingAuth: false,
               isMaintenanceMode: false,
           });
+
         } catch (error) {
-          console.error('[Store] Error en syncUser:', error.response?.data?.message || error.message);
-          
+          console.error('[Store] Fallo en la sesión:', error.response?.data?.message || error.message);
           if (error.response?.status === 503) {
-            set({
-              ...initialState, // Resetea todo
-              isMaintenanceMode: true,
-              maintenanceMessage: error.response.data.message || 'En mantenimiento.',
-            });
+            set({ ...initialState, isMaintenanceMode: true, isLoadingAuth: false });
           } else {
-            // Cualquier otro error (timeout, 401, etc.) resulta en un estado de deslogueo.
-            set({ ...initialState });
+            // Cualquier otro error (401, timeout, etc.) resulta en un deslogueo completo.
+            set({ ...initialState, isLoadingAuth: false });
           }
-        } finally {
-          // Bloque CRÍTICO: Garantiza que el estado de carga SIEMPRE se desactive.
-          set({ isLoadingAuth: false });
         }
       },
-      
-      refreshUserData: async () => { /* ... (sin cambios) ... */ },
-      setUser: (newUserObject) => set({ user: newUserObject }),
       
       logout: () => {
         set({ ...initialState, isLoadingAuth: false });
       },
     }),
     {
-      name: 'mega-fabrica-storage-v3', // Se cambia el nombre para forzar una reinicialización del storage.
+      name: 'mega-fabrica-storage-v4', // Cambiado para forzar reinicio.
       storage: createJSONStorage(() => localStorage),
-      // Solo persistimos el token. El resto de datos se obtienen al sincronizar.
-      // Esto previene tener datos de usuario desactualizados en el storage.
       partialize: (state) => ({ token: state.token }),
     }
   )
 );
 
-// Sincronización del token con las cabeceras de Axios.
 useUserStore.subscribe(
   (state) => state.token,
   (token) => {
     api.defaults.headers.common['Authorization'] = token ? `Bearer ${token}` : undefined;
   },
-  { fireImmediately: true } // Se ejecuta inmediatamente al cargar la app.
+  { fireImmediately: true }
 );
 
 export default useUserStore;
