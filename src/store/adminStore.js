@@ -1,4 +1,4 @@
-// RUTA: frontend/src/store/adminStore.js (VERSIÓN "NEXUS - HYDRATION AWARE")
+// RUTA: frontend/src/store/adminStore.js (VERSIÓN "NEXUS - GUARDIAN")
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -7,12 +7,12 @@ const initialState = {
   token: null,
   isAuthenticated: false,
   isLoading: false,
-  _hasHydrated: false, // [NEXUS HYDRATION AWARE] Nuevo estado para rastrear la rehidratación.
+  _hasHydrated: false, // Estado clave para rastrear la carga desde localStorage.
 };
 
 const useAdminStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       ...initialState,
 
       loginSuccess: (token, adminData) => {
@@ -29,14 +29,13 @@ const useAdminStore = create(
       },
       
       loginFail: () => {
-        set({ ...initialState, _hasHydrated: true }); // Mantenemos el estado de hidratación
+        set({ ...initialState, _hasHydrated: true });
       },
 
       logout: () => {
-        set({ ...initialState, _hasHydrated: true }); // Mantenemos el estado de hidratación
+        set({ ...initialState, _hasHydrated: true });
       },
       
-      // [NEXUS HYDRATION AWARE] Nueva acción para ser llamada cuando la hidratación termina.
       setHasHydrated: (state) => {
         set({
           _hasHydrated: state,
@@ -52,8 +51,6 @@ const useAdminStore = create(
         admin: state.admin, 
       }),
       
-      // [NEXUS HYDRATION AWARE] Usamos la API onRehydrateStorage del middleware.
-      // Se ejecuta una vez que los datos de localStorage se cargan en el store.
       onRehydrateStorage: () => (state) => {
         console.log('[adminStore] Rehidratación desde localStorage completada.');
         state.setHasHydrated(true);
@@ -62,7 +59,6 @@ const useAdminStore = create(
   )
 );
 
-// Sincronización del estado de autenticación después de la rehidratación.
 useAdminStore.subscribe((state) => {
   if (state._hasHydrated && state.token && !state.isAuthenticated) {
     useAdminStore.setState({ isAuthenticated: true });
