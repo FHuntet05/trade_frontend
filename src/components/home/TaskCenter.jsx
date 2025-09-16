@@ -1,48 +1,63 @@
-// frontend/src/components/home/TaskCenter.jsx (CÓDIGO COMPLETO Y SIN CAMBIOS)
+// RUTA: frontend/src/components/home/TaskCenter.jsx (VERSIÓN "NEXUS - DEFENSIVE FIX")
+
 import React from 'react';
-import { motion } from 'framer-motion';
-import { useTaskLogic } from '../../hooks/useTaskLogic';
+import { useTranslation } from 'react-i18next';
+import { useTaskLogic } from '../../hooks/useTaskLogic'; 
 import TaskItem from '../tasks/TaskItem';
+import { motion } from 'framer-motion';
 
 const TaskCenter = () => {
-  const { taskStatus, isLoading, handleClaimTask, handleGoToTask } = useTaskLogic();
-
-  const allTasks = [
-    { id: 'boughtUpgrade', title: 'Primera Mejora', description: 'Compra cualquier herramienta VIP.', reward: 1500 },
-    { id: 'invitedTenFriends', title: 'Invitar 3 Amigos', description: 'Tu equipo debe tener 3 miembros.', reward: 1000 },
-    { id: 'joinedTelegram', title: 'Unirse al Grupo', description: 'Únete a nuestra comunidad oficial.', reward: 500, link: 'https://t.me/nicebotntx' },
-  ];
+  const { t } = useTranslation();
+  const { tasks, isLoading, handleClaimTask, handleGoToTask } = useTaskLogic();
 
   if (isLoading) {
-    return (
-        <div className="w-full space-y-4 bg-dark-secondary p-4 rounded-2xl border border-white/10">
-            <h2 className="text-xl font-bold text-white text-center mb-2">Centro de Tareas</h2>
-            <div className="h-16 bg-dark-primary rounded-xl animate-pulse"></div>
-            <div className="h-16 bg-dark-primary rounded-xl animate-pulse"></div>
-            <div className="h-16 bg-dark-primary rounded-xl animate-pulse"></div>
+      return (
+        <div className="w-full space-y-3">
+          <div className="h-24 bg-dark-secondary/50 rounded-2xl animate-pulse"></div>
+          <div className="h-24 bg-dark-secondary/50 rounded-2xl animate-pulse"></div>
         </div>
-    );
+      );
   }
+  
+  // [NEXUS DEFENSIVE FIX] - CORRECCIÓN CRÍTICA
+  // Se utiliza un "array de fallback". Si `tasks` es undefined o null, se usará un array vacío `[]`.
+  // Esto previene el error `undefined.map` y asegura que el componente nunca crashee.
+  const taskList = tasks || [];
 
-  if (!taskStatus) {
-      return null;
+  if (taskList.length === 0) {
+      return (
+          <div className="bg-dark-secondary/70 backdrop-blur-md rounded-2xl p-6 text-center text-text-secondary border border-white/10">
+              <p>{t('tasks.noTasks', 'No hay tareas disponibles en este momento.')}</p>
+          </div>
+      );
   }
-
+  
   return (
-    <div className="w-full space-y-4 bg-dark-secondary p-4 rounded-2xl border border-white/10">
-      <h2 className="text-xl font-bold text-white text-center mb-2">Centro de Tareas</h2>
-      <motion.div className="space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        {allTasks.map(task => (
+    <motion.div 
+      className="space-y-3" 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }}
+      transition={{ staggerChildren: 0.1 }}
+    >
+      {taskList.map(task => {
+        const translatedTask = {
+          ...task,
+          title: t(`tasks.${task.taskId}.title`), 
+          description: t(`tasks.${task.taskId}.description`, { 
+            count: task.target 
+          }),
+        };
+        
+        return (
           <TaskItem
-            key={task.id}
-            task={task}
-            status={taskStatus}
-            onGoToTask={handleGoToTask}
-            onClaim={handleClaimTask}
+              key={task.taskId}
+              task={translatedTask}
+              onGoToTask={handleGoToTask}
+              onClaim={handleClaimTask}
           />
-        ))}
-      </motion.div>
-    </div>
+        );
+      })}
+    </motion.div>
   );
 };
 
