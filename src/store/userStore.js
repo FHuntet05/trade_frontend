@@ -1,50 +1,30 @@
-// frontend/src/store/userStore.js (VERSIÓN FINAL v32.0 - SIMPLE Y COMPLETA)
+// RUTA: frontend/src/store/userStore.js (VERSIÓN "NEXUS - TIMEOUT FIX")
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
-// Interceptores (SIN CAMBIOS)
-api.interceptors.request.use(
-  (config) => {
-    const token = useUserStore.getState().token;
-    if (token) config.headers['Authorization'] = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response && error.response.status === 401) {
-      const useUserStore = (await import('./userStore')).default;
-      useUserStore.getState().logout();
-    }
-    return Promise.reject(error);
-  }
-);
-
 const useUserStore = create(
   persist(
-    (set) => ({
-      // --- ESTADOS DEL STORE ---
+    (set, get) => ({
       user: null, 
       token: null, 
-      isAuthenticated: false, 
-      isLoadingAuth: true, 
       settings: null,
-      
-      /**
-       * Sincroniza los datos del usuario de Telegram con el backend.
-       * Esta función NO envía ningún código de referido.
-       * @param {object} telegramUser - El objeto `user` de `window.Telegram.WebApp.initDataUnsafe`.
-       */
+      isAuthenticated: false, 
+      isLoadingAuth: true, // Debe ser true inicialmente
+      isMaintenanceMode: false,
+      maintenanceMessage: '',
+      isHydrated: false,
+
       syncUserWithBackend: async (telegramUser) => {
-        set({ isLoadingAuth: true });
+        // Aseguramos que el estado de carga esté activo al inicio.
+        if (!get().isLoadingAuth) {
+            set({ isLoadingAuth: true });
+        }
+        
         try {
-          console.log('[Store] Enviando datos de usuario al backend para sincronizar...');
-          const response = await api.post('/auth/sync', { telegramUser });
-          
+          // [NEXUS FIX] Se añade un timeout de 10 segundos para forzar la resolución o el error.
+          const response = await api.post('/auth/sync', { telegramUser }, { timeout: 10000 }); 
           const { token, user, settings } = response.data;
           
           set({ 
@@ -52,51 +32,92 @@ const useUserStore = create(
               token, 
               isAuthenticated: true, 
               settings, 
-              isLoadingAuth: false 
-            });
-          console.log('[Store] Sincronización completada con éxito.');
+              // El cleanup a isLoadingAuth: false se hará en el bloque finally.
+              isMaintenanceMode: false,
+              maintenanceMessage: ''
+          });
 
         } catch (error) {
-          console.error('Error fatal al sincronizar usuario:', error);
-          set({ 
+          console.error('[Store] Error durante la sincronización:', error.response?.data?.message || error.message);
+          
+          // Lógica de Mantenimiento
+          if (error.response && error.response.status === 503) {
+            set({
+              isAuthenticated: false,
+              isMaintenanceMode: true,
+              maintenanceMessage: error.response.data.maintenanceMessage || 'El sistema está en mantenimiento.'
+            });
+          } else {
+            // Cualquier otro error de autenticación/red.
+            set({ 
               user: null, 
               token: null, 
               isAuthenticated: false, 
-              isLoadingAuth: false 
+              settings: null,
+              isMaintenanceMode: false,
+              maintenanceMessage: ''
             });
+          }
+        } finally {
+            // [NEXUS FIX - CRÍTICO] Garantizamos que isLoadingAuth siempre se desactive,
+            // sin importar si la promesa fue exitosa, falló, o se colgó (timeout).
+            set({ isLoadingAuth: false }); 
         }
       },
 
-      /**
-       * Actualiza parcialmente el estado del usuario.
-       * Útil para operaciones que devuelven un objeto de usuario actualizado,
-       * como reclamar recompensas o comprar mejoras.
-       * @param {object} newUserData - Los nuevos campos para fusionar con el usuario existente.
-       */
-      updateUser: (newUserData) => {
-        set((state) => ({
-          user: state.user ? { ...state.user, ...newUserData } : newUserData,
-        }));
+      refreshUserData: async () => {
+        if (!get().isAuthenticated) return;
+        try {
+          const response = await api.get('/auth/profile'); 
+          const { user: updatedUser, settings: updatedSettings } = response.data;
+          set({ user: updatedUser, settings: updatedSettings });
+          console.log('[Store] Datos de usuario refrescados en segundo plano.');
+        } catch (error) {
+          console.error('[Store] Fallo al refrescar los datos del usuario:', error.response?.data?.message || error.message);
+        }
+      },
+
+      setUser: (newUserObject) => {
+        set({ user: newUserObject });
       },
       
-      /**
-       * Limpia el estado de autenticación del usuario.
-       */
       logout: () => {
         set({
           user: null,
           token: null,
           isAuthenticated: false,
-          isLoadingAuth: false
-        })
-      }
+          isLoadingAuth: false,
+          settings: null,
+          isMaintenanceMode: false,
+          maintenanceMessage: ''
+        });
+        console.log('[Store] Sesión cerrada.');
+      },
+      
+      _setHydrated: () => {
+        set({ isHydrated: true });
+      },
     }),
     {
-      name: 'neuro-link-storage',
+      name: 'mega-fabrica-auth-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state._setHydrated();
+        }
+      }
     }
   )
+);
+
+useUserStore.subscribe(
+  (state) => state.token,
+  (token) => {
+    if (api.defaults.headers.common) {
+        api.defaults.headers.common['Authorization'] = token ? `Bearer ${token}` : '';
+    }
+  }
 );
 
 export default useUserStore;
