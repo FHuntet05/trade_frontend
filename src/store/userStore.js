@@ -1,10 +1,21 @@
-// RUTA: frontend/src/store/userStore.js (VERSIÓN "NEXUS - STABILITY PATCH v1.0")
+// RUTA: frontend/src/store/userStore.js (VERSIÓN "NEXUS - RESILIENCY PATCH v1.1")
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
+// [MODIFICACIÓN CRÍTICA] - Principio de Estado Resiliente
+// Se define un objeto de usuario "vacío" pero con la estructura correcta.
+// Esto evita que los componentes fallen al intentar acceder a propiedades como 'activeTools'.
+const guestUser = {
+  activeTools: [],
+  referrals: [],
+  // Añadir cualquier otra propiedad que sea un array o un objeto y que pueda ser accedida
+  // por los componentes incluso antes de que el usuario esté completamente cargado.
+  // Las propiedades simples (strings, numbers) pueden ser omitidas ya que `undefined` no causa crasheos al renderizar.
+};
+
 const initialState = {
-  user: null, 
+  user: guestUser, // En lugar de 'null', usamos el objeto invitado.
   token: null, 
   settings: null,
   isAuthenticated: false, 
@@ -18,8 +29,6 @@ const useUserStore = create(
       ...initialState,
 
       fetchUserSession: async (telegramUser) => {
-        // [MODIFICACIÓN INICIO] - Se limpia el estado de mantenimiento previo al inicio de la petición.
-        // Esto asegura que si el modo mantenimiento se desactiva, el usuario pueda re-autenticarse.
         set({ isLoadingAuth: true, isMaintenanceMode: false }); 
         
         try {
@@ -40,40 +49,34 @@ const useUserStore = create(
               token: token || get().token,
               isAuthenticated: true, 
               isLoadingAuth: false,
-              isMaintenanceMode: false, // Aseguramos que está en false en caso de éxito.
+              isMaintenanceMode: false,
           });
 
         } catch (error) {
           console.error('[Store] Fallo en la sesión:', error.response?.data?.message || error.message);
           
-          // [MODIFICACIÓN CRÍTICA] - Lógica de manejo de errores atómica y explícita.
           if (error.response?.status === 503) {
-            // Transición específica al estado de MANTENIMIENTO.
-            // No usamos ...initialState. Declaramos explícitamente la nueva forma del estado.
             set({
-              isMaintenanceMode: true, // El flag importante.
-              isAuthenticated: false,    // El acceso está denegado.
-              user: null,                // No hay datos de usuario.
-              token: null,               // El token (si lo hubiera) ya no es válido para acceder.
-              isLoadingAuth: false,      // La carga ha finalizado.
+              isMaintenanceMode: true,
+              isAuthenticated: false,
+              user: guestUser, // [MODIFICACIÓN] Usamos el objeto invitado
+              token: null,
+              isLoadingAuth: false,
             });
           } else {
-            // Transición específica al estado de FALLO DE AUTENTICACIÓN GENÉRICO.
-            // Limpiamos todo excepto el flag de mantenimiento.
             set({
               isAuthenticated: false,
-              user: null,
+              user: guestUser, // [MODIFICACIÓN] Usamos el objeto invitado
               token: null,
               isLoadingAuth: false,
               isMaintenanceMode: false,
             });
           }
-          // [MODIFICACIÓN FIN]
         }
       },
       
       logout: () => {
-        // La función de logout ahora es más simple, solo resetea a un estado inicial limpio.
+        // La función de logout ahora resetea al estado inicial que ya es resiliente.
         set({ ...initialState, isLoadingAuth: false });
       },
     }),
