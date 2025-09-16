@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS - RENDER FIX")
+// RUTA: frontend/src/pages/admin/AdminUsersPage.jsx (VERSIÓN "NEXUS - DIRECT READ FIX")
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import adminApi from '@/pages/admin/api/adminApi';
@@ -10,72 +10,62 @@ import PromoteAdminModal from '@/pages/admin/components/PromoteAdminModal';
 import ResetPasswordModal from '@/pages/admin/components/ResetPasswordModal';
 import { HiOutlineUserGroup, HiOutlineMagnifyingGlass, HiOutlineShieldCheck, HiOutlineLockClosed, HiOutlineNoSymbol, HiOutlineCheckCircle } from 'react-icons/hi2';
 
-// [NEXUS RENDER FIX] Componente ActionsCell movido fuera para claridad.
-// Ahora recibe isSuperAdmin y isAdmin como props.
-const ActionsCell = ({ user, isSuperAdmin, isAdmin, onPromoteClick, onResetPasswordClick, onToggleBanClick }) => {
+// [NEXUS DIRECT READ] El componente ActionsCell ahora es autónomo.
+const ActionsCell = ({ user, onAction }) => {
     const stopPropagation = (e) => e.stopPropagation();
     
-    const superAdminIdFromEnv = import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
+    // Lee el estado MÁS RECIENTE directamente desde el hook.
+    const isSuperAdmin = useAdminStore(state => state.isSuperAdmin());
 
-    // No mostrar acciones si el usuario de la fila es el Super Admin.
+    const superAdminIdFromEnv = import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
+    
+    // Si el usuario de la fila es el Super Admin, no se muestra nada.
     if (user.telegramId?.toString() === superAdminIdFromEnv?.trim()) {
         return <td className="p-3 text-center"></td>;
     }
-
-    // No mostrar acciones si el admin logueado no es Super Admin y el usuario de la fila es otro admin.
-    if (!isSuperAdmin && user.role === 'admin') {
-        return <td className="p-3 text-center"></td>;
-    }
-
+    
     return (
         <td className="p-3 text-center" onClick={stopPropagation}>
             <div className="flex justify-center items-center gap-2">
-                {/* ACCIÓN: Promover (Solo Super Admin sobre usuarios normales) */}
+                {/* Lógica de permisos simplificada */}
                 {isSuperAdmin && user.role !== 'admin' && (
-                    <button onClick={() => onPromoteClick(user)} title="Promover a Administrador" className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-full">
+                    <button onClick={() => onAction('promote', user)} title="Promover a Administrador" className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-full">
                         <HiOutlineShieldCheck className="w-5 h-5" />
                     </button>
                 )}
-
-                {/* ACCIONES: Resetear Contraseña (Solo Super Admin sobre otros admins) */}
                 {isSuperAdmin && user.role === 'admin' && (
-                    <button onClick={() => onResetPasswordClick(user)} title="Resetear Contraseña" className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-full">
-                        <HiOutlineLockClosed className="w-5 h-5" />
-                    </button>
-                )}
-                
-                {/* ACCIONES: Banear/Desbanear (Solo Super Admin sobre otros Admins) */}
-                {isSuperAdmin && user.role === 'admin' && (
-                    user.status === 'active' ? (
-                        <button onClick={() => onToggleBanClick(user._id, user.status)} title="Banear Administrador" className="p-2 text-red-400 hover:bg-red-500/20 rounded-full">
-                            <HiOutlineNoSymbol className="w-5 h-5" />
+                    <>
+                        <button onClick={() => onAction('resetPassword', user)} title="Resetear Contraseña" className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-full">
+                            <HiOutlineLockClosed className="w-5 h-5" />
                         </button>
-                    ) : (
-                        <button onClick={() => onToggleBanClick(user._id, user.status)} title="Desbanear Administrador" className="p-2 text-green-400 hover:bg-green-500/20 rounded-full">
-                            <HiOutlineCheckCircle className="w-5 h-5" />
-                        </button>
-                    )
+                        {user.status === 'active' ? (
+                            <button onClick={() => onAction('toggleBan', user)} title="Banear Administrador" className="p-2 text-red-400 hover:bg-red-500/20 rounded-full">
+                                <HiOutlineNoSymbol className="w-5 h-5" />
+                            </button>
+                        ) : (
+                            <button onClick={() => onAction('toggleBan', user)} title="Desbanear Administrador" className="p-2 text-green-400 hover:bg-green-500/20 rounded-full">
+                                <HiOutlineCheckCircle className="w-5 h-5" />
+                            </button>
+                        )}
+                    </>
                 )}
             </div>
         </td>
     );
 };
 
-
 const AdminUsersPage = () => {
     const [usersData, setUsersData] = useState({ users: [], pages: 1 });
     const [isLoading, setIsLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null);
-    const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
-    const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+    const [modalType, setModalType] = useState(null); // 'promote' o 'resetPassword'
+
     const [searchParams, setSearchParams] = useSearchParams();
     const currentPage = Number(searchParams.get('page')) || 1;
     const currentSearch = searchParams.get('search') || '';
     const navigate = useNavigate();
     
-    const { admin, _hasHydrated } = useAdminStore();
-    const isSuperAdmin = useAdminStore((state) => state.isSuperAdmin());
-    const isAdmin = _hasHydrated && admin?.role === 'admin';
+    const { _hasHydrated } = useAdminStore();
 
     const fetchUsersAndAdmins = useCallback(async (page, search) => {
         setIsLoading(true);
@@ -95,9 +85,50 @@ const AdminUsersPage = () => {
     const handleSearch = (e) => { e.preventDefault(); setSearchParams({ search: e.target.elements.search.value, page: 1 }); };
     const handlePageChange = (newPage) => { setSearchParams({ search: currentSearch, page: newPage }); };
 
-    const handlePromote = async (userId, password) => { const promise = adminApi.post('/admin/admins/promote', { userId, password }); toast.promise(promise, { loading: `Promoviendo usuario...`, success: () => { setIsPromoteModalOpen(false); fetchUsersAndAdmins(currentPage, currentSearch); return `Usuario promovido a administrador.`; }, error: (err) => err.response?.data?.message || 'No se pudo promover al usuario.', }); };
-    const handleToggleAdminBan = (adminId, currentStatus) => { const newStatus = currentStatus === 'active' ? 'banned' : 'active'; const actionText = newStatus === 'banned' ? 'banear' : 'desbanear'; if (window.confirm(`¿Seguro que quieres ${actionText} a este administrador?`)) { const promise = adminApi.put(`/admin/users/${adminId}`, { status: newStatus }); toast.promise(promise, { loading: `${actionText.charAt(0).toUpperCase() + actionText.slice(1)}ndo administrador...`, success: () => { fetchUsersAndAdmins(currentPage, currentSearch); return 'Estado del administrador actualizado.'; }, error: (err) => err.response?.data?.message || 'Error al cambiar el estado del admin.', }); } };
-    const handleResetPassword = async (adminId) => { const promise = adminApi.post('/admin/admins/reset-password', { adminId }); toast.promise(promise, { loading: 'Reseteando contraseña...', success: (res) => { setIsResetPasswordModalOpen(false); window.prompt( `Contraseña reseteada. Comunica esta nueva contraseña temporal al administrador (Cópiala con CTRL+C):`, res.data.temporaryPassword ); return 'Contraseña actualizada.'; }, error: (err) => err.response?.data?.message || 'Error al resetear la contraseña.', }); };
+    const handlePromoteSubmit = async (userId, password) => {
+        const promise = adminApi.post('/admin/admins/promote', { userId, password });
+        toast.promise(promise, {
+            loading: `Promoviendo usuario...`,
+            success: () => { setModalType(null); fetchUsersAndAdmins(currentPage, currentSearch); return `Usuario promovido.`; },
+            error: (err) => err.response?.data?.message || 'No se pudo promover al usuario.',
+        });
+    };
+
+    const handleToggleBan = (user) => {
+        const { _id, status } = user;
+        const newStatus = status === 'active' ? 'banned' : 'active';
+        const actionText = newStatus === 'banned' ? 'banear' : 'desbanear';
+        if (window.confirm(`¿Seguro que quieres ${actionText} a este administrador?`)) {
+            const promise = adminApi.put(`/admin/users/${_id}`, { status: newStatus });
+            toast.promise(promise, {
+                loading: `${actionText.charAt(0).toUpperCase() + actionText.slice(1)}ndo...`,
+                success: () => { fetchUsersAndAdmins(currentPage, currentSearch); return 'Estado actualizado.'; },
+                error: (err) => err.response?.data?.message || 'Error al cambiar el estado.',
+            });
+        }
+    };
+    
+    const handleResetPasswordSubmit = async (adminId) => {
+        const promise = adminApi.post('/admin/admins/reset-password', { adminId });
+        toast.promise(promise, {
+            loading: 'Reseteando contraseña...',
+            success: (res) => {
+                setModalType(null);
+                window.prompt(`Contraseña reseteada. Cópiala y envíala al administrador:`, res.data.temporaryPassword);
+                return 'Contraseña actualizada.';
+            },
+            error: (err) => err.response?.data?.message || 'Error al resetear.',
+        });
+    };
+    
+    const handleActionClick = (action, user) => {
+        setSelectedUser(user);
+        if (action === 'toggleBan') {
+            handleToggleBan(user);
+        } else {
+            setModalType(action);
+        }
+    };
 
     if (!_hasHydrated) {
         return <div className="flex justify-center p-10"><Loader text="Verificando permisos..." /></div>;
@@ -112,22 +143,14 @@ const AdminUsersPage = () => {
                     <div className="bg-dark-secondary rounded-lg border border-white/10 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="text-xs text-text-secondary uppercase bg-dark-tertiary"> <tr> <th className="p-3">Usuario</th> <th className="p-3">Rol</th> <th className="p-3">Estado</th> <th className="p-3 text-center">Acciones de Admin</th> </tr> </thead>
+                                <thead className="text-xs text-text-secondary uppercase bg-dark-tertiary"> <tr> <th className="p-3">Usuario</th> <th className="p-3">Rol</th> <th className="p-3">Estado</th> <th className="p-3 text-center">Acciones</th> </tr> </thead>
                                 <tbody className="divide-y divide-white/10">
                                     {usersData.users.map((user) => (
                                         <tr key={user._id} onClick={() => navigate(`/admin/users/${user._id}`)} className="cursor-pointer hover:bg-dark-tertiary/50 transition-colors">
                                             <td className="p-3 font-medium flex items-center gap-3"> <img src={user.photoUrl} alt="avatar" className="w-8 h-8 rounded-full bg-dark-primary" /> {user.username} ({user.telegramId}) </td>
                                             <td className="p-3"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-blue-500/20 text-blue-300' : 'bg-gray-500/20 text-gray-300'}`}>{user.role}</span></td>
                                             <td className="p-3"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{user.status}</span></td>
-                                            {/* [NEXUS RENDER FIX] Se pasan los permisos como props */}
-                                            <ActionsCell 
-                                                user={user} 
-                                                isSuperAdmin={isSuperAdmin}
-                                                isAdmin={isAdmin}
-                                                onPromoteClick={(userToPromote) => { setSelectedUser(userToPromote); setIsPromoteModalOpen(true); }}
-                                                onResetPasswordClick={(userToReset) => { setSelectedUser(userToReset); setIsResetPasswordModalOpen(true); }}
-                                                onToggleBanClick={handleToggleAdminBan}
-                                            />
+                                            <ActionsCell user={user} onAction={handleActionClick} />
                                         </tr>
                                     ))}
                                 </tbody>
@@ -137,8 +160,8 @@ const AdminUsersPage = () => {
                     </div>
                 )}
             </div>
-            {isPromoteModalOpen && <PromoteAdminModal user={selectedUser} onClose={() => setIsPromoteModalOpen(false)} onPromote={handlePromote} />}
-            {isResetPasswordModalOpen && <ResetPasswordModal user={selectedUser} onClose={() => setIsResetPasswordModalOpen(false)} onConfirm={handleResetPassword} />}
+            {modalType === 'promote' && <PromoteAdminModal user={selectedUser} onClose={() => setModalType(null)} onPromote={handlePromoteSubmit} />}
+            {modalType === 'resetPassword' && <ResetPasswordModal user={selectedUser} onClose={() => setModalType(null)} onConfirm={handleResetPasswordSubmit} />}
         </>
     );
 };
