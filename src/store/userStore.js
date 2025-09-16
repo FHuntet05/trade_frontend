@@ -1,4 +1,4 @@
-// RUTA: frontend/src/store/userStore.js (VERSIÓN "NEXUS - FINAL SIMPLIFIED")
+// RUTA: frontend/src/store/userStore.js (VERSIÓN "NEXUS - HTTP METHOD FIX")
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
@@ -8,7 +8,7 @@ const initialState = {
   token: null, 
   settings: null,
   isAuthenticated: false, 
-  isLoadingAuth: true, // Siempre comienza cargando.
+  isLoadingAuth: true,
   isMaintenanceMode: false,
 };
 
@@ -17,23 +17,27 @@ const useUserStore = create(
     (set, get) => ({
       ...initialState,
 
-      // Acción principal para obtener o actualizar los datos del usuario.
       fetchUserSession: async (telegramUser) => {
         set({ isLoadingAuth: true });
         try {
-          // Si tenemos un token, usamos /auth/profile para una sincronización más ligera.
-          // Si no, usamos /auth/sync para crear/loguear al usuario.
           const hasToken = !!get().token;
-          const endpoint = hasToken ? '/auth/profile' : '/auth/sync';
-          const payload = hasToken ? {} : { telegramUser };
+          let response;
+
+          // [NEXUS HTTP METHOD FIX] - CORRECCIÓN CRÍTICA
+          if (hasToken) {
+            // Si tenemos token, usamos GET para refrescar el perfil.
+            response = await api.get('/auth/profile', { timeout: 15000 });
+          } else {
+            // Si no hay token, usamos POST para el primer login/sincronización.
+            response = await api.post('/auth/sync', { telegramUser }, { timeout: 15000 });
+          }
           
-          const response = await api.post(endpoint, payload, { timeout: 15000 });
           const { user, settings, token } = response.data;
           
           set({ 
               user, 
               settings, 
-              token: token || get().token, // Usar el nuevo token si existe, si no, mantener el antiguo.
+              token: token || get().token,
               isAuthenticated: true, 
               isLoadingAuth: false,
               isMaintenanceMode: false,
@@ -44,7 +48,6 @@ const useUserStore = create(
           if (error.response?.status === 503) {
             set({ ...initialState, isMaintenanceMode: true, isLoadingAuth: false });
           } else {
-            // Cualquier otro error (401, timeout, etc.) resulta en un deslogueo completo.
             set({ ...initialState, isLoadingAuth: false });
           }
         }
@@ -55,7 +58,7 @@ const useUserStore = create(
       },
     }),
     {
-      name: 'mega-fabrica-storage-v4', // Cambiado para forzar reinicio.
+      name: 'mega-fabrica-storage-v5', // Cambiado para forzar reinicio.
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token }),
     }
