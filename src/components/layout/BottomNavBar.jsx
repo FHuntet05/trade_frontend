@@ -5,16 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { HiHome, HiChartBar, HiWrenchScrewdriver, HiUsers, HiUser } from 'react-icons/hi2';
 import { motion } from 'framer-motion';
 
-// --- INICIO DE LA CORRECCIÓN DE RUTAS ---
-// Se han corregido las rutas 'to' para que coincidan con la estructura de la aplicación.
+// --- INICIO DE LA CORRECCIÓN CRÍTICA DE RUTAS ---
+// Las rutas en 'to' ahora coinciden EXACTAMENTE con las definidas en App.jsx.
+// 'Mío' ahora apunta a '/home', 'Mejora' a '/tools', etc.
 const navItems = [
-  { to: '/home', labelKey: 'nav.home', Icon: HiHome },
-  { to: '/ranking', labelKey: 'nav.ranking', Icon: HiChartBar },
-  { to: '/tools', labelKey: 'nav.upgrade', Icon: HiWrenchScrewdriver },
-  { to: '/team', labelKey: 'nav.team', Icon: HiUsers },
-  { to: '/profile', labelKey: 'nav.profile', Icon: HiUser },
+  { to: '/home', labelKey: 'nav.home', Icon: HiHome }, // nav.home = Mío
+  { to: '/ranking', labelKey: 'nav.ranking', Icon: HiChartBar }, // nav.ranking = Tabla de clasificación
+  { to: '/tools', labelKey: 'nav.upgrade', Icon: HiWrenchScrewdriver }, // nav.upgrade = Mejora
+  { to: '/team', labelKey: 'nav.team', Icon: HiUsers }, // nav.team = Equipo
+  { to: '/profile', labelKey: 'nav.profile', Icon: HiUser }, // nav.profile = A mí
 ];
-// --- FIN DE LA CORRECCIÓN DE RUTAS ---
+// --- FIN DE LA CORRECCIÓN CRÍTICA DE RUTAS ---
 
 const NavItem = ({ to, labelKey, Icon }) => {
   const { t } = useTranslation();
@@ -22,7 +23,7 @@ const NavItem = ({ to, labelKey, Icon }) => {
   return (
     <NavLink
       to={to}
-      end={to === '/home'}
+      end={to === '/home'} // 'end' es importante para que 'home' no esté siempre activo
       className="flex-1 flex flex-col items-center justify-center text-xs h-full relative group z-10"
     >
       {({ isActive }) => (
@@ -57,8 +58,9 @@ const NavItem = ({ to, labelKey, Icon }) => {
 
 const BottomNavBar = () => {
   return (
-    // --- INICIO DE LA CORRECCIÓN VISUAL ---
-    // Se aplican los estilos de la imagen de referencia.
+    // --- INICIO DE LA RECONSTRUCCIÓN VISUAL ---
+    // Se aplican las clases de Tailwind para lograr el estilo de la imagen de referencia:
+    // fondo oscuro, semitransparente, desenfoque, bordes redondeados y sombra.
     <nav className="w-full h-20 flex justify-around items-center bg-dark-secondary/70 backdrop-blur-lg rounded-2xl border border-white/10 shadow-glow">
       {navItems.map((item, index) => (
         <NavItem 
@@ -69,7 +71,7 @@ const BottomNavBar = () => {
         />
       ))}
     </nav>
-    // --- FIN DE LA CORRECCIÓN VISUAL ---
+    // --- FIN DE LA RECONSTRUCCIÓN VISUAL ---
   );
 };
 
