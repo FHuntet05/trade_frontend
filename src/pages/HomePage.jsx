@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/HomePage.jsx (v4.3 - CON FONDO CONTEXTUAL FINAL)
+// RUTA: frontend/src/pages/HomePage.jsx (v4.5 - BUILD FIX DEFINITIVO)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +7,12 @@ import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
-import PurchasedFactoryItem from '../components/factories/PurchasedFactoryItem';
+// --- INICIO DE LA CORRECCIÓN CRÍTICA ---
+// Se corrige la ruta de importación para que apunte a la carpeta 'tools' real,
+// en lugar de la carpeta 'factories' inexistente. Esto resolverá el error de build.
+import PurchasedFactoryItem from '../components/tools/PurchasedFactoryItem'; 
+// --- FIN DE LA CORRECCIÓN CRÍTICA ---
+
 import TaskCenter from '../components/home/TaskCenter';
 import Loader from '../components/common/Loader';
 import ActivityTicker from '../components/home/ActivityTicker';
@@ -33,7 +38,6 @@ const UserHeader = ({ user }) => {
         </div>
     );
 };
-
 
 const FactoryAnimation = () => {
     const { t } = useTranslation();
@@ -80,20 +84,9 @@ const HomePage = () => {
     const purchasedFactories = user?.purchasedFactories || [];
     
     return (
-        // --- INICIO DE LA MODIFICACIÓN CRÍTICA ---
-        // 1. Se añade un contenedor 'div' principal con 'relative' para que actúe
-        //    como ancla para el posicionamiento absoluto de la capa de fondo.
         <div className="relative min-h-full">
-            {/* 
-              2. Se crea una capa de fondo dedicada.
-                 - 'absolute inset-0' la expande para llenar el contenedor padre.
-                 - 'z-[-1]' la envía detrás de todo el contenido.
-                 - 'bg-home-background' aplica la imagen de estrellas que definimos.
-                 - Las demás clases aseguran que la imagen cubra el área sin repetirse.
-            */}
             <div className="absolute inset-0 z-[-1] bg-home-background bg-cover bg-center bg-no-repeat"></div>
             
-            {/* 3. El contenido original de la página ahora se renderiza encima de esta capa de fondo. */}
             <motion.div 
                 className="flex flex-col gap-6 p-4 pt-6 pb-28" 
                 initial={{ opacity: 0 }}
@@ -128,7 +121,6 @@ const HomePage = () => {
                 </div>
             </motion.div>
         </div>
-        // --- FIN DE LA MODIFICACIÓN CRÍTICA ---
     );
 };
 
