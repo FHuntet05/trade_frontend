@@ -1,67 +1,74 @@
-// RUTA: frontend/src/store/userStore.js (v4.0 - NEXUS FINAL BUILD)
+// frontend/src/store/userStore.js (VERSIÓN FINAL v32.0 - A VERIFICAR)
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
-const guestUser = { activeTools: [], referrals: [] };
-
-const initialState = {
-  user: guestUser, token: null, settings: null, isAuthenticated: false, 
-  isLoadingAuth: true, isMaintenanceMode: false, maintenanceMessage: '', isHydrated: false,
-};
+// Interceptores (SIN CAMBIOS)
+api.interceptors.request.use(
+  (config) => {
+    const token = useUserStore.getState().token;
+    if (token) config.headers['Authorization'] = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response && error.response.status === 401) {
+      const useUserStore = (await import('./userStore')).default;
+      useUserStore.getState().logout();
+    }
+    return Promise.reject(error);
+  }
+);
 
 const useUserStore = create(
   persist(
-    (set, get) => ({
-      ...initialState,
+    (set) => ({
+      // --- ESTADOS DEL STORE ---
+      user: null, 
+      token: null, 
+      isAuthenticated: false, 
+      isLoadingAuth: true, 
+      settings: null,
+      
       syncUserWithBackend: async (telegramUser) => {
-        if (!get().isLoadingAuth) set({ isLoadingAuth: true });
+        set({ isLoadingAuth: true });
         try {
+          console.log('[Store] Enviando datos de usuario al backend para sincronizar...');
           const response = await api.post('/auth/sync', { telegramUser });
           const { token, user, settings } = response.data;
-          set({ user, token, isAuthenticated: true, settings, isLoadingAuth: false, isMaintenanceMode: false, maintenanceMessage: '' });
+          set({ user, token, isAuthenticated: true, settings, isLoadingAuth: false });
+          console.log('[Store] Sincronización completada con éxito.');
         } catch (error) {
-          console.error('[Store] Error durante la sincronización:', error.response?.data?.message || error.message);
-          if (error.response && error.response.status === 503) {
-            set({ ...initialState, isLoadingAuth: false, isMaintenanceMode: true, maintenanceMessage: error.response.data.maintenanceMessage || 'El sistema está en mantenimiento.' });
-          } else {
-            set({ ...initialState, isLoadingAuth: false });
-          }
+          console.error('Error fatal al sincronizar usuario:', error);
+          set({ user: null, token: null, isAuthenticated: false, isLoadingAuth: false });
         }
       },
-      refreshUserData: async () => {
-        if (!get().isAuthenticated) return;
-        try {
-          const response = await api.get('/auth/profile'); 
-          const { user: updatedUser, settings: updatedSettings } = response.data;
-          set({ user: updatedUser, settings: updatedSettings });
-          console.log('[Store] Datos de usuario refrescados en segundo plano.');
-        } catch (error) {
-          console.error('[Store] Fallo al refrescar los datos del usuario:', error.response?.data?.message || error.message);
-        }
+
+      updateUser: (newUserData) => {
+        set((state) => ({
+          user: state.user ? { ...state.user, ...newUserData } : newUserData,
+        }));
       },
-      setUser: (newUserObject) => set({ user: newUserObject }),
-      logout: () => set({ ...initialState, isLoadingAuth: false }),
-      _setHydrated: () => set({ isHydrated: true }),
+      
+      logout: () => {
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoadingAuth: false
+        })
+      }
     }),
     {
-      name: 'mega-fabrica-auth-storage', storage: createJSONStorage(() => localStorage),
+      name: 'neuro-link-storage',
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token }),
-      onRehydrateStorage: (state) => {
-        if (state) state._setHydrated();
-      }
     }
   )
-);
-
-useUserStore.subscribe(
-  (state) => state.token,
-  (token) => {
-    if (api.defaults.headers.common) {
-        api.defaults.headers.common['Authorization'] = token ? `Bearer ${token}` : '';
-    }
-  }
 );
 
 export default useUserStore;
