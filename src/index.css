@@ -1,18 +1,50 @@
-/* frontend/src/index.css */
+/* RUTA: frontend/src/index.css (CON FONDO PREDETERMINADO GLOBAL) */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@layer utilities {
-  .shadow-glow {
-    box-shadow: 0 0 25px 0 rgba(168, 85, 247, 0.3); /* Sombra/brillo color púrpura (accent-start) */
+
+/* --- INICIO DE LA MODIFICACIÓN CRÍTICA --- */
+/* Se utiliza @layer base para aplicar estilos fundamentales al body */
+@layer base {
+  body {
+    /* 1. Se aplica la clase del fondo azul que definimos en tailwind.config.js */
+    @apply bg-internal-background; 
+    
+    /* 2. Se aplica el color de texto primario por defecto */
+    @apply text-text-primary;
+
+    /* 3. Se añaden propiedades para asegurar que la imagen de fondo cubra
+       toda la pantalla, no se repita y se mantenga fija durante el scroll. */
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+
+    /* Propiedades de fuente originales (se mantienen) */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
-/*
-  Esta regla es la más importante. Le decimos al navegador que el
-  cuerpo de la página NO TENGA NINGÚN COLOR DE FONDO, para que
-  pueda verse el fondo que definimos en nuestro Layout.
-*/
-body {
-  background-color: transparent;
+/* --- FIN DE LA MODIFICACIÓN CRÍTICA --- */
+
+
+/* Utilidad para ocultar la barra de desplazamiento (se mantiene) */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
+/* Clase de animación original (se mantiene) */
+.fan-blades {
+  animation-name: spin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  transform-origin: center;
 }

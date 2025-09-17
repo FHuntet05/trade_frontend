@@ -1,98 +1,134 @@
-// RUTA: frontend/src/pages/HomePage.jsx (VERSIÓN "NEXUS - DEFENSIVE FIX FINAL")
+// RUTA: frontend/src/pages/HomePage.jsx (v4.3 - CON FONDO CONTEXTUAL FINAL)
 
 import React from 'react';
-import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import useUserStore from '../store/userStore';
 import api from '../api/axiosConfig';
-import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
-// --- IMPORTS COMPLETOS DE COMPONENTES DE UI ---
-import UserInfoHeader from '../components/home/UserInfoHeader';
-import RealTimeClock from '../components/home/RealTimeClock';
-import AnimatedCounter from '../components/home/AnimatedCounter';
+import PurchasedFactoryItem from '../components/factories/PurchasedFactoryItem';
 import TaskCenter from '../components/home/TaskCenter';
-import NotificationFeed from '../components/home/NotificationFeed';
-import { useMiningLogic } from '../hooks/useMiningLogic';
-import Loader from '../components/common/Loader'; // Importamos el Loader
+import Loader from '../components/common/Loader';
+import ActivityTicker from '../components/home/ActivityTicker';
+
+const UserHeader = ({ user }) => {
+    const balance = user?.balance?.usdt || 0;
+    
+    return (
+        <div className="flex items-center gap-4 p-4 bg-card/70 backdrop-blur-md rounded-2xl border border-border shadow-medium">
+            <img 
+                src={user?.photoUrl || '/assets/images/user-avatar-placeholder.png'} 
+                alt="Avatar"
+                className="w-16 h-16 rounded-full object-cover border-2 border-accent-primary/50"
+            />
+            <div className="flex-1">
+                <p className="text-lg font-bold text-text-primary">{user?.username || 'Usuario'}</p>
+                <p className="text-xs text-text-secondary font-mono">ID: {user?.telegramId}</p>
+            </div>
+            <div className="text-right">
+                <p className="font-bold text-accent-primary text-xl">{balance.toFixed(2)}</p>
+                <p className="text-xs text-text-secondary">USDT</p>
+            </div>
+        </div>
+    );
+};
+
+
+const FactoryAnimation = () => {
+    const { t } = useTranslation();
+    const [isVideoLoading, setVideoLoading] = React.useState(true);
+    return (
+        <div className="relative w-full max-w-sm mx-auto aspect-square rounded-3xl overflow-hidden bg-black/5 border border-white/10 shadow-medium">
+            {isVideoLoading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader text={t('homePage.loadingAnimation', 'Cargando animación...')} />
+                </div>
+            )}
+            <video
+                src="/animations/factory-animation.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                onLoadedData={() => setVideoLoading(false)}
+                className={`w-full h-full object-cover transition-opacity duration-500 ${isVideoLoading ? 'opacity-0' : 'opacity-100'}`}
+            />
+        </div>
+    );
+};
 
 const HomePage = () => {
     const { t } = useTranslation();
-    const { user, updateUser } = useUserStore();
+    const { user, setUser } = useUserStore();
 
-    // [NEXUS DEFENSIVE FIX] - Guardia principal. Si el objeto 'user' aún no está cargado,
-    // mostramos un loader para prevenir cualquier error de lectura de propiedades.
+    const handleClaim = async (purchasedFactoryId) => {
+        toast.loading(t('homePage.toasts.claiming'), { id: 'claim_request' });
+        try {
+            const response = await api.post('/wallet/claim-production', { purchasedFactoryId });
+            setUser(response.data.user);
+            toast.success(response.data.message, { id: 'claim_request' });
+        } catch (error) {
+            toast.error(error.response?.data?.message || t('common.error'), { id: 'claim_request' });
+        }
+    };
+
     if (!user) {
-        return (
-            <div className="flex h-full w-full items-center justify-center">
-                <Loader text="Cargando datos de usuario..." />
-            </div>
-        );
+        return <div className="flex items-center justify-center h-full"><Loader text={t('common.loadingUser')} /></div>;
     }
-    
-    // [NEXUS DEFENSIVE FIX] - CORRECCIÓN CRÍTICA
-    // Proporcionamos valores por defecto seguros para TODAS las propiedades que usa el hook.
-    // Si `user.lastMiningClaim` es undefined, usamos `new Date()` como un fallback seguro.
-    const { accumulatedNtx, countdown, progress, buttonState } = useMiningLogic(
-        user.lastMiningClaim || new Date(),
-        user.effectiveMiningRate ?? 0,
-        user.miningStatus ?? 'IDLE'
-    );
 
-    const handleStartMining = async () => {
-        const toastId = 'mining_control';
-        toast.loading(t('homePage.toasts.startingCycle', 'Iniciando ciclo...'), { id: toastId });
-        try {
-            const response = await api.post('/wallet/start-mining');
-            // La actualización del estado ahora debe ser más robusta, fusionando los nuevos datos.
-            updateUser({ ...user, ...response.data.user });
-            toast.success(t('homePage.toasts.cycleStarted', '¡Ciclo de minado iniciado!'), { id: toastId });
-        } catch (error) { 
-            toast.error(error.response?.data?.message || t('common.error', 'Error'), { id: toastId }); 
-        }
-    };
-
-    const handleClaim = async () => {
-        const toastId = 'mining_control';
-        toast.loading(t('homePage.toasts.claiming', 'Reclamando...'), { id: toastId });
-        try {
-            const response = await api.post('/wallet/claim');
-            updateUser({ ...user, ...response.data.user });
-            toast.success(response.data.message, { id: toastId });
-        } catch (error) { 
-            toast.error(error.response?.data?.message || t('common.error', 'Error'), { id: toastId }); 
-        }
-    };
-
-    const renderControlButton = () => {
-        switch (buttonState) {
-            case 'SHOW_START': return <button onClick={handleStartMining} className="w-full py-4 bg-blue-500 text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">{t('homePage.buttons.start', 'INICIAR')}</button>;
-            case 'SHOW_CLAIM': return <button onClick={handleClaim} className="w-full py-4 bg-gradient-to-r from-accent-start to-accent-end text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all">{t('homePage.buttons.claim', 'RECLAMAR')}</button>;
-            default: return null; 
-        }
-    };
+    const purchasedFactories = user?.purchasedFactories || [];
     
     return (
-        <div className="flex flex-col h-full animate-fade-in gap-4 overflow-y-auto pb-24">
-            <div className="px-4 pt-4 space-y-4">
-                <UserInfoHeader />
-                <RealTimeClock />
-            </div>
-            <div className="flex flex-col items-center justify-center text-center px-4">
-                <video src="/assets/mining-animation.webm" autoPlay loop muted playsInline className="w-48 h-48 mx-auto" />
-                <AnimatedCounter value={parseFloat(accumulatedNtx.toFixed(2))} />
-                <div className="w-full max-w-xs mx-auto mt-4 space-y-3">
-                    <div className="w-full bg-dark-secondary rounded-full h-6 shadow-inner overflow-hidden">
-                        <div className="bg-gradient-to-r from-accent-start to-accent-end h-6 rounded-full transition-all duration-1000" style={{width: `${progress}%`}} />
-                    </div>
-                    <p className="text-text-secondary text-base font-mono">{countdown}</p>
+        // --- INICIO DE LA MODIFICACIÓN CRÍTICA ---
+        // 1. Se añade un contenedor 'div' principal con 'relative' para que actúe
+        //    como ancla para el posicionamiento absoluto de la capa de fondo.
+        <div className="relative min-h-full">
+            {/* 
+              2. Se crea una capa de fondo dedicada.
+                 - 'absolute inset-0' la expande para llenar el contenedor padre.
+                 - 'z-[-1]' la envía detrás de todo el contenido.
+                 - 'bg-home-background' aplica la imagen de estrellas que definimos.
+                 - Las demás clases aseguran que la imagen cubra el área sin repetirse.
+            */}
+            <div className="absolute inset-0 z-[-1] bg-home-background bg-cover bg-center bg-no-repeat"></div>
+            
+            {/* 3. El contenido original de la página ahora se renderiza encima de esta capa de fondo. */}
+            <motion.div 
+                className="flex flex-col gap-6 p-4 pt-6 pb-28" 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+            >
+                <UserHeader user={user} />
+                <ActivityTicker />
+                <FactoryAnimation />
+                <div>
+                    <h2 className="text-xl font-bold text-text-primary mb-3">{t('homePage.myFactories')}</h2>
+                    {purchasedFactories.length > 0 ? (
+                        <div className="space-y-4">
+                            {purchasedFactories.map(pf => (
+                                <PurchasedFactoryItem 
+                                    key={pf._id} 
+                                    purchasedFactory={pf}
+                                    onClaim={handleClaim}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="bg-card/70 backdrop-blur-md rounded-2xl p-8 text-center text-text-secondary border border-border shadow-medium">
+                            <p>{t('homePage.noFactories')}</p>
+                            <p className="text-sm mt-2">{t('homePage.goToStore')}</p>
+                        </div>
+                    )}
                 </div>
-            </div>
-            <div className="flex-grow flex flex-col px-4 space-y-4">
-                <div className="w-full h-16 flex items-center justify-center">{renderControlButton()}</div>
-                <TaskCenter />
-                <NotificationFeed />
-            </div>
+                 <div>
+                    <h2 className="text-xl font-bold text-text-primary mb-3">{t('homePage.tasks')}</h2>
+                    <TaskCenter />
+                </div>
+            </motion.div>
         </div>
+        // --- FIN DE LA MODIFICACIÓN CRÍTICA ---
     );
 };
 
