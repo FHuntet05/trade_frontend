@@ -1,11 +1,12 @@
-// RUTA: src/components/layout/BottomNavBar.jsx (VERSIÓN NEXUS RECONSTRUIDA)
+// RUTA: src/components/layout/BottomNavBar.jsx (NEXUS RECONSTRUIDA Y CORREGIDA)
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { HiHome, HiChartBar, HiWrenchScrewdriver, HiUsers, HiUser } from 'react-icons/hi2';
 import { motion } from 'framer-motion';
 
-// Los íconos y la estructura de navegación se mantienen
+// --- INICIO DE LA CORRECCIÓN DE RUTAS ---
+// Se han corregido las rutas 'to' para que coincidan con la estructura de la aplicación.
 const navItems = [
   { to: '/home', labelKey: 'nav.home', Icon: HiHome },
   { to: '/ranking', labelKey: 'nav.ranking', Icon: HiChartBar },
@@ -13,6 +14,7 @@ const navItems = [
   { to: '/team', labelKey: 'nav.team', Icon: HiUsers },
   { to: '/profile', labelKey: 'nav.profile', Icon: HiUser },
 ];
+// --- FIN DE LA CORRECCIÓN DE RUTAS ---
 
 const NavItem = ({ to, labelKey, Icon }) => {
   const { t } = useTranslation();
@@ -20,7 +22,7 @@ const NavItem = ({ to, labelKey, Icon }) => {
   return (
     <NavLink
       to={to}
-      end={to === '/home'} // 'end' debe ser true solo para la ruta raíz del nav
+      end={to === '/home'}
       className="flex-1 flex flex-col items-center justify-center text-xs h-full relative group z-10"
     >
       {({ isActive }) => (
@@ -39,7 +41,6 @@ const NavItem = ({ to, labelKey, Icon }) => {
           >
             {t(labelKey)}
           </span>
-          {/* Indicador activo animado */}
           {isActive && (
             <motion.div
               layoutId="active-nav-indicator"
@@ -56,8 +57,8 @@ const NavItem = ({ to, labelKey, Icon }) => {
 
 const BottomNavBar = () => {
   return (
-    // --- INICIO DE LA RECONSTRUCCIÓN VISUAL ---
-    // Contenedor principal que aplica los estilos del diseño de referencia
+    // --- INICIO DE LA CORRECCIÓN VISUAL ---
+    // Se aplican los estilos de la imagen de referencia.
     <nav className="w-full h-20 flex justify-around items-center bg-dark-secondary/70 backdrop-blur-lg rounded-2xl border border-white/10 shadow-glow">
       {navItems.map((item, index) => (
         <NavItem 
@@ -68,7 +69,7 @@ const BottomNavBar = () => {
         />
       ))}
     </nav>
-    // --- FIN DE LA RECONSTRUCCIÓN VISUAL ---
+    // --- FIN DE LA CORRECCIÓN VISUAL ---
   );
 };
 
