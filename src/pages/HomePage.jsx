@@ -1,22 +1,23 @@
-// RUTA: frontend/src/pages/HomePage.jsx (v4.3 - SECCIÓN DE FÁBRICAS ELIMINADA)
+// RUTA: frontend/src/pages/HomePage.jsx (v4.5 - ACTIVITY TICKER ELIMINADO)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '../store/userStore';
-// 'api' y 'toast' ya no son necesarios aquí si 'handleClaim' se elimina.
-// Se mantendrán por si otras funciones los necesitan en el futuro, pero podrían eliminarse.
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
-// --- INICIO DE LA REFACTORIZACIÓN ---
-// 1. Se elimina la importación del componente 'PurchasedFactoryItem' ya que no se usará.
+// La importación de 'PurchasedFactoryItem' se mantiene comentada como en la versión anterior.
 // import PurchasedFactoryItem from '../components/factories/PurchasedFactoryItem';
-// --- FIN DE LA REFACTORIZACIÓN ---
 
 import TaskCenter from '../components/home/TaskCenter';
 import Loader from '../components/common/Loader';
-//import ActivityTicker from '../components/home/ActivityTicker';
+
+// --- INICIO DE LA REFACTORIZACIÓN ---
+// 1. Se elimina la importación del componente 'ActivityTicker' ya que no se usará.
+// import ActivityTicker from '../components/home/ActivityTicker';
+// --- FIN DE LA REFACTORIZACIÓN ---
+
 
 const UserHeader = ({ user }) => {
     const balance = user?.balance?.usdt || 0;
@@ -66,33 +67,11 @@ const FactoryAnimation = () => {
 
 const HomePage = () => {
     const { t } = useTranslation();
-    // 'setUser' se elimina si 'handleClaim' se va, pero lo mantenemos por si acaso.
-    const { user, setUser } = useUserStore();
-
-    // --- INICIO DE LA REFACTORIZACIÓN ---
-    // 2. Se elimina la función 'handleClaim' ya que no hay un botón para llamarla.
-    /*
-    const handleClaim = async (purchasedFactoryId) => {
-        toast.loading(t('homePage.toasts.claiming'), { id: 'claim_request' });
-        try {
-            const response = await api.post('/wallet/claim-production', { purchasedFactoryId });
-            setUser(response.data.user);
-            toast.success(response.data.message, { id: 'claim_request' });
-        } catch (error) {
-            toast.error(error.response?.data?.message || t('common.error'), { id: 'claim_request' });
-        }
-    };
-    */
-    // --- FIN DE LA REFACTORIZACIÓN ---
+    const { user } = useUserStore(); // Se elimina 'setUser' ya que no hay funciones que lo usen ahora.
 
     if (!user) {
         return <div className="flex items-center justify-center h-full"><Loader text={t('common.loadingUser')} /></div>;
     }
-
-    // --- INICIO DE LA REFACTORIZACIÓN ---
-    // 3. Se elimina la variable 'purchasedFactories' ya que no se usará en el renderizado.
-    // const purchasedFactories = user?.purchasedFactories || [];
-    // --- FIN DE LA REFACTORIZACIÓN ---
     
     return (
         <motion.div 
@@ -102,36 +81,17 @@ const HomePage = () => {
             transition={{ duration: 0.5 }}
         >
             <UserHeader user={user} />
-            <ActivityTicker />
-            <FactoryAnimation />
-
+            
             {/* --- INICIO DE LA REFACTORIZACIÓN --- */}
-            {/* 4. Se elimina por completo el bloque div que renderizaba la lista de fábricas. */}
-            {/*
-            <div>
-                <h2 className="text-xl font-bold text-text-primary mb-3">{t('homePage.myFactories')}</h2>
-                {purchasedFactories.length > 0 ? (
-                    <div className="space-y-4">
-                        {purchasedFactories.map(pf => (
-                            <PurchasedFactoryItem 
-                                key={pf._id} 
-                                purchasedFactory={pf}
-                                onClaim={handleClaim}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="bg-card/70 backdrop-blur-md rounded-2xl p-8 text-center text-text-secondary border border-border shadow-medium">
-                        <p>{t('homePage.noFactories')}</p>
-                        <p className="text-sm mt-2">{t('homePage.goToStore')}</p>
-                    </div>
-                )}
-            </div>
-            */}
+            {/* 2. Se elimina el componente Ticker del renderizado. */}
+            {/* <ActivityTicker /> */}
             {/* --- FIN DE LA REFACTORIZACIÓN --- */}
             
-            {/* La sección de Tareas se mantiene intacta, como se solicitó. */}
-             <div>
+            <FactoryAnimation />
+
+            {/* El bloque de "Mis Fábricas" se mantiene eliminado como se solicitó anteriormente. */}
+            
+            <div>
                 <h2 className="text-xl font-bold text-text-primary mb-3">{t('homePage.tasks')}</h2>
                 <TaskCenter />
             </div>
