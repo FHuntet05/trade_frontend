@@ -16,7 +16,7 @@ import { motion } from 'framer-motion';
 
 import TaskCenter from '../components/home/TaskCenter';
 import Loader from '../components/common/Loader';
-import ActivityTicker from '../components/home/ActivityTicker';
+//import ActivityTicker from '../components/home/ActivityTicker';
 
 const UserHeader = ({ user }) => {
     const balance = user?.balance?.usdt || 0;
