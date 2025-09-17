@@ -1,59 +1,48 @@
-// RUTA: frontend/src/components/layout/Layout.jsx (v3.0 - NEXUS FLEXBOX REBUILD)
-
-import React, { useRef } from 'react';
+// src/components/layout/Layout.jsx (VERSIÓN VISIBLE)
+import React from 'react';
 import { Outlet } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-
-import BottomNavBar from './BottomNavBar';
-import FloatingSupportButton from '../common/FloatingSupportButton';
 
 const Layout = () => {
-  const dragContainerRef = useRef(null);
-
-  // --- CORRECCIÓN ARQUITECTÓNICA ---
-  // Se eliminan las comprobaciones de 'isAuthenticated' y 'isLoadingAuth'.
-  // Esa responsabilidad ya la gestiona 'UserGatekeeper' en App.jsx.
-  // El Layout ahora se enfoca únicamente en maquetar.
-
   return (
-    <div className="h-screen w-screen flex justify-center bg-black">
-      {/* 
-        --- CORRECCIÓN DE MAQUETACIÓN (FLEXBOX) ---
-        1. Se añaden 'flex' y 'flex-col' para convertir este div en un contenedor Flexbox vertical.
-      */}
-      <div 
-        ref={dragContainerRef} 
-        className="h-full w-full max-w-lg relative font-sans bg-background text-text-primary flex flex-col"
-      >
-        {/*
-          2. 'main' ahora usa 'flex-1', lo que le permite "crecer" y ocupar todo el espacio
-             vertical disponible, empujando la barra de navegación hacia abajo.
-          3. 'overflow-y-auto' asegura que solo esta área tenga scroll.
-        */}
-        <main className="flex-1 w-full overflow-y-auto no-scrollbar">
-          <Outlet />
-        </main>
-        
-        {/* 
-          3. El BottomNavBar ahora se posicionará correctamente al final del contenedor flex.
-        */}
-        <BottomNavBar />
-        <FloatingSupportButton dragRef={dragContainerRef} />
-        
-        <Toaster
-          position="top-center"
-          reverseOrder={false}
-          toastOptions={{
-            style: {
-              background: 'var(--color-card)',
-              color: 'var(--color-text-primary)',
-              border: '1px solid var(--color-border)',
-            },
-            success: { iconTheme: { primary: 'var(--color-status-success)', secondary: 'var(--color-card)' } },
-            error: { iconTheme: { primary: 'var(--color-status-danger)', secondary: 'var(--color-card)' } }
-          }}
-        />
-      </div>
+    <div style={{
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: '#121212', // dark-primary
+        color: '#E0E0E0', // text-primary
+        fontFamily: 'sans-serif',
+        display: 'flex',
+        flexDirection: 'column'
+    }}>
+      <main style={{
+          flexGrow: 1,
+          padding: '1rem',
+          paddingBottom: '7rem', // Espacio para el footer
+          overflowY: 'auto'
+      }}>
+        <h1 style={{color: 'limegreen', border: '2px solid limegreen', padding: '10px', textAlign: 'center'}}>LAYOUT CARGADO</h1>
+        <Outlet />
+      </main>
+      
+      <footer style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '1rem',
+          zIndex: 50
+      }}>
+          <div style={{
+              height: '5rem', // 80px
+              backgroundColor: '#0f172a', // slate-900
+              borderRadius: '0.75rem', // rounded-xl
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+          }}>
+             <p>BottomNavBar Placeholder</p>
+          </div>
+      </footer>
     </div>
   );
 };
