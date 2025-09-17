@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/HomePage.jsx (v4.6 - BUILD FIX FINAL Y DEFINITIVO)
+// RUTA: frontend/src/pages/HomePage.jsx (v4.7 - BUILD FIX FINALÍSIMO)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,15 +7,15 @@ import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
-// --- INICIO DE LA CORRECCIÓN CRÍTICA ---
-// 1. Se elimina la importación del componente inexistente 'PurchasedFactoryItem'.
-// 2. Se importa el componente real y existente 'ToolCard.jsx' desde la misma ubicación.
+// --- INICIO DE LA CORRECCIÓN CRÍTICA 2 ---
+// Se importan los componentes que SÍ EXISTEN en su proyecto,
+// basándonos en la evidencia de su sistema de archivos.
 import ToolCard from '../components/tools/ToolCard'; 
-// --- FIN DE LA CORRECCIÓN CRÍTICA ---
+import NotificationFeed from '../components/home/NotificationFeed'; // Reemplaza al inexistente ActivityTicker
+// --- FIN DE LA CORRECCIÓN CRÍTICA 2 ---
 
 import TaskCenter from '../components/home/TaskCenter';
 import Loader from '../components/common/Loader';
-import ActivityTicker from '../components/home/ActivityTicker';
 
 const UserHeader = ({ user }) => {
     const balance = user?.balance?.usdt || 0;
@@ -94,23 +94,23 @@ const HomePage = () => {
                 transition={{ duration: 0.5 }}
             >
                 <UserHeader user={user} />
-                <ActivityTicker />
+                
+                {/* --- INICIO DE LA CORRECCIÓN CRÍTICA 2 --- */}
+                {/* Se renderiza el componente correcto: <NotificationFeed /> */}
+                <NotificationFeed />
+                {/* --- FIN DE LA CORRECCIÓN CRÍTICA 2 --- */}
+                
                 <FactoryAnimation />
                 <div>
                     <h2 className="text-xl font-bold text-text-primary mb-3">{t('homePage.myFactories')}</h2>
                     {purchasedFactories.length > 0 ? (
                         <div className="space-y-4">
                             {purchasedFactories.map(pf => (
-                                // --- INICIO DE LA CORRECCIÓN CRÍTICA ---
-                                // 3. Se renderiza el componente correcto: <ToolCard />.
-                                // 4. Se cambia el nombre de la prop a 'tool' para mayor claridad,
-                                //    aunque 'purchasedFactory' también funcionaría si el componente lo espera.
                                 <ToolCard 
                                     key={pf._id} 
                                     tool={pf}
                                     onClaim={handleClaim}
                                 />
-                                // --- FIN DE LA CORRECCIÓN CRÍTICA ---
                             ))}
                         </div>
                     ) : (
