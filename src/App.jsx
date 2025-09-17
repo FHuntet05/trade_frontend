@@ -1,9 +1,10 @@
-// RUTA: frontend/src/App.jsx (VERSIÓN "NEXUS - CON NUEVAS RUTAS")
+// RUTA: frontend/src/App.jsx (VERSIÓN NEXUS REFINADA)
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 
+// --- IMPORTACIONES DE COMPONENTES Y PÁGINAS ---
 import Layout from './components/layout/Layout';
 import Loader from './components/common/Loader';
 import HomePage from './pages/HomePage';
@@ -18,12 +19,34 @@ import AboutPage from './pages/AboutPage';
 import SupportPage from './pages/SupportPage';
 import FinancialHistoryPage from './pages/FinancialHistoryPage';
 import CryptoSelectionPage from './pages/CryptoSelectionPage';
-// [NEXUS HÍBRIDO] Importamos la nueva página de detalles de depósito.
 import DepositDetailsPage from './pages/DepositDetailsPage';
 
+// --- COMPONENTES AUXILIARES (Separados para mayor claridad) ---
 
-const AppInitializer = () => { const { isAuthenticated, syncUserWithBackend } = useUserStore(); useEffect(() => { if (isAuthenticated) return; const tg = window.Telegram?.WebApp; if (tg?.initDataUnsafe?.user?.id) { syncUserWithBackend(tg.initDataUnsafe.user); } }, [isAuthenticated, syncUserWithBackend]); return null; };
-const UserGatekeeper = ({ children }) => { const { isAuthenticated, isLoadingAuth } = useUserStore(); if (isLoadingAuth) { return ( <div className="w-full h-screen flex items-center justify-center bg-dark-primary"><Loader text="Autenticando..." /></div> ); } if (!isAuthenticated) { return ( <div className="w-full h-screen flex items-center justify-center p-4 bg-dark-primary">Error de autenticación. Por favor, reinicia la app desde Telegram.</div> ); } return children; };
+// Se encarga de la sincronización inicial del usuario
+const AppInitializer = () => { 
+  const { isAuthenticated, syncUserWithBackend } = useUserStore(); 
+  useEffect(() => { 
+    if (isAuthenticated) return; 
+    const tg = window.Telegram?.WebApp; 
+    if (tg?.initDataUnsafe?.user?.id) { 
+      syncUserWithBackend(tg.initDataUnsafe.user); 
+    } 
+  }, [isAuthenticated, syncUserWithBackend]); 
+  return null; 
+};
+
+// Protege las rutas, mostrando un loader o un error de autenticación
+const UserGatekeeper = ({ children }) => { 
+  const { isAuthenticated, isLoadingAuth } = useUserStore(); 
+  if (isLoadingAuth) { 
+    return ( <div className="w-full h-screen flex items-center justify-center bg-dark-primary"><Loader text="Autenticando..." /></div> ); 
+  } 
+  if (!isAuthenticated) { 
+    return ( <div className="w-full h-screen flex items-center justify-center p-4 bg-dark-primary">Error de autenticación.<br />Por favor, reinicia la app desde Telegram.</div> ); 
+  } 
+  return children; 
+};
 
 function App() {
   return (
@@ -32,7 +55,10 @@ function App() {
       <AppInitializer />
       <UserGatekeeper>
         <Routes>
+          {/* La ruta raíz redirige a /home */}
           <Route path="/" element={<Navigate to="/home" replace />} />
+          
+          {/* Rutas que utilizan el Layout principal (con la barra de navegación) */}
           <Route element={<Layout />}>
             <Route path="/home" element={<HomePage />} />
             <Route path="/tools" element={<ToolsPage />} />
@@ -41,13 +67,16 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/history" element={<FinancialHistoryPage />} />
             <Route path="/crypto-selection" element={<CryptoSelectionPage />} />
-             {/* [NEXUS HÍBRIDO] Añadimos la nueva ruta para la página de detalles. */}
             <Route path="/deposit-details" element={<DepositDetailsPage />} />
           </Route>
+          
+          {/* Rutas que no utilizan el Layout principal */}
           <Route path="/language" element={<LanguagePage />} />
           <Route path="/faq" element={<FaqPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/support" element={<SupportPage />} />
+          
+          {/* Ruta para cualquier otra URL no encontrada */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </UserGatekeeper>
