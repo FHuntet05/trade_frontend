@@ -1,34 +1,31 @@
-// tailwind.config.js (VERSIÓN FINAL Y GARANTIZADA)
-/** @type {import('tailwindcss').Config} */
+// frontend/tailwind.config.js (VERSIÓN ACTUALIZADA CON AMBOS FONDOS)
 export default {
-  // Esta es la parte más importante. Le dice a Tailwind que escanee
-  // CADA archivo relevante dentro de la carpeta 'src'.
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-
-  // Aquí va tu tema personalizado.
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
-      backgroundImage: {
-        'space-background': "url('/assets/space-bg.png')",
-        'internal-background': "url('/assets/internal-bg.png')",
-      },
       colors: {
-        'dark-primary': '#121212',
-        'dark-secondary': '#1E1E1E',
-        'accent-start': '#4F46E5',
-        'accent-end': '#A855F7',
-        'text-primary': '#E0E0E0',
-        'text-secondary': '#A0A0A0',
+        'dark-primary': '#0D0B1F',   // Púrpura muy oscuro
+        'dark-secondary': '#1A183E', // Púrpura oscuro para tarjetas
+        'dark-tertiary': '#101128',  // Azul casi negro
+        'text-primary': '#FFFFFF',
+        'text-secondary': '#A9A7C3',
+        'accent': {
+          'start': '#E84D8A',
+          'end': '#A149E2',
+        },
+      },
+      backgroundImage: {
+       
+        // Fondo 1: El degradado para las páginas internas
+       'internal-background': "url('/assets/internal-bg.png')",
+        // Fondo 2: La imagen de estrellas para el Home
+        'space-background': "url('/assets/space-bg.png')",
+        'primary-gradient': 'linear-gradient(to right, var(--tw-gradient-stops))',
       },
       boxShadow: {
-         'glow': '0 0 15px 5px rgba(79, 70, 229, 0.4)',
-      }
+        'glow': '0 0 15px 5px rgba(232, 77, 138, 0.4)',
+      },
     },
   },
-
-  // No necesitas plugins por ahora.
   plugins: [],
-}
+};
