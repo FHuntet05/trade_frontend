@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/HomePage.jsx (v4.5 - BUILD FIX DEFINITIVO)
+// RUTA: frontend/src/pages/HomePage.jsx (v4.6 - BUILD FIX FINAL Y DEFINITIVO)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,9 +8,9 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
 // --- INICIO DE LA CORRECCIÓN CRÍTICA ---
-// Se corrige la ruta de importación para que apunte a la carpeta 'tools' real,
-// en lugar de la carpeta 'factories' inexistente. Esto resolverá el error de build.
-import PurchasedFactoryItem from '../components/tools/PurchasedFactoryItem'; 
+// 1. Se elimina la importación del componente inexistente 'PurchasedFactoryItem'.
+// 2. Se importa el componente real y existente 'ToolCard.jsx' desde la misma ubicación.
+import ToolCard from '../components/tools/ToolCard'; 
 // --- FIN DE LA CORRECCIÓN CRÍTICA ---
 
 import TaskCenter from '../components/home/TaskCenter';
@@ -101,11 +101,16 @@ const HomePage = () => {
                     {purchasedFactories.length > 0 ? (
                         <div className="space-y-4">
                             {purchasedFactories.map(pf => (
-                                <PurchasedFactoryItem 
+                                // --- INICIO DE LA CORRECCIÓN CRÍTICA ---
+                                // 3. Se renderiza el componente correcto: <ToolCard />.
+                                // 4. Se cambia el nombre de la prop a 'tool' para mayor claridad,
+                                //    aunque 'purchasedFactory' también funcionaría si el componente lo espera.
+                                <ToolCard 
                                     key={pf._id} 
-                                    purchasedFactory={pf}
+                                    tool={pf}
                                     onClaim={handleClaim}
                                 />
+                                // --- FIN DE LA CORRECCIÓN CRÍTICA ---
                             ))}
                         </div>
                     ) : (
