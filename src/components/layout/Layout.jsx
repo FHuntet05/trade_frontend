@@ -1,4 +1,4 @@
-// RUTA: src/components/layout/Layout.jsx (VERSIÓN NEXUS CON MAQUETACIÓN FIJA)
+// RUTA: src/components/layout/Layout.jsx (VERSIÓN NEXUS RECONSTRUIDA Y CORREGIDA)
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,19 +14,23 @@ const Layout = () => {
   return (
     // Se añade bg-fixed para que la imagen de fondo no se desplace con el contenido
     <div className={`w-full min-h-screen text-text-primary font-sans ${backgroundClass} bg-fixed`}>
+      {/* 
+        Estructura Flexbox vertical que ocupa toda la pantalla para un pie de página fijo.
+      */}
       <div className="container mx-auto max-w-lg h-screen flex flex-col bg-transparent">
-        {/* --- INICIO DE LA CORRECCIÓN DE SCROLL --- */}
         {/*
-          1. 'flex-grow' hace que el main ocupe todo el espacio vertical disponible.
-          2. 'overflow-y-auto' AÑADE EL SCROLL ÚNICAMENTE A ESTA ÁREA.
+          El 'main' ocupa todo el espacio vertical disponible y tiene su propio scroll.
         */}
-        <main className="flex-grow overflow-y-auto no-scrollbar p-4">
+        <main className="flex-1 overflow-y-auto no-scrollbar">
           <AnimatePresence mode="wait">
+            {/* 
+              Se elimina el 'flex-grow' conflictivo. Ahora solo se encarga de la animación.
+            */}
             <motion.div
               key={location.pathname}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="flex flex-col flex-grow" // Se mantiene para animaciones
+              className="h-full" 
             >
               <Outlet />
             </motion.div>
@@ -34,13 +38,11 @@ const Layout = () => {
         </main>
         
         {/* 
-          3. 'flex-shrink-0' previene que el footer se encoja.
-          4. El padding se aplica aquí para dar el efecto flotante a la barra.
+          El footer no se encoge y tiene un padding inferior aumentado para elevar la barra.
         */}
-        <footer className="flex-shrink-0 w-full p-4">
+        <footer className="flex-shrink-0 w-full px-4 pb-6 pt-2">
           <BottomNavBar />
         </footer>
-        {/* --- FIN DE LA CORRECCIÓN DE SCROLL --- */}
       </div>
     </div>
   );
