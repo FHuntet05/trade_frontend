@@ -1,95 +1,131 @@
-// RUTA: frontend/src/pages/ProfilePage.jsx (VERSIÓN "NEXUS - DIRECT DEPOSIT FLOW")
+// RUTA: frontend/src/pages/ProfilePage.jsx (VERSIÓN NEXUS - RECONSTRUCCIÓN VISUAL COMPLETA)
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '../store/userStore';
-import { motion } from 'framer-motion';
-import toast from 'react-hot-toast';
-import { 
-    HiOutlineArrowDownOnSquare, HiOutlineArrowUpOnSquare, HiOutlineRectangleStack, 
-    HiOutlineWallet, HiOutlineUserGroup, HiOutlineQuestionMarkCircle, HiOutlineInformationCircle, 
-    HiOutlineChatBubbleLeftRight, HiOutlineLanguage, HiOutlineArrowRightOnRectangle,
-    HiChevronRight, HiOutlineKey
+import { AnimatePresence } from 'framer-motion';
+import GeneratedAvatar from '../components/common/GeneratedAvatar';
+import Loader from '../components/common/Loader';
+import WithdrawalModal from '../components/modals/WithdrawalModal';
+import SwapModal from '../components/modals/SwapModal'; // Asumo este nombre de archivo
+
+import {
+    HiOutlineArrowDownOnSquare, HiOutlineArrowUpOnSquare, HiOutlineRectangleStack, HiOutlineArrowsRightLeft,
+    HiOutlineUserGroup, HiOutlineLanguage, HiOutlineQuestionMarkCircle, HiOutlineInformationCircle,
+    HiOutlineChatBubbleLeftRight, HiOutlineArrowRightOnRectangle
 } from 'react-icons/hi2';
 
-import Loader from '../components/common/Loader';
-// [NEXUS DIRECT DEPOSIT] - Se eliminan imports de modales que ya no se usan en este flujo.
-// import WithdrawalModal from '../components/modals/WithdrawalModal';
-// import SetWithdrawalPasswordModal from '../components/modals/SetWithdrawalPasswordModal';
-// import SaveWalletModal from '../components/modals/SaveWalletModal'; 
+// --- SUB-COMPONENTES DE UI PARA MANTENER EL CÓDIGO LIMPIO ---
 
-const StatCard = ({ label, value }) => ( <div className="flex-1 text-center"> <p className="text-2xl font-bold text-text-primary">{value.toFixed(2)}</p> <p className="text-xs text-text-secondary uppercase tracking-wider mt-1">{label}</p> </div> );
-const ActionCard = ({ icon: Icon, label, onClick }) => ( <button onClick={onClick} className="flex flex-col items-center justify-center p-4 bg-dark-secondary/70 backdrop-blur-md rounded-2xl border border-white/10 text-center hover:border-accent-start/50 transition-colors duration-200 active:bg-accent-start/10 aspect-square"> <Icon className="w-12 h-12 mb-2 text-accent-start" /> <span className="text-sm font-semibold text-text-primary">{label}</span> </button> );
-const ActionRow = ({ icon: Icon, label, onClick }) => ( <button onClick={onClick} className="w-full flex items-center p-4 bg-dark-secondary/70 backdrop-blur-md rounded-2xl border border-white/10 text-left hover:border-accent-start/50 transition-colors duration-200 active:bg-accent-start/10"> <Icon className="w-6 h-6 mr-4 text-text-secondary" /> <span className="flex-grow text-base font-semibold text-text-primary">{label}</span> <HiChevronRight className="w-5 h-5 text-gray-500" /> </button> );
+const HeaderInfo = ({ user }) => (
+    <div className="flex items-center gap-3">
+        {user.photoUrl ? (
+            <img src={user.photoUrl} alt="Avatar" className="w-12 h-12 rounded-full object-cover" />
+        ) : (
+            <GeneratedAvatar name={user.username} size="w-12 h-12" />
+        )}
+        <div>
+            <h1 className="text-xl font-bold text-white">{user.username}</h1>
+        </div>
+    </div>
+);
+
+const NtxBalanceCard = ({ value }) => (
+    <div className="bg-dark-secondary/70 p-2 rounded-full text-center">
+        <p className="font-bold text-white leading-tight">{value.toFixed(2)} NTX</p>
+        <p className="text-xs text-text-secondary leading-tight">Valor Almacenado</p>
+    </div>
+);
+
+const WalletCard = ({ title, value, currency }) => (
+    <div className="bg-dark-secondary/70 p-4 rounded-2xl border border-white/10">
+        <p className="text-2xl font-bold text-white">{value.toFixed(2)}</p>
+        <p className="text-sm text-text-secondary">{title} ({currency})</p>
+    </div>
+);
+
+const ActionButton = ({ icon: Icon, label, onClick }) => (
+    <button onClick={onClick} className="flex flex-col items-center justify-center p-2 text-center space-y-2 hover:bg-white/5 rounded-lg transition-colors">
+        <div className="w-12 h-12 flex items-center justify-center bg-dark-secondary rounded-full">
+            <Icon className="w-6 h-6 text-accent-start" />
+        </div>
+        <span className="text-xs font-semibold text-text-primary">{label}</span>
+    </button>
+);
+
+// --- COMPONENTE PRINCIPAL DE LA PÁGINA ---
 
 const ProfilePage = () => {
     const { user, logout } = useUserStore();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    
-    // [NEXUS DIRECT DEPOSIT] - Se simplifica la gestión de modales, ya que el de depósito se elimina.
-    // const [modalState, setModalState] = React.useState({ ... });
-    // const openModal = (modalName) => ...;
-    // const closeModal = (modalName) => ...;
-    
-    const handleWithdrawClick = () => {
-        // La lógica de retiro (que sí usa modales) se mantiene.
-        toast.error('La función de retiro no está disponible en esta versión.');
-    };
-    
-    if (!user) { return <div className="h-full w-full flex items-center justify-center pt-16"><Loader /></div>; }
+    const [activeModal, setActiveModal] = useState(null); // 'withdraw', 'swap', o null
 
-    const mainActions = [
-        // [NEXUS DIRECT DEPOSIT] - CORRECCIÓN CRÍTICA
-        // El onClick ahora navega directamente a la página de selección de criptomonedas.
-        // No se pasa ningún 'amountNeeded', por lo que la página sabrá que es un depósito general.
-        { label: t('profile.recharge'), icon: HiOutlineArrowDownOnSquare, onClick: () => navigate('/crypto-selection') },
-        { label: t('profile.withdraw'), icon: HiOutlineArrowUpOnSquare, onClick: handleWithdrawClick },
-        { label: t('profile.records'), icon: HiOutlineRectangleStack, onClick: () => navigate('/history') },
-        { label: t('profile.invite'), icon: HiOutlineUserGroup, onClick: () => navigate('/team') },
-    ];
+    if (!user) {
+        return <div className="h-full w-full flex items-center justify-center"><Loader /></div>;
+    }
     
+    // --- Definición de Acciones ---
+    const primaryActions = [
+        { label: 'Recargar', icon: HiOutlineArrowDownOnSquare, onClick: () => navigate('/crypto-selection') },
+        { label: 'Retirar', icon: HiOutlineArrowUpOnSquare, onClick: () => setActiveModal('withdraw') },
+        { label: 'Registros', icon: HiOutlineRectangleStack, onClick: () => navigate('/history') },
+        { label: 'NTX/USDT', icon: HiOutlineArrowsRightLeft, onClick: () => setActiveModal('swap') },
+    ];
+
     const secondaryActions = [
-        { label: t('profile.password'), icon: HiOutlineKey, onClick: () => toast.error('Función no disponible.') },
-        { label: t('profile.language'), icon: HiOutlineLanguage, onClick: () => navigate('/language') },
-        { label: t('profile.support'), icon: HiOutlineChatBubbleLeftRight, onClick: () => navigate('/support') },
-        { label: t('profile.faq'), icon: HiOutlineQuestionMarkCircle, onClick: () => navigate('/faq') },
-        { label: t('profile.about'), icon: HiOutlineInformationCircle, onClick: () => navigate('/about') },
+        { label: 'Invitar', icon: HiOutlineUserGroup, onClick: () => navigate('/team') },
+        { label: 'Idioma', icon: HiOutlineLanguage, onClick: () => navigate('/language') },
+        { label: 'FAQ', icon: HiOutlineQuestionMarkCircle, onClick: () => navigate('/faq') },
+        { label: 'Sobre nosotros', icon: HiOutlineInformationCircle, onClick: () => navigate('/about') },
+        { label: 'Atención al Cliente', icon: HiOutlineChatBubbleLeftRight, onClick: () => navigate('/support') },
     ];
 
     return (
-        <motion.div 
-            className="flex flex-col h-full overflow-y-auto no-scrollbar p-4 gap-6" 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            transition={{ duration: 0.5 }}
-        >
-            <div className="flex flex-col items-center text-center pt-4">
-                <img src={user?.photoUrl} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-dark-secondary" />
-                <h1 className="text-2xl font-bold mt-4">{user?.username}</h1>
-                <p className="text-sm text-text-secondary mt-1 font-mono">ID: {user?.telegramId}</p>
+        <>
+            <div className="p-4 space-y-6 pb-8">
+                {/* --- SECCIÓN DE HEADER --- */}
+                <header className="flex justify-between items-center">
+                    <HeaderInfo user={user} />
+                    <NtxBalanceCard value={user.balance?.ntx || 0} />
+                </header>
+
+                {/* --- SECCIÓN DE BILLETERAS --- */}
+                <div className="grid grid-cols-2 gap-4">
+                    <WalletCard title="Cartera de Corretaje" value={user.balance?.usdt || 0} currency="USDT" />
+                    <WalletCard title="Cartera de Valor" value={user.balance?.ntx || 0} currency="NTX" />
+                </div>
+
+                {/* --- SECCIÓN DE ACCIONES PRIMARIAS --- */}
+                <div className="bg-dark-secondary/70 p-4 rounded-2xl border border-white/10">
+                    <div className="grid grid-cols-4 gap-2">
+                        {primaryActions.map(action => <ActionButton key={action.label} {...action} />)}
+                    </div>
+                </div>
+
+                {/* --- SECCIÓN DE ACCIONES SECUNDARIAS --- */}
+                <div className="bg-dark-secondary/70 p-4 rounded-2xl border border-white/10">
+                    <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+                        {secondaryActions.map(action => <ActionButton key={action.label} {...action} />)}
+                    </div>
+                </div>
+                
+                {/* --- BOTÓN DE CIERRE DE SESIÓN --- */}
+                <div className="pt-4">
+                    <button onClick={logout} className="w-full flex items-center justify-center gap-3 p-3 bg-red-900/40 rounded-2xl border border-red-500/30 text-red-400 hover:bg-red-900/60 transition-colors">
+                        <span className="text-base font-bold">Cerrar Sesión</span>
+                    </button>
+                </div>
             </div>
             
-            <div className="flex items-center justify-around p-4 bg-dark-secondary/70 backdrop-blur-md rounded-2xl border border-white/10">
-                <StatCard label={t('profilePage.balanceUsdtLabel')} value={user?.balance?.usdt || 0} />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-                {mainActions.map(action => <ActionCard key={action.label} {...action} />)}
-            </div>
-            
-            <div className="space-y-3">
-                {secondaryActions.map(action => <ActionRow key={action.label} {...action} />)}
-            </div>
-            
-            <div className="pt-4">
-                <button onClick={logout} className="w-full flex items-center justify-center gap-3 p-4 bg-red-500/10 backdrop-blur-md rounded-2xl border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors">
-                    <HiOutlineArrowRightOnRectangle className="w-6 h-6" />
-                    <span className="text-base font-bold">{t('profile.logout')}</span>
-                </button>
-            </div>
-        </motion.div>
+            {/* --- RENDERIZADO DE MODALES --- */}
+            <AnimatePresence>
+                {activeModal === 'withdraw' && <WithdrawalModal onClose={() => setActiveModal(null)} />}
+                {activeModal === 'swap' && <SwapModal onClose={() => setActiveModal(null)} />}
+            </AnimatePresence>
+        </>
     );
 };
+
 export default ProfilePage;
