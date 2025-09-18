@@ -1,4 +1,4 @@
-// src/pages/HomePage.jsx (VERSIÓN FINAL CON TODAS LAS MEJORAS)
+// RUTA: frontend/src/pages/HomePage.jsx (VERSIÓN NEXUS - CORRECCIÓN DE PADDING)
 import React from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
@@ -39,7 +39,12 @@ const HomePage = () => {
   };
 
   return (
-    <div className="flex flex-col h-full animate-fade-in gap-4">
+    // ======================= INICIO DE LA CORRECCIÓN =======================
+    // Se añade padding:
+    // pt-6: Padding superior para separar el UserInfoHeader del borde de la pantalla.
+    // px-4: Padding horizontal para que el contenido no se pegue a los lados.
+    <div className="flex flex-col h-full animate-fade-in gap-4 pt-6 px-4">
+    // ======================== FIN DE LA CORRECCIÓN =========================
       <UserInfoHeader />
       <RealTimeClock />
 
@@ -70,7 +75,8 @@ const HomePage = () => {
         </div>
       </div>
       
-      <div className="w-full px-4 mb-2">
+      {/* Se elimina el padding de este contenedor para no duplicarlo */}
+      <div className="w-full mb-2">
         <button 
           onClick={handleClaim}
           disabled={!isClaimable}
