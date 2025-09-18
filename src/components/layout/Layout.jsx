@@ -1,4 +1,4 @@
-// RUTA: src/components/layout/Layout.jsx (VERSIÓN NEXUS - CONTROL ÚNICO Y DEFINITIVO)
+// RUTA: src/components/layout/Layout.jsx (VERSIÓN NEXUS - ANIMACIÓN NEUTRALIZADA)
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,17 +16,24 @@ const Layout = () => {
       <div className="container mx-auto max-w-lg h-screen flex flex-col bg-transparent">
         
         <main className="flex-1 overflow-y-auto no-scrollbar">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-            >
+          {/* ======================= INICIO DE LA CORRECCIÓN CRÍTICA ======================= */}
+          {/*
+            PASO 1: Se elimina 'mode="wait"' de AnimatePresence.
+            Esto evita que el componente saliente espere a terminar su animación, lo que puede
+            complicar el cálculo de la altura del contenedor.
+
+            PASO 2: Se eliminan las propiedades 'initial', 'animate' y 'exit' del motion.div.
+            Al hacerlo, el motion.div actúa como un simple contenedor. Si las páginas aparecen
+            ahora, confirmaremos que el problema era una propiedad específica de la animación
+            (probablemente 'exit' o 'y: 20') que estaba causando un colapso de la altura.
+            Mantenemos el 'key' porque es esencial para que AnimatePresence detecte el cambio.
+          */}
+          <AnimatePresence>
+            <motion.div key={location.pathname}>
               <Outlet />
             </motion.div>
           </AnimatePresence>
+          {/* ======================== FIN DE LA CORRECCIÓN CRÍTICA ========================= */}
         </main>
         
         <footer className="flex-shrink-0 w-full px-4 pb-6 pt-2">
