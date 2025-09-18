@@ -1,92 +1,83 @@
-// frontend/components/tasks/TaskItem.jsx (CÓDIGO COMPLETO Y SIN CAMBIOS)
+// RUTA: frontend/components/tasks/TaskItem.jsx (VERSIÓN NEXUS - LÓGICA CORREGIDA)
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FaTelegramPlane, FaCheckCircle, FaGift, FaUsers, FaHammer } from 'react-icons/fa';
+import { FaCheckCircle, FaGift, FaTelegramPlane, FaUsers, FaHammer } from 'react-icons/fa';
+import { HiArrowRight } from 'react-icons/hi2';
 
 const ICONS = {
-    joinedTelegram: <FaTelegramPlane />,
-    invitedTenFriends: <FaUsers />,
-    boughtUpgrade: <FaHammer />,
+    joinedTelegram: <FaTelegramPlane className="w-4 h-4" />,
+    inviteFriends: <FaUsers className="w-4 h-4" />,
 };
 
-const TaskItem = ({ task, status, onGoToTask, onClaim }) => {
-    const { id, title, description, reward, link } = task;
-    const isClaimed = status?.claimedTasks?.[id] || false;
-    
-    const getCompletionStatus = () => {
-        if (isClaimed) return 'claimed';
-        switch (id) {
-            case 'boughtUpgrade':
-                return status?.hasBoughtUpgrade ? 'claimable' : 'pending';
-            case 'invitedTenFriends':
-                return (status?.referralCount || 0) >= 3 ? 'claimable' : 'pending';
-            case 'joinedTelegram':
-                return status?.telegramVisited ? 'claimable' : 'visitable';
-            default:
-                return 'pending';
-        }
-    };
-
-    const completionStatus = getCompletionStatus();
+const TaskItem = ({ task, onGoToTask, onClaim }) => {
+    // ======================= INICIO DE LA CORRECCIÓN CRÍTICA =======================
+    // Se desestructuran las propiedades correctas directamente del prop 'task'.
+    // La propiedad más importante es 'taskId'.
+    const { taskId, title, description, reward, progress, target, status, isClaimed, link } = task;
 
     const renderButton = () => {
-        switch (completionStatus) {
-            case 'claimed':
-                return (
-                    <button disabled className="bg-green-500/50 text-white text-sm font-semibold px-4 py-1.5 rounded-lg flex items-center gap-2 cursor-not-allowed">
-                        <FaCheckCircle /> Reclamado
-                    </button>
-                );
+        if (isClaimed) {
+            return (
+                <button disabled className="bg-green-500/50 text-white text-sm font-semibold px-4 py-1.5 rounded-lg flex items-center gap-2 cursor-not-allowed">
+                    <FaCheckCircle /> Reclamado
+                </button>
+            );
+        }
+
+        // La lógica ahora se basa en el 'status' que viene de la API para cada tarea.
+        switch (status) {
             case 'claimable':
                 return (
                     <motion.button
-                        whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => onClaim(id)}
+                        onClick={() => onClaim(taskId)}
                         className="bg-accent-start text-white text-sm font-semibold px-4 py-1.5 rounded-lg"
                     >
                         Reclamar
                     </motion.button>
                 );
-            case 'visitable':
+            case 'action_required': // Un estado donde el usuario debe hacer algo (ej: visitar un link)
                 return (
                     <motion.button
-                        whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => onGoToTask(task)}
-                        className="bg-blue-500 text-white text-sm font-semibold px-4 py-1.5 rounded-lg"
+                        className="bg-blue-500 text-white text-sm font-semibold px-4 py-1.5 rounded-lg flex items-center gap-2"
                     >
-                        Ir
+                        Ir <HiArrowRight />
                     </motion.button>
                 );
-            case 'pending':
-            default:
-                const progressText = id === 'invitedTenFriends' ? `(${(status?.referralCount || 0)}/3)` : '';
+            case 'in_progress':
+            default: // Cualquier otro estado se considera 'en progreso' o 'pendiente'
+                const progressText = (progress !== undefined && target) ? `(${progress}/${target})` : '';
                 return (
                     <button disabled className="bg-gray-600/50 text-gray-400 text-sm font-semibold px-4 py-1.5 rounded-lg cursor-not-allowed">
-                        {id === 'invitedTenFriends' ? 'Invitar' : 'Pendiente'} {progressText}
+                        Pendiente {progressText}
                     </button>
                 );
         }
     };
+    // ======================== FIN DE LA CORRECCIÓN CRÍTICA =========================
 
     return (
-        <div className="bg-dark-primary/70 backdrop-blur-sm rounded-xl p-3 border border-white/10 flex flex-col space-y-2">
+        <motion.div 
+            className="bg-dark-secondary/70 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex flex-col space-y-3"
+            variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
+        >
             <div className="flex justify-between items-start">
-                <h3 className="font-semibold text-white pr-4">{title}</h3>
-                <div className="flex items-center gap-1.5 text-yellow-400 font-bold flex-shrink-0">
+                <h3 className="font-bold text-base text-white pr-4">{title}</h3>
+                <div className="flex items-center gap-1.5 text-yellow-400 font-bold flex-shrink-0 bg-black/20 px-2 py-1 rounded-full">
                     <FaGift />
                     <span>{reward.toLocaleString()}</span>
                 </div>
             </div>
-            <div className="flex justify-between items-center">
-                <div className="text-xs text-gray-400 flex items-center gap-2">
-                    {ICONS[id] || ''}
+            <div className="flex justify-between items-end">
+                <div className="text-sm text-text-secondary flex items-center gap-2">
+                    {ICONS[taskId] || ''}
                     <span>{description}</span>
                 </div>
                 {renderButton()}
             </div>
-        </div>
+        </motion.div>
     );
 };
 

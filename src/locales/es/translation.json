@@ -6,6 +6,18 @@
     "team": "Equipo",
     "profile": "A mí"
   },
+  "tasks": {
+    "title": "Centro de Tareas",
+    "noTasks": "No hay tareas disponibles en este momento.",
+    "joinedTelegram": {
+      "title": "Únete a Nuestro Canal",
+      "description": "Mantente al día con las últimas noticias."
+    },
+    "inviteFriends": {
+      "title": "Invita a 5 Amigos",
+      "description": "Invita a {{count}} amigos para recibir la recompensa."
+    }
+  },
   "profile": {
     "recharge": "Recargar",
     "withdraw": "Retirar",

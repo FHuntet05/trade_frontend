@@ -1,10 +1,19 @@
-// RUTA: frontend/src/components/home/TaskCenter.jsx (VERSIÓN "NEXUS - DEFENSIVE FIX")
-
+// RUTA: frontend/src/components/home/TaskCenter.jsx (VERSIÓN NEXUS - REFACTORIZADA)
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTaskLogic } from '../../hooks/useTaskLogic'; 
 import TaskItem from '../tasks/TaskItem';
 import { motion } from 'framer-motion';
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
 
 const TaskCenter = () => {
   const { t } = useTranslation();
@@ -19,9 +28,6 @@ const TaskCenter = () => {
       );
   }
   
-  // [NEXUS DEFENSIVE FIX] - CORRECCIÓN CRÍTICA
-  // Se utiliza un "array de fallback". Si `tasks` es undefined o null, se usará un array vacío `[]`.
-  // Esto previene el error `undefined.map` y asegura que el componente nunca crashee.
   const taskList = tasks || [];
 
   if (taskList.length === 0) {
@@ -35,11 +41,13 @@ const TaskCenter = () => {
   return (
     <motion.div 
       className="space-y-3" 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }}
-      transition={{ staggerChildren: 0.1 }}
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
     >
+      <h2 className="text-xl font-bold text-white px-2">{t('tasks.title', 'Centro de Tareas')}</h2>
       {taskList.map(task => {
+        // Obtenemos las traducciones y las fusionamos con los datos de la tarea
         const translatedTask = {
           ...task,
           title: t(`tasks.${task.taskId}.title`), 
@@ -51,7 +59,7 @@ const TaskCenter = () => {
         return (
           <TaskItem
               key={task.taskId}
-              task={translatedTask}
+              task={translatedTask} // Se pasa el objeto completo y unificado
               onGoToTask={handleGoToTask}
               onClaim={handleClaimTask}
           />
