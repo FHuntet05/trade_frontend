@@ -44,7 +44,6 @@ const HomePage = () => {
     // pt-6: Padding superior para separar el UserInfoHeader del borde de la pantalla.
     // px-4: Padding horizontal para que el contenido no se pegue a los lados.
     <div className="flex flex-col h-full animate-fade-in gap-4 pt-6 px-4">
-    // ======================== FIN DE LA CORRECCIÓN =========================
       <UserInfoHeader />
       <RealTimeClock />
 

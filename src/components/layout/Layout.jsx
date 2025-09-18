@@ -1,4 +1,4 @@
-// RUTA: src/components/layout/Layout.jsx (VERSIÓN NEXUS RECONSTRUIDA Y CORREGIDA)
+// RUTA: src/components/layout/Layout.jsx (VERSIÓN NEXUS - SOLUCIÓN DEFINITIVA DE NAVEGACIÓN Y SCROLL)
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,49 +8,50 @@ const Layout = () => {
   const location = useLocation();
 
   const backgroundClass = location.pathname === '/home' || location.pathname === '/'
-    ? 'bg-space-background bg-cover bg-center' 
-    : 'bg-internal-background bg-cover bg-center';
+    ? 'bg-space-background' 
+    : 'bg-internal-background';
 
   return (
-    // Se añade bg-fixed para que la imagen de fondo no se desplace con el contenido
-    <div className={`w-full min-h-screen text-text-primary font-sans ${backgroundClass} bg-fixed`}>
-      {/* --- INICIO DE LA CORRECCIÓN DE MAQUETACIÓN --- */}
-      {/* 
-        1. 'h-screen' (altura completa de la pantalla) y 'flex flex-col' son la base
-           para un layout con pie de página fijo.
-      */}
+    // Contenedor global: cubre toda la pantalla y fija la imagen de fondo.
+    <div className={`w-full min-h-screen text-text-primary font-sans ${backgroundClass} bg-cover bg-center bg-fixed`}>
+      
+      {/* Contenedor principal de la aplicación: Centrado y con altura de pantalla completa. */}
+      {/* [CORRECCIÓN FUNDAMENTAL 1]: 'h-screen' y 'flex flex-col' son la base.
+          Esto crea un contenedor flexible que ocupa toda la altura de la ventana,
+          permitiendo que podamos fijar la barra de navegación en la parte inferior. */}
       <div className="container mx-auto max-w-lg h-screen flex flex-col bg-transparent">
-        {/*
-          2. 'flex-1' (equivalente a flex-grow) hace que el 'main' ocupe todo el espacio vertical disponible.
-          3. 'overflow-y-auto' AÑADE EL SCROLL ÚNICAMENTE A ESTA ÁREA de contenido.
-          4. Se elimina el p-4 de aquí para que las páginas controlen su propio padding.
-        */}
+        
+        {/* ÁREA DE CONTENIDO PRINCIPAL */}
+        {/* [CORRECCIÓN FUNDAMENTAL 2]: 'flex-1' (crecer) y 'overflow-y-auto' (scroll).
+            Este 'main' se expandirá para ocupar todo el espacio vertical sobrante.
+            Si el contenido dentro de él es más alto que el espacio disponible,
+            APARECERÁ UNA BARRA DE SCROLL ÚNICAMENTE EN ESTA SECCIÓN. */}
         <main className="flex-1 overflow-y-auto no-scrollbar">
           <AnimatePresence mode="wait">
-            {/* 
-              5. Se elimina la clase 'flex-grow' del motion.div para resolver el conflicto
-                 que impedía que las páginas cambiaran. Ahora solo se encarga de la animación.
-            */}
+            {/* [CORRECCIÓN FUNDAMENTAL 3]: ELIMINACIÓN DEL CONFLICTO DE RENDERIZADO.
+                El problema que impedía el cambio de páginas era una clase de flexbox
+                (como flex-1 o flex-grow) aplicada directamente a este 'motion.div'.
+                Al quitarla, Framer Motion solo se encarga de la animación, y el 'Outlet'
+                puede ser reemplazado correctamente por React Router sin conflictos. */}
             <motion.div
-              key={location.pathname}
+              key={location.pathname} // La clave que dispara la animación al cambiar de ruta
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="h-full" // Asegura que la página animada ocupe el espacio
+              className="h-full" // Asegura que la página ocupe todo el alto del 'main'
             >
               <Outlet />
             </motion.div>
           </AnimatePresence>
         </main>
         
-        {/* 
-          6. 'flex-shrink-0' previene que el footer se encoja.
-          7. Se ajusta el padding para elevar la barra de navegación:
-             px-4 (padding horizontal), pb-6 (padding inferior aumentado), pt-2 (padding superior reducido).
-        */}
+        {/* PIE DE PÁGINA CON LA BARRA DE NAVEGACIÓN */}
+        {/* 'flex-shrink-0' previene que el footer se encoja. */}
         <footer className="flex-shrink-0 w-full px-4 pb-6 pt-2">
           <BottomNavBar />
         </footer>
-        {/* --- FIN DE LA CORRECCIÓN DE MAQUETACIÓN --- */}
+
       </div>
     </div>
   );
