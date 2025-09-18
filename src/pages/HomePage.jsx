@@ -40,7 +40,6 @@ const HomePage = () => {
     // El 'Layout.jsx' se encargará del scroll si el contenido es demasiado largo.
     // Mantenemos el padding y el gap para la separación visual de los elementos.
     <div className="animate-fade-in space-y-4 pt-6 px-4 pb-4">
-    // ======================== FIN DE LA CORRECCIÓN =========================
       <UserInfoHeader />
       <RealTimeClock />
 

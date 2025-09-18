@@ -1,4 +1,4 @@
-// RUTA: src/components/layout/Layout.jsx (VERSIÓN NEXUS - CONTROL ÚNICO Y ROBUSTO)
+// RUTA: src/components/layout/Layout.jsx (VERSIÓN NEXUS - CONTROL ÚNICO Y DEFINITIVO)
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,12 +23,6 @@ const Layout = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeInOut' }}
-              // ======================= CORRECCIÓN SUTIL PERO VITAL =======================
-              // Se elimina la clase 'h-full'. Forzar la altura del contenedor de la animación
-              // era parte del conflicto. Ahora, el contenedor tendrá la altura de su contenido
-              // (la página que está dentro), lo que es más natural y robusto.
-              // El scroll lo manejará el padre ('main') si es necesario.
-              // ======================== FIN DE LA CORRECCIÓN =========================
             >
               <Outlet />
             </motion.div>
