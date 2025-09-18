@@ -9,13 +9,17 @@
   "tasks": {
     "title": "Centro de Tareas",
     "noTasks": "No hay tareas disponibles en este momento.",
-    "joinedTelegram": {
-      "title": "Únete a Nuestro Canal",
-      "description": "Mantente al día con las últimas noticias."
+    "boughtUpgrade": {
+      "title": "Primera Mejora",
+      "description": "Compra cualquier herramienta VIP."
     },
     "inviteFriends": {
-      "title": "Invita a 5 Amigos",
-      "description": "Invita a {{count}} amigos para recibir la recompensa."
+      "title": "Invitar 10 Amigos",
+      "description": "Tu equipo debe tener {{count}} miembros."
+    },
+    "joinedTelegram": {
+      "title": "Unirse al Canal",
+      "description": "Únete a nuestra comunidad oficial."
     }
   },
   "profile": {
