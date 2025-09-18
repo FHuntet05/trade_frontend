@@ -1,11 +1,10 @@
-// RUTA: src/components/layout/BottomNavBar.jsx (NEXUS - ESTILO FINAL Y RUTAS CORREGIDAS)
+// RUTA: src/components/layout/BottomNavBar.jsx (VERSIÓN FINAL SIN GLOW)
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { HiHome, HiChartBar, HiWrenchScrewdriver, HiUsers, HiUser } from 'react-icons/hi2';
 import { motion } from 'framer-motion';
 
-// Rutas corregidas para coincidir con App.jsx
 const navItems = [
   { to: '/home', labelKey: 'nav.home', Icon: HiHome },
   { to: '/ranking', labelKey: 'nav.ranking', Icon: HiChartBar },
@@ -55,7 +54,7 @@ const NavItem = ({ to, labelKey, Icon }) => {
 
 const BottomNavBar = () => {
   return (
-    // Se elimina la clase 'shadow-glow' para quitar el efecto de brillo.
+    // Se mantiene la clase 'shadow-glow' eliminada.
     <nav className="w-full h-20 flex justify-around items-center bg-dark-secondary/70 backdrop-blur-lg rounded-2xl border border-white/10">
       {navItems.map((item, index) => (
         <NavItem 

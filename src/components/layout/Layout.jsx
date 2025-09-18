@@ -14,23 +14,28 @@ const Layout = () => {
   return (
     // Se añade bg-fixed para que la imagen de fondo no se desplace con el contenido
     <div className={`w-full min-h-screen text-text-primary font-sans ${backgroundClass} bg-fixed`}>
+      {/* --- INICIO DE LA CORRECCIÓN DE MAQUETACIÓN --- */}
       {/* 
-        Estructura Flexbox vertical que ocupa toda la pantalla para un pie de página fijo.
+        1. 'h-screen' (altura completa de la pantalla) y 'flex flex-col' son la base
+           para un layout con pie de página fijo.
       */}
       <div className="container mx-auto max-w-lg h-screen flex flex-col bg-transparent">
         {/*
-          El 'main' ocupa todo el espacio vertical disponible y tiene su propio scroll.
+          2. 'flex-1' (equivalente a flex-grow) hace que el 'main' ocupe todo el espacio vertical disponible.
+          3. 'overflow-y-auto' AÑADE EL SCROLL ÚNICAMENTE A ESTA ÁREA de contenido.
+          4. Se elimina el p-4 de aquí para que las páginas controlen su propio padding.
         */}
         <main className="flex-1 overflow-y-auto no-scrollbar">
           <AnimatePresence mode="wait">
             {/* 
-              Se elimina el 'flex-grow' conflictivo. Ahora solo se encarga de la animación.
+              5. Se elimina la clase 'flex-grow' del motion.div para resolver el conflicto
+                 que impedía que las páginas cambiaran. Ahora solo se encarga de la animación.
             */}
             <motion.div
               key={location.pathname}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="h-full" 
+              className="h-full" // Asegura que la página animada ocupe el espacio
             >
               <Outlet />
             </motion.div>
@@ -38,11 +43,14 @@ const Layout = () => {
         </main>
         
         {/* 
-          El footer no se encoge y tiene un padding inferior aumentado para elevar la barra.
+          6. 'flex-shrink-0' previene que el footer se encoja.
+          7. Se ajusta el padding para elevar la barra de navegación:
+             px-4 (padding horizontal), pb-6 (padding inferior aumentado), pt-2 (padding superior reducido).
         */}
         <footer className="flex-shrink-0 w-full px-4 pb-6 pt-2">
           <BottomNavBar />
         </footer>
+        {/* --- FIN DE LA CORRECCIÓN DE MAQUETACIÓN --- */}
       </div>
     </div>
   );
