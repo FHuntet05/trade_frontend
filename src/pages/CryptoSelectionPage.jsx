@@ -99,7 +99,7 @@ const CryptoSelectionPage = () => {
                     initial="hidden" 
                     animate="visible" 
                     variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } }}
-                    className="rounded-xl overflow-hidden divide-y divide-white/10 bg-black/20 backdrop-blur-lg border border-white/10"
+                    className="rounded-xl overflow-hidden divide-y divide-white/10 bg-white/20 backdrop-blur-lg border border-white/10"
                 >
                     {depositOptions.map((option, index) => (
                         <DepositOptionItem 
