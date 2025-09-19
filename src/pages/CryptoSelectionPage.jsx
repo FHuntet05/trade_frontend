@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/CryptoSelectionPage.jsx (VERSIÓN "NEXUS - VISUAL SYNC")
+// RUTA: frontend/src/pages/CryptoSelectionPage.jsx (VERSIÓN "NEXUS - GLASSMORPHISM SYNC")
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -10,25 +10,23 @@ import StaticPageLayout from '../components/layout/StaticPageLayout';
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 
-// [NEXUS VISUAL FIX] - El componente ahora recibe el índice y el total para aplicar bordes condicionales.
 const DepositOptionItem = ({ option, onSelect, index, totalItems }) => {
-    
-    // Construimos las clases de borde dinámicamente.
     const borderClasses = 
-        index === 0 && totalItems > 1 ? 'rounded-t-xl' : // Solo el de arriba si hay más de uno
-        index === totalItems - 1 && totalItems > 1 ? 'rounded-b-xl' : // Solo el de abajo si hay más de uno
-        totalItems === 1 ? 'rounded-xl' : // Redondeado completo si es el único item
-        ''; // Sin bordes si está en el medio
+        index === 0 && totalItems > 1 ? 'rounded-t-xl' :
+        index === totalItems - 1 && totalItems > 1 ? 'rounded-b-xl' :
+        totalItems === 1 ? 'rounded-xl' :
+        '';
 
     return (
         <motion.button
             variants={itemVariants}
             onClick={() => onSelect(option)}
-            // [NEXUS VISUAL FIX] - Clases actualizadas para adaptarse al contenedor.
-            // Se quita el fondo individual y el 'rounded-lg' estático.
-            className={`w-full flex items-center p-4 bg-dark-secondary hover:bg-dark-tertiary transition-colors ${borderClasses}`}
+            // [NEXUS GLASSMORPHISM FIX] - Se elimina el fondo sólido y se cambia el hover.
+            // Ahora el item es transparente, dejando ver el fondo del contenedor padre.
+            className={`w-full flex items-center p-4 hover:bg-white/10 transition-colors ${borderClasses}`}
         >
-            <img src={option.logo} alt={option.name} className="w-10 h-10 rounded-full mr-4" />
+            {/* [NEXUS GLASSMORPHISM FIX] - Se añade un fondo de respaldo a la imagen. */}
+            <img src={option.logo} alt={option.name} className="w-10 h-10 rounded-full mr-4 bg-dark-primary object-cover" />
             <span className="font-bold text-white text-lg">{option.name}</span>
             <HiChevronRight className="w-6 h-6 text-text-secondary ml-auto" />
         </motion.button>
@@ -92,23 +90,22 @@ const CryptoSelectionPage = () => {
             {isLoading 
             ? <div className="flex justify-center pt-10"><Loader text="Cargando opciones..." /></div>
             : (
-                // [NEXUS VISUAL FIX] - Este es el nuevo contenedor unificado.
-                // - rounded-xl: Define la forma exterior.
-                // - overflow-hidden: Es la clave, recorta los hijos para que encajen en la forma redondeada.
-                // - divide-y & divide-white/10: Crea las líneas separadoras automáticamente.
+                // [NEXUS GLASSMORPHISM FIX] - Contenedor actualizado con estilos de cristal.
+                // - bg-black/20: Fondo negro semi-transparente.
+                // - backdrop-blur-lg: Efecto de desenfoque del fondo.
+                // - border & border-white/10: Borde sutil para definir la forma.
                 <motion.div 
                     key="options-container" 
                     initial="hidden" 
                     animate="visible" 
                     variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } }}
-                    className="rounded-xl overflow-hidden divide-y divide-white/5"
+                    className="rounded-xl overflow-hidden divide-y divide-white/10 bg-black/20 backdrop-blur-lg border border-white/10"
                 >
                     {depositOptions.map((option, index) => (
                         <DepositOptionItem 
                             key={option.id} 
                             option={option} 
                             onSelect={handleOptionSelected}
-                            // [NEXUS VISUAL FIX] - Pasamos las props necesarias para el estilo condicional.
                             index={index}
                             totalItems={depositOptions.length}
                         />
