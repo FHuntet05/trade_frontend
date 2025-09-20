@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/components/ToolFormModal.jsx (VERSIÓN "NEXUS - SYNC FIX")
+// RUTA: frontend/src/pages/admin/components/ToolFormModal.jsx (VERSIÓN "NEXUS - FREE TOOL ENABLED")
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiXMark } from 'react-icons/hi2';
@@ -15,11 +15,10 @@ const ToolFormModal = ({ factory, onSave, onClose }) => {
     name: '',
     vipLevel: '',
     price: '',
-    // [NEXUS SYNC FIX] Se renombra 'dailyProduction' a 'miningBoost' para que coincida con el modelo del backend.
     miningBoost: '', 
     durationDays: '',
     imageUrl: '',
-    isFree: false // Aunque no se use en el backend, lo mantenemos en el estado del form.
+    isFree: false // [NEXUS ONBOARDING FIX] El campo 'isFree' es ahora central.
   });
 
   const isEditing = !!factory;
@@ -29,33 +28,40 @@ const ToolFormModal = ({ factory, onSave, onClose }) => {
       setFormData({
         name: factory.name || '',
         vipLevel: factory.vipLevel || '',
-        price: factory.price || '',
-        // [NEXUS SYNC FIX] Se lee 'miningBoost' del objeto 'factory' al editar.
+        price: factory.isFree ? 0 : (factory.price || ''), // Si es gratis, el precio es 0.
         miningBoost: factory.miningBoost || '', 
         durationDays: factory.durationDays || '',
         imageUrl: factory.imageUrl || '',
-        isFree: factory.isFree || false // Campo no persistido pero útil en el form.
+        isFree: factory.isFree || false
       });
     }
   }, [factory, isEditing]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+    const newFormData = { ...formData, [name]: type === 'checkbox' ? checked : value };
+
+    // [NEXUS ONBOARDING FIX] Lógica para auto-gestionar el precio.
+    // Si se marca como gratuito, el precio se establece en 0.
+    if (name === 'isFree' && checked) {
+        newFormData.price = '0';
+    }
+
+    setFormData(newFormData);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // [NEXUS ONBOARDING FIX] Se envía el objeto completo, incluyendo 'isFree'.
     const dataToSend = {
       name: formData.name,
       vipLevel: Number(formData.vipLevel),
       price: Number(formData.price),
-      // [NEXUS SYNC FIX] Se envía 'miningBoost' con el tipo de dato correcto.
       miningBoost: Number(formData.miningBoost),
       durationDays: Number(formData.durationDays),
       imageUrl: formData.imageUrl,
+      isFree: formData.isFree, 
     };
-    // No enviamos 'isFree' ya que el modelo del backend no lo tiene.
     onSave(dataToSend, factory?._id);
   };
 
@@ -86,7 +92,8 @@ const ToolFormModal = ({ factory, onSave, onClose }) => {
 
               <div>
                 <label className="text-sm font-medium text-text-secondary">Precio (USDT)</label>
-                <input type="number" name="price" value={formData.price} onChange={handleChange} className="w-full mt-1 p-2 bg-black/20 rounded-md border border-white/10" step="0.01" required />
+                {/* [NEXUS ONBOARDING FIX] El campo de precio se deshabilita si 'isFree' es true. */}
+                <input type="number" name="price" value={formData.price} onChange={handleChange} className="w-full mt-1 p-2 bg-black/20 rounded-md border border-white/10 disabled:opacity-50" step="0.01" required disabled={formData.isFree} />
               </div>
               
               <div>
@@ -94,7 +101,6 @@ const ToolFormModal = ({ factory, onSave, onClose }) => {
                 <input type="number" name="vipLevel" value={formData.vipLevel} onChange={handleChange} className="w-full mt-1 p-2 bg-black/20 rounded-md border border-white/10" required />
               </div>
               
-              {/* [NEXUS SYNC FIX] Se actualiza el 'name' y la etiqueta del input. */}
               <div>
                 <label className="text-sm font-medium text-text-secondary">Potencia (NTX/Día)</label>
                 <input type="number" name="miningBoost" value={formData.miningBoost} onChange={handleChange} className="w-full mt-1 p-2 bg-black/20 rounded-md border border-white/10" step="0.01" required />
@@ -110,10 +116,10 @@ const ToolFormModal = ({ factory, onSave, onClose }) => {
                 <input name="imageUrl" value={formData.imageUrl} onChange={handleChange} className="w-full mt-1 p-2 bg-black/20 rounded-md border border-white/10" required />
               </div>
 
-              {/* El campo 'isFree' se mantiene en el formulario para posible uso futuro, pero no se envía al backend. */}
+              {/* [NEXUS ONBOARDING FIX] El checkbox ahora es completamente funcional. */}
               <div className="md:col-span-2 flex items-center justify-start gap-3 pt-2">
                 <input type="checkbox" id="isFree" name="isFree" checked={formData.isFree} onChange={handleChange} className="h-5 w-5 rounded bg-black/20 text-accent-start focus:ring-accent-start border-gray-500" />
-                <label htmlFor="isFree" className="text-sm font-medium text-text-secondary">Marcar como Gratuita (No implementado)</label>
+                <label htmlFor="isFree" className="text-sm font-medium text-text-secondary">Marcar como Herramienta Gratuita de Inicio</label>
               </div>
 
             </main>
