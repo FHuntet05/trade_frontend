@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN "NEXUS SYNC")
+// RUTA: frontend/src/pages/admin/AdminTreasuryPage.jsx (VERSIÓN "NEXUS - TREASURY CONTROLS")
 import React, { useState, useEffect, useCallback } from 'react';
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
@@ -9,9 +9,6 @@ import SweepConfirmationModal from '@/pages/admin/components/SweepConfirmationMo
 import SweepReportModal from '@/pages/admin/components/SweepReportModal';
 import { HiOutlineBanknotes, HiOutlineCpuChip, HiOutlineArrowDownTray, HiOutlineTrash } from 'react-icons/hi2';
 
-const SUPER_ADMIN_TELEGRAM_ID = import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
-
-// --- COMPONENTES INTERNOS (sin cambios) ---
 const SummaryCard = ({ title, amount, currency, icon }) => (
   <div className="bg-dark-tertiary p-4 rounded-lg border border-white/10 flex items-center gap-4">
     <div className="p-3 bg-dark-secondary rounded-full">{icon}</div>
@@ -33,13 +30,12 @@ const AdminTreasuryPage = () => {
     const [sweepContext, setSweepContext] = useState(null);
     const [sweepReport, setSweepReport] = useState(null);
 
-    const { admin } = useAdminStore();
-    const isSuperAdmin = admin?.telegramId?.toString() === SUPER_ADMIN_TELEGRAM_ID;
+    // [NEXUS CONTROLS] Obtenemos la función de verificación del store.
+    const isSuperAdmin = useAdminStore((state) => state.isSuperAdmin());
 
     const fetchTreasuryData = useCallback(async (page) => {
         setIsLoading(true);
         try {
-            // [NEXUS SYNC - REPAIR] Se corrige el endpoint de 'wallets-list' a 'wallets'.
             const { data: responseData } = await adminApi.get(`/admin/treasury/wallets`, { params: { page, limit: 15 }});
             setData(responseData);
         } catch (error) { 
@@ -55,7 +51,6 @@ const AdminTreasuryPage = () => {
     const handleWalletSelection = (address) => { setSelectedWallets(prev => { const newSelection = new Set(prev); if (newSelection.has(address)) newSelection.delete(address); else newSelection.add(address); return newSelection; }); };
     const handleSelectAllOnPage = (e) => { if (e.target.checked) { setSelectedWallets(new Set(data.wallets.map(w => w.address))); } else { setSelectedWallets(new Set()); } };
     
-    // [NEXUS SYNC] Se corrigen los endpoints de barrido para que coincidan con la nueva estructura de rutas.
     const handleOpenUsdtSweepModal = () => {
         if (selectedWallets.size === 0) return toast.error(`Seleccione las wallets que desea barrer.`);
         const walletsCandidatas = data.wallets.filter(w => selectedWallets.has(w.address) && w.chain === 'BSC' && w.usdtBalance > 0.000001 && w.gasBalance >= w.estimatedRequiredGas);
@@ -100,16 +95,23 @@ const AdminTreasuryPage = () => {
                 <div>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                         <h2 className="text-xl font-semibold">Resumen de Fondos en Página</h2>
-                        {isSuperAdmin && (
-                            <div className="flex flex-wrap gap-2">
-                                <button onClick={handleSweepGas} disabled={!walletsSelectedForAction || isLoading} className="flex items-center gap-2 px-3 py-2 text-sm font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600">
+                        
+                        {/* [NEXUS CONTROLS] - INICIO DEL PANEL DE ACCIONES CON PERMISOS */}
+                        <div className="flex flex-wrap gap-2">
+                            {/* Este botón es visible para TODOS los administradores */}
+                            <button onClick={handleOpenUsdtSweepModal} disabled={!walletsSelectedForAction || isLoading} className="flex items-center gap-2 px-3 py-2 text-sm font-bold bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 disabled:bg-gray-600 disabled:text-gray-300">
+                                <HiOutlineArrowDownTray /> Barrer USDT (BSC)
+                            </button>
+                            
+                            {/* Este botón solo es visible para el SUPER ADMIN */}
+                            {isSuperAdmin && (
+                                <button onClick={handleSweepGas} disabled={!walletsSelectedForAction || isLoading} className="flex items-center gap-2 px-3 py-2 text-sm font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:text-gray-300">
                                     <HiOutlineTrash /> Barrer Gas BNB
                                 </button>
-                                <button onClick={handleOpenUsdtSweepModal} disabled={!walletsSelectedForAction || isLoading} className="flex items-center gap-2 px-3 py-2 text-sm font-bold bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 disabled:bg-gray-600">
-                                    <HiOutlineArrowDownTray /> Barrer USDT (BSC)
-                                </button>
-                            </div>
-                        )}
+                            )}
+                        </div>
+                        {/* [NEXUS CONTROLS] - FIN DEL PANEL DE ACCIONES */}
+
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <SummaryCard title="Total USDT en Página" amount={data.summary.usdt} currency="USDT" icon={<HiOutlineBanknotes className="w-6 h-6 text-green-400"/>} />
@@ -122,7 +124,7 @@ const AdminTreasuryPage = () => {
                         <table className="w-full text-left">
                            <thead className="text-xs text-text-secondary uppercase bg-dark-tertiary">
                                 <tr>
-                                    <th className="p-3"><input type="checkbox" onChange={handleSelectAllOnPage} checked={isAllOnPageSelected} /></th>
+                                    <th className="p-3"><input type="checkbox" onChange={handleSelectAllOnPage} checked={isAllOnPageSelected} className="form-checkbox h-4 w-4 bg-dark-primary border-gray-600 text-accent-start focus:ring-accent-start"/></th>
                                     <th className="p-3">Usuario</th>
                                     <th className="p-3">Dirección de Wallet</th>
                                     <th className="p-3 text-right">Saldo USDT</th>
@@ -133,8 +135,8 @@ const AdminTreasuryPage = () => {
                             {isLoading ? <tbody><tr><td colSpan="6"><div className="flex justify-center p-4"><Loader /></div></td></tr></tbody> : (
                                 <tbody className="divide-y divide-white/10">
                                     {data.wallets.map((wallet) => (
-                                        <tr key={wallet.address} className={`hover:bg-dark-tertiary ${selectedWallets.has(wallet.address) ? 'bg-blue-900/50' : ''}`}>
-                                            <td className="p-3"><input type="checkbox" checked={selectedWallets.has(wallet.address)} onChange={() => handleWalletSelection(wallet.address)} /></td>
+                                        <tr key={wallet.address} className={`hover:bg-dark-tertiary transition-colors duration-150 ${selectedWallets.has(wallet.address) ? 'bg-blue-900/50' : ''}`}>
+                                            <td className="p-3"><input type="checkbox" checked={selectedWallets.has(wallet.address)} onChange={() => handleWalletSelection(wallet.address)} className="form-checkbox h-4 w-4 bg-dark-primary border-gray-600 text-accent-start focus:ring-accent-start"/></td>
                                             <td className="p-3 font-medium">{wallet.user?.username || 'N/A'}</td>
                                             <td className="p-3 font-mono text-sm">{wallet.address}</td>
                                             <td className="p-3 text-right font-mono text-green-400">{parseFloat(wallet.usdtBalance).toFixed(6)}</td>
