@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/CryptoSelectionPage.jsx (VERSIÓN "NEXUS - GLASSMORPHISM SYNC")
+// RUTA: frontend/src/pages/CryptoSelectionPage.jsx (VERSIÓN "NEXUS DEPOSIT FLOW - STABLE ICONS & LOGIC")
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -7,6 +7,23 @@ import toast from 'react-hot-toast';
 import Loader from '../components/common/Loader';
 import { HiChevronRight } from 'react-icons/hi2';
 import StaticPageLayout from '../components/layout/StaticPageLayout';
+
+// [NEXUS DEPOSIT FLOW] - Paso 1: Mapeo de iconos locales.
+// Ignoramos la URL de la API y usamos nuestros propios iconos para fiabilidad.
+// Asegúrese de que estos archivos existan en `public/assets/network/`.
+const cryptoLogos = {
+    'BEP20-USDT': '/assets/network/bep20-usdt.png',
+    'TRC20-USDT': '/assets/network/trc20-usdt.svg',
+    'BNB': '/assets/network/bnb.png',
+    'TRX': '/assets/network/tron.png',
+    'LTC': '/assets/network/litecoin.png',
+    // Añada aquí más mapeos si agrega más monedas.
+};
+
+// Función de ayuda para obtener el logo correcto o un placeholder.
+const getCryptoLogo = (name) => {
+    return cryptoLogos[name] || '/assets/network/default.svg'; // Un ícono por defecto si no se encuentra.
+};
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 
@@ -21,12 +38,10 @@ const DepositOptionItem = ({ option, onSelect, index, totalItems }) => {
         <motion.button
             variants={itemVariants}
             onClick={() => onSelect(option)}
-            // [NEXUS GLASSMORPHISM FIX] - Se elimina el fondo sólido y se cambia el hover.
-            // Ahora el item es transparente, dejando ver el fondo del contenedor padre.
             className={`w-full flex items-center p-4 hover:bg-white/10 transition-colors ${borderClasses}`}
         >
-            {/* [NEXUS GLASSMORPHISM FIX] - Se añade un fondo de respaldo a la imagen. */}
-            <img src={option.logo} alt={option.name} className="w-10 h-10 rounded-full mr-4 bg-dark-primary object-cover" />
+            {/* Usamos nuestra función getCryptoLogo en lugar de option.logo */}
+            <img src={getCryptoLogo(option.name)} alt={option.name} className="w-10 h-10 rounded-full mr-4 bg-dark-primary object-cover" />
             <span className="font-bold text-white text-lg">{option.name}</span>
             <HiChevronRight className="w-6 h-6 text-text-secondary ml-auto" />
         </motion.button>
@@ -63,17 +78,27 @@ const CryptoSelectionPage = () => {
   }, []);
 
   const handleOptionSelected = (option) => {
-    let amountToSend = amountNeeded;
-    const price = prices[option.chain];
-    
-    if (amountToSend > 0 && option.name !== 'BEP20-USDT' && option.name !== 'TRC20-USDT' && price > 0) {
-      amountToSend = amountNeeded / price;
+    // [NEXUS DEPOSIT FLOW] - Paso 2: Lógica de Monto Condicional.
+    const fixedAmountCryptos = ['BEP20-USDT', 'TRC20-USDT', 'BNB'];
+    let amountToSend = null; // Por defecto, no enviamos monto (depósito manual).
+
+    if (amountNeeded > 0 && fixedAmountCryptos.includes(option.name)) {
+        if (option.name === 'BNB') {
+            const price = prices[option.chain]; // Usamos la cadena 'BNB' para obtener el precio.
+            if (price > 0) {
+                amountToSend = amountNeeded / price;
+            }
+        } else {
+            // Para USDT, el monto es directo.
+            amountToSend = amountNeeded;
+        }
     }
 
+    // Para TRX, LTC, y cualquier otra, amountToSend permanecerá como null.
     navigate('/deposit-details', { 
       state: { 
         option, 
-        amountToSend: amountToSend > 0 ? amountToSend : null
+        amountToSend: amountToSend 
       } 
     });
   };
@@ -90,16 +115,12 @@ const CryptoSelectionPage = () => {
             {isLoading 
             ? <div className="flex justify-center pt-10"><Loader text="Cargando opciones..." /></div>
             : (
-                // [NEXUS GLASSMORPHISM FIX] - Contenedor actualizado con estilos de cristal.
-                // - bg-black/20: Fondo negro semi-transparente.
-                // - backdrop-blur-lg: Efecto de desenfoque del fondo.
-                // - border & border-white/10: Borde sutil para definir la forma.
                 <motion.div 
                     key="options-container" 
                     initial="hidden" 
                     animate="visible" 
                     variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } }}
-                    className="rounded-xl overflow-hidden divide-y divide-white/10 bg-white/20 backdrop-blur-lg border border-white/10"
+                    className="rounded-xl overflow-hidden divide-y divide-white/10 bg-black/20 backdrop-blur-lg border border-white/10"
                 >
                     {depositOptions.map((option, index) => (
                         <DepositOptionItem 
