@@ -12,11 +12,11 @@ import StaticPageLayout from '../components/layout/StaticPageLayout';
 // Ignoramos la URL de la API y usamos nuestros propios iconos para fiabilidad.
 // Asegúrese de que estos archivos existan en `public/assets/network/`.
 const cryptoLogos = {
-    'BEP20-USDT': '/assets/images/network/bep20-usdt.png',
-    'TRC20-USDT': '/assets/images/network/trc20-usdt.svg',
-    'BNB': '/assets/images/network/bnb.png',
-    'TRX': '/assets/images/network/tron.png',
-    'LTC': '/assets/images/network/litecoin.png',
+    'BEP20-USDT': '/assets/images/networks/bep20-usdt.png',
+    'TRC20-USDT': '/assets/images/networks/trc20-usdt.svg',
+    'BNB': '/assets/images/networks/bnb.png',
+    'TRX': '/assets/images/networks/tron.png',
+    'LTC': '/assets/images/networks/litecoin.png',
     // Añada aquí más mapeos si agrega más monedas.
 };
 
