@@ -12,8 +12,8 @@ const SupportPage = () => {
           <p>{t('supportPage.p1')}</p>
           <div>
             <h3 className="font-semibold text-text-primary mb-1">{t('supportPage.supportLink')}</h3>
-            <a href="https://t.me/NeurolinkServic" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-              https://t.me/NeurolinkServic
+            <a href="https://t.me/BlockSpheresvi" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              https://t.me/BlockSpheresvi
             </a>
           </div>
         </div>
