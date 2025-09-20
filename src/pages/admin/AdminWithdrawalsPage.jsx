@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminWithdrawalsPage.jsx (VERSIÓN "NEXUS - DATA INTEGRITY FIX")
+// RUTA: frontend/src/pages/admin/AdminWithdrawalsPage.jsx (VERSIÓN "NEXUS - UI & DATA SYNC")
 import React, { useState, useEffect, useCallback } from 'react';
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
@@ -6,28 +6,27 @@ import Loader from '@/components/common/Loader';
 import Pagination from '@/components/common/Pagination';
 import { HiOutlineClipboardDocument, HiOutlineClipboardDocumentCheck, HiOutlineReceiptRefund } from 'react-icons/hi2';
 
-// Sub-componente para la celda de montos, ahora "blindado" contra datos nulos.
+// Sub-componente dedicado para mostrar el desglose de montos, alineado con la imagen de referencia.
 const AmountCell = ({ withdrawal }) => {
   const { grossAmount, feeAmount, netAmount } = withdrawal;
-  
-  // [NEXUS DATA INTEGRITY FIX] - INICIO DE LA CORRECCIÓN CRÍTICA
-  // Se utiliza '(valor || 0).toFixed(2)' para asegurar que siempre se opera sobre un número.
-  // Esto previene el crash si la API envía un valor nulo o indefinido.
+
+  // Lógica de blindaje: asegura que siempre operamos sobre un número.
   const formattedNetAmount = (netAmount || 0).toFixed(2);
   const formattedGrossAmount = (grossAmount || 0).toFixed(2);
   const formattedFeeAmount = (feeAmount || 0).toFixed(2);
-  // [NEXUS DATA INTEGRITY FIX] - FIN DE LA CORRECCIÓN CRÍTICA
 
   return (
     <div className="font-mono">
       <p className="font-bold text-lg text-green-400">{formattedNetAmount}</p>
-      <p className="text-xs text-text-secondary mt-1">Solicitado: {formattedGrossAmount}</p>
-      <p className="text-xs text-text-secondary">Comisión: -{formattedFeeAmount}</p>
+      <div className="text-xs text-text-secondary mt-1 space-y-0.5">
+          <p>Solicitado: {formattedGrossAmount}</p>
+          <p>Comisión: -{formattedFeeAmount}</p>
+      </div>
     </div>
   );
 };
 
-// Componente para la tabla, ahora más limpio y reutilizable.
+// Componente para la tabla, mejorando la estructura y legibilidad.
 const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
   const [copiedAddress, setCopiedAddress] = useState('');
 
@@ -47,35 +46,35 @@ const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
             <th className="p-3">Usuario</th>
             <th className="p-3">Monto a Pagar (USDT)</th>
             <th className="p-3">Dirección de Retiro</th>
-            <th className="p-3">Fecha</th>
+            <th className="p-3">Fecha Solicitud</th>
             <th className="p-3 text-center">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-white/10">
           {withdrawals.map((tx) => (
-            <tr key={tx._id} className="hover:bg-dark-tertiary">
-              <td className="p-3">
+            <tr key={tx._id} className="hover:bg-dark-tertiary/50 transition-colors">
+              <td className="p-3 align-top">
                 <div className="flex items-center gap-3">
                   <img className="w-8 h-8 rounded-full bg-dark-primary object-cover" src={tx.user?.photoUrl} alt="avatar" />
-                  <span>{tx.user?.username}</span>
+                  <span className="font-medium">{tx.user?.username}</span>
                 </div>
               </td>
-              <td className="p-3"><AmountCell withdrawal={tx} /></td>
-              <td className="p-3 font-mono text-sm">
+              <td className="p-3 align-top"><AmountCell withdrawal={tx} /></td>
+              <td className="p-3 align-top font-mono text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="truncate max-w-xs">{tx.walletAddress}</span>
-                  <button onClick={() => handleCopy(tx.walletAddress)} className="text-gray-400 hover:text-white">
+                  <span className="truncate max-w-[200px]">{tx.walletAddress}</span>
+                  <button onClick={() => handleCopy(tx.walletAddress)} className="text-gray-400 hover:text-white flex-shrink-0">
                     {copiedAddress === tx.walletAddress ? <HiOutlineClipboardDocumentCheck className="w-5 h-5 text-green-400" /> : <HiOutlineClipboardDocument className="w-5 h-5" />}
                   </button>
                 </div>
               </td>
-              <td className="p-3 text-sm text-text-secondary whitespace-nowrap">{new Date(tx.createdAt).toLocaleString()}</td>
-              <td className="p-3 text-center">
+              <td className="p-3 align-top text-sm text-text-secondary whitespace-nowrap">{new Date(tx.createdAt).toLocaleString()}</td>
+              <td className="p-3 align-top text-center">
                 <div className="flex justify-center gap-2">
-                  <button onClick={() => onProcess(tx._id, 'completed')} disabled={!!processingId} className="px-3 py-1.5 text-xs font-bold text-white bg-green-500 rounded-md hover:bg-green-600 disabled:opacity-50">
-                    {processingId === tx._id ? 'Procesando...' : 'Aprobar'}
+                  <button onClick={() => onProcess(tx._id, 'completed')} disabled={!!processingId} className="px-4 py-2 text-xs font-bold text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors">
+                    {processingId === tx._id ? '...' : 'Aprobar'}
                   </button>
-                  <button onClick={() => onProcess(tx._id, 'rejected')} disabled={!!processingId} className="px-3 py-1.5 text-xs font-bold text-white bg-red-500 rounded-md hover:bg-red-600 disabled:opacity-50">
+                  <button onClick={() => onProcess(tx._id, 'rejected')} disabled={!!processingId} className="px-4 py-2 text-xs font-bold text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors">
                     Rechazar
                   </button>
                 </div>
@@ -100,6 +99,7 @@ const AdminWithdrawalsPage = () => {
       setData(responseData);
     } catch (err) {
       toast.error(err.response?.data?.message || "Error al cargar las solicitudes.");
+      setData({ withdrawals: [], page: 1, pages: 1 }); // Resetea a un estado seguro en caso de error
     } finally {
       setIsLoading(false);
     }
@@ -110,6 +110,7 @@ const AdminWithdrawalsPage = () => {
   }, [fetchWithdrawals]);
 
   const handleProcessWithdrawal = async (txId, status) => {
+    if (processingId) return; // Previene doble click
     setProcessingId(txId);
     let notes = '';
     
@@ -135,29 +136,32 @@ const AdminWithdrawalsPage = () => {
             return res.data.message || `Retiro procesado.`;
         },
         error: (err) => err.response?.data?.message || 'No se pudo procesar el retiro.'
+    }).finally(() => {
+      setProcessingId(null);
     });
-
-    setProcessingId(null);
   };
 
   return (
     <div className="space-y-6">
       <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
-        <h1 className="text-2xl font-semibold mb-1 flex items-center gap-3"><HiOutlineReceiptRefund /> Retiros Pendientes</h1>
+        <h1 className="text-2xl font-semibold mb-1 flex items-center gap-3"><HiOutlineReceiptRefund /> Solicitudes de Retiro Pendientes</h1>
         <p className="text-text-secondary">Aprueba o rechaza las solicitudes de retiro de los usuarios.</p>
       </div>
 
-      <div className="bg-dark-secondary rounded-lg border border-white/10 p-4">
+      <div className="bg-dark-secondary rounded-lg border border-white/10">
         {isLoading ? <div className="flex justify-center items-center h-96"><Loader text="Cargando solicitudes..." /></div>
         : data.withdrawals.length > 0 ? (
             <>
               <WithdrawalsTable withdrawals={data.withdrawals} onProcess={handleProcessWithdrawal} processingId={processingId} />
-              <Pagination currentPage={data.page} totalPages={data.pages} onPageChange={fetchWithdrawals} />
+              <div className="p-4 border-t border-white/10">
+                <Pagination currentPage={data.page} totalPages={data.pages} onPageChange={fetchWithdrawals} />
+              </div>
             </>
           )
         : (
             <div className="text-center py-16 text-text-secondary">
-              <p>¡Excelente! No hay solicitudes de retiro pendientes.</p>
+              <h3 className="text-lg font-semibold text-white">¡Todo en orden!</h3>
+              <p>No hay solicitudes de retiro pendientes.</p>
             </div>
           )
         }
