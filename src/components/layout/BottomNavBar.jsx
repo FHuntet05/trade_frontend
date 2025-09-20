@@ -1,4 +1,4 @@
-// RUTA: src/components/layout/BottomNavBar.jsx (VERSIÓN FINAL SIN GLOW)
+// RUTA: src/components/layout/BottomNavBar.jsx (VERSIÓN "NEXUS - ACCENT COLOR SYNC")
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -29,12 +29,14 @@ const NavItem = ({ to, labelKey, Icon }) => {
             animate={{ y: isActive ? -4 : 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 15 }}
           >
+            {/* [NEXUS VISUAL SYNC] - Se cambia 'text-white' por 'text-accent' para el icono activo. */}
             <Icon
-              className={`w-7 h-7 transition-colors duration-300 ${isActive ? 'text-white' : 'text-text-secondary group-hover:text-white'}`}
+              className={`w-7 h-7 transition-colors duration-300 ${isActive ? 'text-accent' : 'text-text-secondary group-hover:text-white'}`}
             />
           </motion.div>
+          {/* [NEXUS VISUAL SYNC] - Se cambia 'text-white' por 'text-accent' para el texto activo. */}
           <span
-            className={`text-xs transition-colors duration-300 ${isActive ? 'font-bold text-white' : 'text-text-secondary group-hover:text-white'}`}
+            className={`text-xs transition-colors duration-300 ${isActive ? 'font-bold text-accent' : 'text-text-secondary group-hover:text-white'}`}
           >
             {t(labelKey)}
           </span>
@@ -54,7 +56,6 @@ const NavItem = ({ to, labelKey, Icon }) => {
 
 const BottomNavBar = () => {
   return (
-    // Se mantiene la clase 'shadow-glow' eliminada.
     <nav className="w-full h-20 flex justify-around items-center bg-dark-secondary/70 backdrop-blur-lg rounded-2xl border border-white/10">
       {navItems.map((item, index) => (
         <NavItem 
