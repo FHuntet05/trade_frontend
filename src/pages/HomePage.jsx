@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/HomePage.jsx (VERSIÓN "NEXUS - GLOBAL STYLE SYNC")
+// RUTA: frontend/src/pages/HomePage.jsx (VERSIÓN "NEXUS - UX ENHANCEMENT")
 import React from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
@@ -50,22 +50,23 @@ const HomePage = () => {
     });
   };
 
+  // --- [NEXUS UX] - LÓGICA DE RENDERIZADO DEL BOTÓN REFACTORIZADA ---
+  
   let buttonText = 'Cargando...';
   let buttonAction = () => {};
-  let isButtonDisabled = true;
+  let showButton = false; // Por defecto, el botón está oculto.
 
   if (miningStatus === 'IDLE') {
     buttonText = 'EMPEZAR A MINAR';
     buttonAction = handleStartMining;
-    isButtonDisabled = false;
+    showButton = true; // Mostramos el botón para iniciar.
   } else if (miningStatus === 'MINING') {
     if (isClaimable) {
       buttonText = 'RECLAMAR GANANCIAS';
       buttonAction = handleClaim;
-      isButtonDisabled = false;
+      showButton = true; // Mostramos el botón para reclamar.
     } else {
-      buttonText = 'MINANDO...';
-      isButtonDisabled = true;
+      // Cuando está minando y no es reclamable, el botón permanece oculto (showButton = false).
     }
   }
 
@@ -90,7 +91,6 @@ const HomePage = () => {
         
         <div className="w-full max-w-xs mx-auto mt-4 space-y-2">
           <div className="w-full bg-dark-secondary rounded-full h-3">
-            {/* [NEXUS STYLE SYNC] - Se reemplaza el gradiente por el color de acento sólido */}
             <div 
               className="bg-accent h-3 rounded-full transition-all duration-1000" 
               style={{width: `${progress}%`}}
@@ -102,16 +102,17 @@ const HomePage = () => {
         </div>
       </div>
       
-      <div className="w-full">
-        {/* [NEXUS STYLE SYNC] - Se reemplaza el gradiente por el color de acento sólido */}
-        <button 
-          onClick={buttonAction}
-          disabled={isButtonDisabled}
-          className="w-full py-4 bg-accent text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-        >
-          {buttonText}
-        </button>
-      </div>
+      {/* [NEXUS UX] - El botón ahora se renderiza condicionalmente. */}
+      {showButton && (
+          <div className="w-full">
+            <button 
+              onClick={buttonAction}
+              className="w-full py-4 bg-accent text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all duration-150"
+            >
+              {buttonText}
+            </button>
+          </div>
+      )}
       
       <TaskCenter />
       <NotificationFeed />

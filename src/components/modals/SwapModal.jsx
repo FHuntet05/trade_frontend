@@ -1,4 +1,4 @@
-// RUTA: frontend/src/components/modals/SwapModal.jsx (VERSIÓN "NEXUS - GLOBAL STYLE SYNC")
+// RUTA: frontend/src/components/modals/SwapModal.jsx (VERSIÓN "NEXUS - UX ENHANCEMENT")
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -59,6 +59,11 @@ const SwapModal = ({ onClose }) => {
     });
   };
 
+  // [NEXUS UX] - Nueva función para establecer el monto máximo.
+  const handleSetMax = () => {
+    setNtxAmount(userNtxBalance.toString());
+  };
+
   return (
     <motion.div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
@@ -85,7 +90,13 @@ const SwapModal = ({ onClose }) => {
           <div className="bg-black/20 p-3 rounded-lg">
             <div className="flex justify-between items-baseline mb-1">
               <label className="text-sm text-text-secondary">Pagar con NTX</label>
-              <span className="text-xs text-text-secondary">Saldo: {userNtxBalance.toLocaleString('en-US', {maximumFractionDigits: 2})}</span>
+              {/* [NEXUS UX] - Contenedor para el saldo y el nuevo botón "TODO" */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-secondary">Saldo: {userNtxBalance.toLocaleString('en-US', {maximumFractionDigits: 2})}</span>
+                <button type="button" onClick={handleSetMax} className="text-xs font-bold text-accent hover:underline">
+                  TODO
+                </button>
+              </div>
             </div>
             <div className="flex items-center">
               <input
@@ -96,7 +107,6 @@ const SwapModal = ({ onClose }) => {
                 className="w-full bg-transparent text-2xl font-bold focus:outline-none"
                 disabled={isLoading}
               />
-              {/* [NEXUS STYLE SYNC] - Se actualiza el color del texto a 'text-accent' */}
               <span className="text-xl font-bold text-accent ml-2">NTX</span>
             </div>
           </div>
@@ -117,7 +127,6 @@ const SwapModal = ({ onClose }) => {
              {swapFee > 0 && <p>Comisión de Intercambio: {swapFee}% ({feeAmount.toLocaleString()} NTX)</p>}
           </div>
 
-          {/* [NEXUS STYLE SYNC] - Se reemplaza el gradiente por el color de acento sólido */}
           <button
             onClick={handleSwap}
             disabled={!isValid || isLoading}

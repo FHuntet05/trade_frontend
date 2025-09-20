@@ -1,10 +1,26 @@
 {
   "nav": {
-    "home": "Mine",
+    "home": "Home",
     "ranking": "Ranking",
     "upgrade": "Upgrade",
     "team": "Team",
     "profile": "Me"
+  },
+  "tasks": {
+    "title": "Task Center",
+    "noTasks": "No tasks available at the moment.",
+    "boughtUpgrade": {
+      "title": "First Upgrade",
+      "description": "Purchase any VIP tool."
+    },
+    "inviteFriends": {
+      "title": "Invite 10 Friends",
+      "description": "Your team must have {{count}} members."
+    },
+    "joinedTelegram": {
+      "title": "Join Channel",
+      "description": "Join our official community."
+    }
   },
   "profile": {
     "recharge": "Recharge",
@@ -15,16 +31,16 @@
     "password": "Password",
     "language": "Language",
     "faq": "FAQ",
-    "about": "About us",
+    "about": "About Us",
     "support": "Customer Support",
     "logout": "Log Out",
     "comingSoon": {
-      "withdraw": "Withdrawal function coming soon.",
+      "withdraw": "Withdrawal feature coming soon.",
       "records": "Financial history coming soon.",
       "exchange": "NTX/USDT exchange coming soon.",
       "password": "Password management coming soon.",
-      "faq": "FAQ coming soon.",
-      "about": "'About us' page coming soon.",
+      "faq": "Frequently Asked Questions coming soon.",
+      "about": "'About Us' page coming soon.",
       "support": "Contact support coming soon."
     }
   },
@@ -32,17 +48,121 @@
     "title": "Mining Tools",
     "subtitle": "Upgrade your equipment to increase your earnings.",
     "loading": "Loading...",
-    "error": "Could not load the tools."
+    "error": "Could not load tools."
   },
-    "common": { "error": "Error", "copied": "Copied!", "continue": "Continue", "loading": "Loading...", "close": "Close" },
-    "homePage": { "buttons": { "start": "START", "claim": "CLAIM" }, "toasts": { "startingCycle": "Starting cycle...", "cycleStarted": "Mining cycle started!", "claiming": "Claiming..." }, "errors": { "noUser": "Error: Could not retrieve user information. Please try restarting the application." }, "taskCenter": "Task Center" },
-    "profilePage": { "balanceNtxLabel": "Value Portfolio (NTX)", "balanceUsdtLabel": "Brokerage Portfolio (USDT)", "toasts": { "insufficientBalance": "Insufficient balance. The minimum to withdraw is {{min}} USDT.", "insufficientNtx": "Insufficient NTX balance. The minimum to exchange is {{min}} NTX.", "loadingPrices": "Fetching market prices...", "selectCoin": "Select a currency to pay." } },
-    "teamPage": { "stats": { "members": "Team Members", "totalCommission": "Total Commission", "teamRecharge": "Team Recharges", "teamWithdrawals": "Team Withdrawals" }, "referralLink": { "copy": "Copy", "shareOn": "Share on", "shareText": "Come and build your team and let's make money together!" }, "levels": { "level": "LEVEL", "totalMembers": "Total Members", "validMembers": "Valid Members", "showDetails": "SHOW DETAILS" }, "shareWithFriends": "SHARE WITH FRIENDS", "detailsModal": { "errorLoading": "Could not load team details." } },
-    "toolsPage": { "hoursOfWork": "Working hours", "miningSpeed": "Mining speed", "perDay": "NTX/Day", "tabs": { "allTools": "Mining Tools", "myTools": "Upgrade" }, "purchaseHistory": "Purchase History", "noActiveTools": "You have no active tools." },
-    "rankingPage": { "tabs": { "global": "Global Ranking", "team": "Team Ranking" }, "loading": "Loading ranking...", "error": "Could not load the ranking." },
-    "historyPage": { "title": "Records History", "loading": "Loading history...", "error": "Could not load history.", "empty": "You have no transactions yet." },
-    "faqPage": { "title": "Frequently Asked Questions (FAQ)", "q1": "What is Block Sphere?", "a1": "Block Sphere is a gamified mining simulation platform that allows you to earn NTX tokens by purchasing and managing virtual tools.", "q2": "How can I increase my earnings?", "a2": "You can increase your mining rate by purchasing more powerful tools in the 'Upgrade' section. You can also earn bonuses by inviting friends to join your team.", "q3": "What is the NTX token?", "a3": "NTX is the native token of the Block Sphere platform. You accumulate it through mining and can use it within the application's ecosystem.", "q4": "How does the referral system work?", "a4": "When someone signs up using your invitation code, they join your team. You earn a percentage of your team members' mining activity, spread across several levels." },
-    "aboutPage": { "title": "About Us", "p1": "We are a team passionate about blockchain technology and decentralized finance. Our mission with Block Sphere is to create an accessible and fun gateway to the world of cryptocurrencies.", "p2": "We believe learning should be an engaging experience, and we have designed this platform to simulate the concepts of mining and rewards in a simple and visual way." },
-    "supportPage": { "title": "Customer Support", "p1": "If you have any problems, questions, or suggestions, do not hesitate to contact us. Our support team is here to help you.", "supportLink": "Support" },
-    "taskLogic": { "markingVisited": "Marking as visited...", "visitSuccess": "Come back to claim your reward!", "visitError": "Something went wrong.", "claimingReward": "Claiming reward...", "claimSuccess": "Reward claimed!", "claimError": "Could not claim the task.", "statusError": "Could not update task status." }
+  "common": {
+    "error": "Error",
+    "copied": "Copied!",
+    "continue": "Continue",
+    "loading": "Loading...",
+    "close": "Close"
+  },
+  "homePage": {
+    "buttons": {
+      "start": "START",
+      "claim": "CLAIM"
+    },
+    "toasts": {
+      "startingCycle": "Starting cycle...",
+      "cycleStarted": "Mining cycle started!",
+      "claiming": "Claiming..."
+    },
+    "errors": {
+      "noUser": "Error: Could not retrieve user information. Please try restarting the app."
+    },
+    "taskCenter": "Task Center"
+  },
+  "profilePage": {
+    "balanceNtxLabel": "Value Wallet (NTX)",
+    "balanceUsdtLabel": "Brokerage Wallet (USDT)",
+    "toasts": {
+      "insufficientBalance": "Insufficient balance. The minimum to withdraw is {{min}} USDT.",
+      "insufficientNtx": "Insufficient NTX balance. The minimum to swap is {{min}} NTX.",
+      "loadingPrices": "Fetching market prices...",
+      "selectCoin": "Select a coin to pay."
+    }
+  },
+  "teamPage": {
+    "stats": {
+      "members": "Team Members",
+      "totalCommission": "Total Commission",
+      "teamRecharge": "Team Recharges",
+      "teamWithdrawals": "Team Withdrawals"
+    },
+    "referralLink": {
+      "copy": "Copy",
+      "shareOn": "Share on",
+      "shareText": "Come and build your team and let's earn money together!"
+    },
+    "levels": {
+      "level": "LEVEL",
+      "totalMembers": "Total Members",
+      "validMembers": "Valid Members",
+      "showDetails": "SHOW DETAILS"
+    },
+    "shareWithFriends": "SHARE WITH FRIENDS",
+    "detailsModal": {
+      "errorLoading": "Could not load team details."
+    }
+  },
+  "toolsPage": {
+    "hoursOfWork": "Working hours",
+    "miningSpeed": "Mining speed",
+    "perDay": "NTX/Day",
+    "tabs": {
+      "allTools": "Mining tools",
+      "myTools": "Upgrade"
+    },
+    "purchaseHistory": "Purchase history",
+    "noActiveTools": "You have no active tools.",
+    "toasts": {
+      "processing": "Processing purchase...",
+      "success": "Purchase successful!",
+      "error": "Purchase failed."
+    }
+  },
+  "rankingPage": {
+    "tabs": {
+      "global": "Leaderboard",
+      "team": "Team Ranking"
+    },
+    "loading": "Loading ranking...",
+    "error": "Could not load ranking."
+  },
+  "historyPage": {
+    "title": "Records History",
+    "loading": "Loading history...",
+    "error": "Could not load history.",
+    "empty": "You have no transactions yet."
+  },
+  "faqPage": {
+    "title": "Frequently Asked Questions (FAQ)",
+    "q1": "What is Block Sphere?",
+    "a1": "Block Sphere is a gamified mining simulation platform that allows you to earn NTX tokens by purchasing and managing virtual tools.",
+    "q2": "How can I increase my earnings?",
+    "a2": "You can increase your mining rate by purchasing more powerful tools in the 'Upgrade' section. You can also earn bonuses by inviting friends to join your team.",
+    "q3": "What is the NTX token?",
+    "a3": "NTX is the native token of the Block Sphere platform. You accumulate it through mining and can use it within the app's ecosystem.",
+    "q4": "How does the referral system work?",
+    "a4": "When someone signs up using your invitation code, they join your team. You earn a percentage of your team members' mining activity, spread across several levels."
+  },
+  "aboutPage": {
+    "title": "About Us",
+    "p1": "We are a passionate team dedicated to blockchain technology and decentralized finance. Our mission with Block Sphere is to create an accessible and fun gateway to the world of cryptocurrencies.",
+    "p2": "We believe that learning should be an engaging experience, and we have designed this platform to simulate the concepts of mining and rewards in a simple and visual way."
+  },
+  "supportPage": {
+    "title": "Customer Support",
+    "p1": "If you have any problems, questions, or suggestions, please do not hesitate to contact us. Our support team is here to help you.",
+    "supportLink": "Support"
+  },
+  "taskLogic": {
+    "markingVisited": "Marking as visited...",
+    "visitSuccess": "Come back to claim your reward!",
+    "visitError": "Something went wrong.",
+    "claimingReward": "Claiming reward...",
+    "claimSuccess": "Reward claimed!",
+    "claimError": "Could not claim task.",
+    "statusError": "Could not update task status."
+  }
 }

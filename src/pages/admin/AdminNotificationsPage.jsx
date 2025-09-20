@@ -1,183 +1,106 @@
-// RUTA: frontend/src/pages/admin/AdminNotificationsPage.jsx (FASE "REMEDIATIO" - RUTAS CON ALIAS CORREGIDAS)
+// RUTA: frontend/src/pages/admin/AdminNotificationsPage.jsx (VERSIÓN "NEXUS - REFINED & SIMPLIFIED")
 
-import React, { useState, useCallback } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
-// [REMEDIATIO - SOLUCIÓN ESTRUCTURAL] Se aplica el alias de ruta.
 import adminApi from '@/pages/admin/api/adminApi';
-import { HiOutlineMegaphone } from 'react-icons/hi2';
+import { HiOutlineMegaphone, HiOutlineBellAlert } from 'react-icons/hi2';
 
+// --- SUB-COMPONENTES DE UI PARA CONSISTENCIA VISUAL ---
+const FormCard = ({ title, description, children }) => (
+    <div className="bg-dark-secondary rounded-lg border border-white/10">
+        <div className="p-6 border-b border-white/10">
+            <h2 className="text-xl font-bold">{title}</h2>
+            <p className="text-sm text-text-secondary mt-1">{description}</p>
+        </div>
+        <div className="p-6">{children}</div>
+    </div>
+);
+
+const FormInput = ({ name, label, type, register, ...props }) => (
+    <div>
+        <label htmlFor={name} className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
+        <input 
+            type={type} 
+            id={name}
+            {...register(name)} 
+            className="w-full bg-dark-primary p-2 rounded-md border border-white/20"
+            {...props}
+        />
+    </div>
+);
+
+
+// --- COMPONENTE PRINCIPAL DE LA PÁGINA (Refactorizado) ---
 const AdminNotificationsPage = () => {
-    const [targetType, setTargetType] = useState('all');
-    const [targetValue, setTargetValue] = useState('');
-    const [message, setMessage] = useState('');
-    const [imageUrl, setImageUrl] = useState('');
-    const [buttons, setButtons] = useState([{ text: '', url: '' }]);
-    const [isLoading, setIsLoading] = useState(false);
+    const { register, handleSubmit, reset, formState: { isSubmitting, isDirty } } = useForm({
+        defaultValues: { message: '', imageUrl: '', buttonUrl: '', buttonText: '' }
+    });
 
-    const handleAddButton = useCallback(() => {
-        setButtons(prevButtons => [...prevButtons, { text: '', url: '' }]);
-    }, []);
-
-    const handleRemoveButton = useCallback((indexToRemove) => {
-        setButtons(prevButtons => prevButtons.filter((_, index) => index !== indexToRemove));
-    }, []);
-    
-    const handleButtonChange = useCallback((indexToChange, field, value) => {
-        setButtons(prevButtons => 
-            prevButtons.map((button, index) => {
-                if (index === indexToChange) {
-                    return { ...button, [field]: value };
-                }
-                return button;
-            })
-        );
-    }, []);
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        if (!message.trim()) {
+    const onSendNotification = async (data) => {
+        if (!data.message || !data.message.trim()) {
             return toast.error("El campo de mensaje no puede estar vacío.");
         }
-        if (targetType === 'id' && !targetValue.trim()) {
-            return toast.error("Debe proporcionar un ID de Telegram específico.");
-        }
         
-        setIsLoading(true);
-        try {
-            const finalButtons = buttons.filter(b => b.text.trim() && b.url.trim());
-            
-            const payload = {
-                message,
-                target: { type: targetType, value: targetValue },
-                imageUrl: imageUrl.trim() || null,
-                buttons: finalButtons.length > 0 ? finalButtons : null
-            };
-            
-            const { data } = await adminApi.post('/admin/notifications/broadcast', payload); // Corregido endpoint
-            toast.success(data.message);
-            
-            setMessage(''); 
-            setImageUrl(''); 
-            setButtons([{ text: '', url: '' }]);
-            setTargetValue('');
-
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Error al enviar la notificación.');
-        } finally {
-            setIsLoading(false);
+        // Validación: si se proporciona uno de los campos del botón, el otro también es obligatorio.
+        if ((data.buttonText && !data.buttonUrl) || (!data.buttonText && data.buttonUrl)) {
+            toast.error('Para enviar un botón, tanto el Texto como la URL son requeridos.');
+            return;
         }
+
+        const promise = adminApi.post('/admin/notifications/broadcast', data);
+        toast.promise(promise, {
+            loading: 'Enviando notificación a todos los usuarios...',
+            success: (res) => {
+                reset(); // Limpia los campos del formulario tras el envío exitoso.
+                return res.data.message;
+            },
+            error: (err) => err.response?.data?.message || 'Error al enviar la notificación.'
+        });
     };
 
     return (
         <div className="space-y-6">
             <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
                 <h1 className="text-2xl font-semibold mb-1 flex items-center gap-3">
-                    <HiOutlineMegaphone /> Notificaciones a Usuarios
+                    <HiOutlineMegaphone /> Enviar Notificación Global
                 </h1>
                 <p className="text-text-secondary">
-                    Envía mensajes masivos o individuales a los usuarios del bot de Telegram.
+                    Envía un mensaje a todos los usuarios activos. Soporta imágenes y botones.
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="bg-dark-secondary p-6 rounded-lg border border-white/10 space-y-6">
-                <div>
-                    <label htmlFor="targetType" className="block mb-2 text-sm font-medium">Público Objetivo</label>
-                    <div className="flex gap-4">
-                        <select
-                            id="targetType"
-                            value={targetType}
-                            onChange={(e) => setTargetType(e.target.value)}
-                            className="bg-dark-tertiary border border-white/10 rounded-lg p-2.5"
-                        >
-                            <option value="all">Todos los Usuarios</option>
-                            <option value="id">ID de Telegram Específico</option>
-                        </select>
-                        {targetType === 'id' && (
-                            <input
-                                id="targetValue"
-                                type="text"
-                                value={targetValue}
-                                onChange={(e) => setTargetValue(e.target.value)}
-                                placeholder="Introduce el ID de Telegram"
-                                className="flex-grow bg-dark-tertiary border border-white/10 rounded-lg p-2.5"
-                            />
-                        )}
+            <FormCard>
+                <form onSubmit={handleSubmit(onSendNotification)} className="space-y-4">
+                    <div>
+                        <label htmlFor="message" className="block text-sm font-medium text-text-secondary mb-1">Mensaje (Soporta HTML)</label>
+                        <textarea 
+                            id="message"
+                            rows={6}
+                            {...register('message', { required: true })}
+                            className="w-full bg-dark-primary p-2 rounded-md border border-white/20"
+                            placeholder="Escribe tu mensaje aquí..."
+                        />
                     </div>
-                </div>
-
-                <div>
-                    <label htmlFor="message" className="block mb-2 text-sm font-medium">
-                        Mensaje (soporta HTML básico como &lt;b&gt; y &lt;i&gt;)
-                    </label>
-                    <textarea
-                        id="message"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        rows="8"
-                        className="w-full bg-dark-tertiary border border-white/10 rounded-lg p-2.5"
-                        required
-                    ></textarea>
-                </div>
-                
-                <div>
-                    <label htmlFor="imageUrl" className="block mb-2 text-sm font-medium">URL de Imagen (Opcional)</label>
-                    <input
-                        id="imageUrl"
-                        type="url"
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        placeholder="https://ejemplo.com/imagen.jpg"
-                        className="w-full bg-dark-tertiary border border-white/10 rounded-lg p-2.5"
-                    />
-                </div>
-
-                <div>
-                    <label className="block mb-2 text-sm font-medium">Botones (Opcional)</label>
-                    {buttons.map((btn, index) => (
-                        <div key={index} className="flex gap-2 mb-2 items-center">
-                            <input
-                                type="text"
-                                value={btn.text}
-                                onChange={(e) => handleButtonChange(index, 'text', e.target.value)}
-                                placeholder={`Texto del Botón ${index + 1}`}
-                                className="w-1/3 bg-dark-tertiary border border-white/10 rounded-lg p-2"
-                            />
-                            <input
-                                type="url"
-                                value={btn.url}
-                                onChange={(e) => handleButtonChange(index, 'url', e.target.value)}
-                                placeholder={`URL del Enlace ${index + 1}`}
-                                className="w-2/3 bg-dark-tertiary border border-white/10 rounded-lg p-2"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => handleRemoveButton(index)}
-                                className="text-red-400 p-2 rounded-full hover:bg-red-500/20"
-                            >
-                                ×
-                            </button>
-                        </div>
-                    ))}
-                    <button
-                        type="button"
-                        onClick={handleAddButton}
-                        className="text-sm text-accent-start hover:underline"
-                    >
-                        + Añadir Botón
-                    </button>
-                </div>
-
-                <div className="text-right border-t border-white/10 pt-6">
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="px-6 py-3 bg-gradient-to-r from-accent-start to-accent-end text-white font-bold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isLoading ? 'Enviando...' : 'Enviar Notificación'}
-                    </button>
-                </div>
-            </form>
+                    <FormInput name="imageUrl" label="URL de la Imagen (Opcional)" type="text" register={register} placeholder="https://ejemplo.com/imagen.jpg" />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <FormInput name="buttonText" label="Texto del Botón (Opcional)" type="text" register={register} placeholder="Abrir App" />
+                        <FormInput name="buttonUrl" label="URL del Botón (Opcional)" type="text" register={register} placeholder="https://tu-app.com" />
+                    </div>
+                    
+                    <div className="pt-4 text-right">
+                         <button 
+                            type="submit" 
+                            disabled={isSubmitting || !isDirty}
+                            className="px-6 py-3 flex items-center justify-center gap-2 font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 transition-colors"
+                        >
+                            <HiOutlineBellAlert className="w-5 h-5" />
+                            {isSubmitting ? 'Enviando...' : 'Enviar Notificación'}
+                        </button>
+                    </div>
+                </form>
+            </FormCard>
         </div>
     );
 };
