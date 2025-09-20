@@ -135,18 +135,18 @@
   },
   "faqPage": {
     "title": "Preguntas Frecuentes (FAQ)",
-    "q1": "¿Qué es NEURO LINK?",
-    "a1": "NEURO LINK es una plataforma de simulación de minería gamificada que te permite ganar tokens NTX a través de la compra y gestión de herramientas virtuales.",
+    "q1": "¿Qué es Block Sphere?",
+    "a1": "Block Sphere es una plataforma de simulación de minería gamificada que te permite ganar tokens NTX a través de la compra y gestión de herramientas virtuales.",
     "q2": "¿Cómo puedo aumentar mis ganancias?",
     "a2": "Puedes aumentar tu tasa de minería comprando herramientas más potentes en la sección 'Mejora'. También puedes ganar bonificaciones invitando a amigos a unirse a tu equipo.",
     "q3": "¿Qué es el token NTX?",
-    "a3": "NTX es el token nativo de la plataforma NEURO LINK. Lo acumulas a través de la minería y puedes usarlo dentro del ecosistema de la aplicación.",
+    "a3": "NTX es el token nativo de la plataforma Block Sphere. Lo acumulas a través de la minería y puedes usarlo dentro del ecosistema de la aplicación.",
     "q4": "¿Cómo funciona el sistema de referidos?",
     "a4": "Cuando alguien se registra usando tu código de invitación, se une a tu equipo. Ganas un porcentaje de la actividad de minería de los miembros de tu equipo, repartido en varios niveles."
   },
   "aboutPage": {
     "title": "Sobre nosotros",
-    "p1": "Somos un equipo apasionado por la tecnología blockchain y las finanzas descentralizadas. Nuestra misión con NEURO LINK es crear una puerta de entrada accesible y divertida al mundo de las criptomonedas.",
+    "p1": "Somos un equipo apasionado por la tecnología blockchain y las finanzas descentralizadas. Nuestra misión con Block Sphere es crear una puerta de entrada accesible y divertida al mundo de las criptomonedas.",
     "p2": "Creemos que el aprendizaje debe ser una experiencia atractiva, y hemos diseñado esta plataforma para simular los conceptos de minería y recompensas de una manera sencilla y visual."
   },
   "supportPage": {
