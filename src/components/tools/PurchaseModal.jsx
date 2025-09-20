@@ -1,4 +1,4 @@
-// RUTA: frontend/src/components/tools/PurchaseModal.jsx (VERSIÓN "NEXUS - CONDICIONAL")
+// RUTA: frontend/src/components/tools/PurchaseModal.jsx (VERSIÓN "NEXUS - GLOBAL STYLE SYNC")
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { HiXMark, HiOutlineCreditCard, HiOutlineCurrencyDollar, HiMinus, HiPlus } from 'react-icons/hi2';
@@ -6,13 +6,8 @@ import useUserStore from '../../store/userStore';
 import toast from 'react-hot-toast';
 import api from '../../api/axiosConfig';
 
-// [NEXUS CONDICIONAL]
-// El modal ahora necesita tres callbacks para manejar todos los escenarios:
-// 1. onClose: para cerrar el modal.
-// 2. onPurchaseWithBalance: para ejecutar la compra directa.
-// 3. onRedirectToDeposit: para navegar a la página de pago.
 const PurchaseModal = ({ tool, onClose, onPurchaseWithBalance, onRedirectToDeposit }) => {
-  const { user } = useUserStore(); // Solo necesitamos leer el usuario, no actualizarlo desde aquí.
+  const { user } = useUserStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const MAX_QUANTITY = 20;
@@ -29,22 +24,16 @@ const PurchaseModal = ({ tool, onClose, onPurchaseWithBalance, onRedirectToDepos
   const userBalance = user?.balance?.usdt || 0;
   const canPayWithBalance = userBalance >= totalCost;
 
-  // [NEXUS CONDICIONAL] La lógica de la compra con saldo ahora es un callback del padre.
-  // Esto mantiene la lógica de API en la página principal, que es una mejor práctica.
   const handlePayWithBalance = async () => {
     setIsProcessing(true);
-    // Pasamos el toolId y la quantity para que la página se encargue de la llamada a la API.
     await onPurchaseWithBalance(tool._id, quantity);
     setIsProcessing(false);
   };
   
-  // [NEXUS CONDICIONAL] La redirección también es un callback.
   const handleRedirect = () => {
-    // Pasamos el costo total para que la página de pago sepa cuánto se necesita.
     onRedirectToDeposit(totalCost); 
   };
   
-  // Lógica unificada del botón principal.
   const handlePrimaryAction = () => {
     if (canPayWithBalance) {
       handlePayWithBalance();
@@ -70,9 +59,11 @@ const PurchaseModal = ({ tool, onClose, onPurchaseWithBalance, onRedirectToDepos
           <div className="flex items-center justify-center my-4 p-3 bg-dark-primary/50 rounded-lg">
             <span className="text-text-secondary mr-4">Cantidad:</span>
             <div className="flex items-center">
-                <button onClick={handleDecrease} disabled={quantity <= 1} className="p-2 bg-dark-primary rounded-l-lg disabled:opacity-40 hover:bg-accent-start transition"><HiMinus className="w-5 h-5" /></button>
+                {/* [NEXUS STYLE SYNC] - Se actualiza el color del hover */}
+                <button onClick={handleDecrease} disabled={quantity <= 1} className="p-2 bg-dark-primary rounded-l-lg disabled:opacity-40 hover:bg-accent transition"><HiMinus className="w-5 h-5" /></button>
                 <span className="px-4 py-1 bg-dark-primary text-white font-bold text-lg">{quantity}</span>
-                <button onClick={handleIncrease} disabled={quantity >= MAX_QUANTITY} className="p-2 bg-dark-primary rounded-r-lg disabled:opacity-40 hover:bg-accent-start transition"><HiPlus className="w-5 h-5" /></button>
+                {/* [NEXUS STYLE SYNC] - Se actualiza el color del hover */}
+                <button onClick={handleIncrease} disabled={quantity >= MAX_QUANTITY} className="p-2 bg-dark-primary rounded-r-lg disabled:opacity-40 hover:bg-accent transition"><HiPlus className="w-5 h-5" /></button>
             </div>
           </div>
 
@@ -88,14 +79,14 @@ const PurchaseModal = ({ tool, onClose, onPurchaseWithBalance, onRedirectToDepos
           </div>
         
           <div className="mt-6">
+            {/* [NEXUS STYLE SYNC] - Se reemplaza el gradiente por el color de acento sólido */}
             <button 
               onClick={handlePrimaryAction}
               disabled={isProcessing}
-              className="w-full flex items-center justify-center gap-3 p-3 rounded-full bg-gradient-to-r from-accent-start to-accent-end text-white font-bold disabled:bg-gray-600 disabled:opacity-50 transition-all"
+              className="w-full flex items-center justify-center gap-3 p-3 rounded-full bg-accent text-white font-bold disabled:bg-gray-600 disabled:opacity-50 transition-all"
             >
               {canPayWithBalance ? <HiOutlineCurrencyDollar className="w-6 h-6" /> : <HiOutlineCreditCard className="w-6 h-6" />}
-              {/* [NEXUS CONDICIONAL] El texto del botón ahora es dinámico. */}
-              <span>{canPayWithBalance ? `Comprar Ahora (${totalCost.toFixed(2)} USDT)` : `Depositar para Comprar`}</span>
+              <span>{canPayWithAmmount ? `Comprar Ahora (${totalCost.toFixed(2)} USDT)` : `Depositar para Comprar`}</span>
             </button>
           </div>
       </motion.div>

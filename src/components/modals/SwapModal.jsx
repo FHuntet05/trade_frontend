@@ -1,4 +1,4 @@
-// frontend/src/components/modals/SwapModal.jsx (VERSIÓN DE PRODUCCIÓN - LIMPIA Y DINÁMICA)
+// RUTA: frontend/src/components/modals/SwapModal.jsx (VERSIÓN "NEXUS - GLOBAL STYLE SYNC")
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -13,11 +13,9 @@ const SwapModal = ({ onClose }) => {
   const [ntxAmount, setNtxAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Valores de negocio
   const SWAP_RATE = 10000;
   const userNtxBalance = user?.balance?.ntx ?? 0;
   
-  // Valores desde la configuración global, con valores por defecto seguros
   const minSwap = settings?.minimumSwap || 10000;
   const swapFee = settings?.swapFeePercent || 0;
 
@@ -98,7 +96,8 @@ const SwapModal = ({ onClose }) => {
                 className="w-full bg-transparent text-2xl font-bold focus:outline-none"
                 disabled={isLoading}
               />
-              <span className="text-xl font-bold text-accent-end ml-2">NTX</span>
+              {/* [NEXUS STYLE SYNC] - Se actualiza el color del texto a 'text-accent' */}
+              <span className="text-xl font-bold text-accent ml-2">NTX</span>
             </div>
           </div>
 
@@ -118,10 +117,11 @@ const SwapModal = ({ onClose }) => {
              {swapFee > 0 && <p>Comisión de Intercambio: {swapFee}% ({feeAmount.toLocaleString()} NTX)</p>}
           </div>
 
+          {/* [NEXUS STYLE SYNC] - Se reemplaza el gradiente por el color de acento sólido */}
           <button
             onClick={handleSwap}
             disabled={!isValid || isLoading}
-            className="w-full py-3 bg-gradient-to-r from-accent-start to-accent-end text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            className="w-full py-3 bg-accent text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
           >
             Confirmar Intercambio
           </button>

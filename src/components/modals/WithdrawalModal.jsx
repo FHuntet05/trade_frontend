@@ -1,4 +1,4 @@
-// frontend/src/components/modals/WithdrawalModal.jsx (COMPLETO Y DINÁMICO)
+// RUTA: frontend/src/components/modals/WithdrawalModal.jsx (VERSIÓN "NEXUS - GLOBAL STYLE SYNC")
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -8,10 +8,8 @@ import useUserStore from '../../store/userStore';
 import api from '../../api/axiosConfig';
 
 const WithdrawalModal = ({ onClose }) => {
-  // Obtenemos el usuario, la configuración y la función de actualización del store
   const { user, settings, updateUser } = useUserStore();
   
-  // Extraemos valores con defaults por si la configuración aún no ha cargado
   const userBalance = user?.balance?.usdt || 0;
   const minWithdrawal = settings?.minimumWithdrawal || 1.0;
   const withdrawalFee = settings?.withdrawalFeePercent || 0;
@@ -20,7 +18,6 @@ const WithdrawalModal = ({ onClose }) => {
   const [walletAddress, setWalletAddress] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Calculamos la comisión y el monto neto en tiempo real usando useMemo para eficiencia
   const { feeAmount, netAmount } = useMemo(() => {
     const numericAmount = parseFloat(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
@@ -35,7 +32,6 @@ const WithdrawalModal = ({ onClose }) => {
     e.preventDefault();
     const numericAmount = parseFloat(amount);
 
-    // Validaciones dinámicas
     if (!amount || !walletAddress) return toast.error('Todos los campos son obligatorios.');
     if (isNaN(numericAmount) || numericAmount < minWithdrawal) return toast.error(`La cantidad mínima para retirar es ${minWithdrawal} USDT.`);
     if (numericAmount > userBalance) return toast.error('No puedes retirar más de tu saldo disponible.');
@@ -45,7 +41,6 @@ const WithdrawalModal = ({ onClose }) => {
     const withdrawalPromise = api.post('/wallet/request-withdrawal', {
       amount: numericAmount,
       walletAddress,
-      // La red es fija, pero podríamos hacerla dinámica en el futuro
       network: 'USDT-BEP20',
     });
 
@@ -76,7 +71,8 @@ const WithdrawalModal = ({ onClose }) => {
             <label className="text-sm text-text-secondary mb-1 block">Cantidad a Retirar (USDT)</label>
             <div className="flex items-center bg-dark-primary/50 rounded-lg">
               <input type="number" step="0.01" placeholder={`Mínimo ${minWithdrawal}`} value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-transparent p-3 focus:outline-none" />
-              <button type="button" onClick={() => setAmount(userBalance.toString())} className="font-bold text-accent-start pr-4">MAX</button>
+              {/* [NEXUS STYLE SYNC] - Se actualiza el color del texto a 'text-accent' */}
+              <button type="button" onClick={() => setAmount(userBalance.toString())} className="font-bold text-accent pr-4">MAX</button>
             </div>
           </div>
           <div>
@@ -84,13 +80,13 @@ const WithdrawalModal = ({ onClose }) => {
             <input type="text" placeholder="Pega tu dirección 0x..." value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} className="w-full bg-dark-primary/50 p-3 rounded-lg" />
           </div>
 
-          {/* --- Resumen Dinámico --- */}
           <div className="text-sm space-y-1 bg-black/20 p-3 rounded-lg">
             <div className="flex justify-between text-text-secondary"><span>Comisión ({withdrawalFee}%):</span><span>- {feeAmount.toFixed(4)} USDT</span></div>
             <div className="flex justify-between font-bold"><span>Recibirás:</span><span>{netAmount > 0 ? netAmount.toFixed(4) : '0.0000'} USDT</span></div>
           </div>
 
-          <button type="submit" disabled={isProcessing} className="w-full mt-4 py-3 bg-gradient-to-r from-accent-start to-accent-end text-white font-bold rounded-full disabled:opacity-50">
+          {/* [NEXUS STYLE SYNC] - Se reemplaza el gradiente por el color de acento sólido */}
+          <button type="submit" disabled={isProcessing} className="w-full mt-4 py-3 bg-accent text-white font-bold rounded-full disabled:opacity-50">
             {isProcessing ? 'Procesando...' : 'Confirmar Solicitud'}
           </button>
         </form>
