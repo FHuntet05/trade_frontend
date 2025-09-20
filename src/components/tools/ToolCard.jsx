@@ -1,12 +1,9 @@
-// src/components/tools/ToolCard.jsx (VERSIÓN "NEXUS - STOREFRONT FIX")
+// RUTA: src/components/tools/ToolCard.jsx (VERSIÓN "NEXUS - GLOBAL STYLE SYNC")
 import React from 'react';
 
 const ToolCard = ({ tool, onBuyClick, ownedCount, isLocked }) => {
-  // [NEXUS STOREFRONT FIX] - INICIO DE LA LÓGICA DE BLINDAJE
-  // Combinamos la lógica de bloqueo. El botón se deshabilita si la herramienta es gratuita O si está bloqueada (compra única).
   const isDisabled = isLocked || tool.isFree;
 
-  // El texto del botón ahora es dinámico para reflejar el estado real de la herramienta.
   let buttonText;
   if (tool.isFree) {
     buttonText = 'INCLUIDO';
@@ -15,7 +12,6 @@ const ToolCard = ({ tool, onBuyClick, ownedCount, isLocked }) => {
   } else {
     buttonText = 'COMPRAR YA';
   }
-  // [NEXUS STOREFRONT FIX] - FIN DE LA LÓGICA DE BLINDAJE
 
   return (
     <div className={`
@@ -50,14 +46,14 @@ const ToolCard = ({ tool, onBuyClick, ownedCount, isLocked }) => {
         </div>
       </div>
       
-      {/* Indicador de herramientas poseídas (solo si es > 0 y no es la gratuita) */}
+      {/* [NEXUS STYLE SYNC] - Se actualiza el color del texto a 'text-accent' */}
       {ownedCount > 0 && !tool.isFree && (
-        <div className="text-center text-xs text-accent-start bg-accent-start/10 py-1 rounded-md">
+        <div className="text-center text-xs text-accent bg-accent/10 py-1 rounded-md">
           Posees: {ownedCount}
         </div>
       )}
 
-      {/* Botón de compra condicional y blindado */}
+      {/* Botón de compra */}
       <button 
         onClick={() => onBuyClick(tool)}
         disabled={isDisabled}
@@ -65,8 +61,8 @@ const ToolCard = ({ tool, onBuyClick, ownedCount, isLocked }) => {
           w-full mt-2 py-3 text-white font-bold rounded-full transition-all duration-150
           ${isDisabled 
             ? 'bg-gray-700 cursor-not-allowed opacity-60' 
-            // [NEXUS STOREFRONT FIX] - El estilo del botón para la herramienta gratuita es el mismo que para una bloqueada.
-            : 'bg-gradient-to-r from-accent-start to-accent-end shadow-glow transform active:scale-95'
+            // [NEXUS STYLE SYNC] - Se reemplaza el gradiente por el color de acento sólido
+            : 'bg-accent shadow-glow transform active:scale-95'
           }
         `}
       >
