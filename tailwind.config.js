@@ -1,4 +1,4 @@
-// frontend/tailwind.config.js (VERSIÓN "NEXUS - UNICOLOR REFINEMENT")
+// frontend/tailwind.config.js (VERSIÓN "NEXUS - PINK SYNC")
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
@@ -10,19 +10,18 @@ export default {
         'text-primary': '#FFFFFF',
         'text-secondary': '#A9A7C3',
         
-        // [NEXUS UNICOLOR] - INICIO DE LA CORRECCIÓN
-        // Se reemplaza el objeto de gradiente por un único color de acento.
-        'accent': '#F472B6', // Un rosa claro y moderno.
-        // [NEXUS UNICOLOR] - FIN DE LA CORRECCIÓN
+        // [NEXUS VISUAL SYNC] - INICIO DE LA CORRECCIÓN
+        // Se reemplaza el objeto de gradiente por un único color de acento rosa.
+        'accent': '#EC4899', // Equivale a 'pink-500' en la paleta de Tailwind.
+        // [NEXUS VISUAL SYNC] - FIN DE LA CORRECCIÓN
       },
       backgroundImage: {
         'internal-background': "url('/assets/internal-bg.png')",
         'space-background': "url('/assets/space-bg.png')",
-        // La clase 'primary-gradient' ya no es necesaria si no se usa en otros lugares.
       },
       boxShadow: {
-        // [NEXUS UNICOLOR] - Se actualiza el color del 'glow' para que coincida con el nuevo 'accent'.
-        'glow': '0 0 15px 5px rgba(244, 114, 182, 0.4)', // Sombra basada en #F472B6
+        // [NEXUS VISUAL SYNC] - Se actualiza el color del 'glow' para que coincida con el nuevo 'accent'.
+        'glow': '0 0 15px 5px rgba(236, 72, 153, 0.4)', // Sombra basada en #EC4899
       },
     },
   },

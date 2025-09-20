@@ -1,4 +1,4 @@
-// frontend/src/pages/TeamPage.jsx (v21.22 - CORRECCIÓN BUILD)
+// RUTA: frontend/src/pages/TeamPage.jsx (VERSIÓN "NEXUS - PINK SYNC")
 
 import React, { useState, useEffect } from 'react';
 import useUserStore from '../store/userStore';
@@ -14,11 +14,7 @@ import Loader from '../components/common/Loader';
 import TeamLevelDetailsModal from '../components/team/TeamLevelDetailsModal';
 import { triggerImpactHaptic, triggerNotificationHaptic } from '../utils/haptics';
 
-// [CORRECCIÓN BUILD] - INICIO DE LA MODIFICACIÓN
-// Se ha cambiado FaTelegramPlane por FaTelegram, que es el nombre correcto en react-icons/fa6.
 import { FaTelegram, FaXTwitter, FaFacebookF, FaLinkedinIn, FaWhatsapp, FaInstagram, FaTiktok } from "react-icons/fa6";
-// [CORRECCIÓN BUILD] - FIN DE LA MODIFICACIÓN
-
 import { HiUsers, HiBanknotes, HiArrowDownTray, HiArrowUpTray } from 'react-icons/hi2';
 
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
@@ -87,10 +83,7 @@ const TeamPage = () => {
 
   const socialIcons = [
     { Icon: FaXTwitter, name: 'twitter' }, { Icon: FaFacebookF, name: 'facebook' },
-    // [CORRECCIÓN BUILD] - INICIO DE LA MODIFICACIÓN
-    { Icon: FaTelegram, name: 'telegram' }, // Se usa el componente corregido.
-    // [CORRECCIÓN BUILD] - FIN DE LA MODIFICACIÓN
-    { Icon: FaLinkedinIn, name: 'linkedin' },
+    { Icon: FaTelegram, name: 'telegram' }, { Icon: FaLinkedinIn, name: 'linkedin' },
     { Icon: FaWhatsapp, name: 'whatsapp' }, { Icon: FaInstagram, name: 'instagram' },
     { Icon: FaTiktok, name: 'tiktok' },
   ];
@@ -115,7 +108,8 @@ const TeamPage = () => {
               <motion.div variants={itemVariants} className="bg-dark-secondary p-4 rounded-xl border border-white/10 space-y-4">
                 <div className="flex items-center space-x-2">
                   <p className="flex-1 bg-black/30 text-text-secondary p-3 rounded-lg truncate">{referralLink}</p>
-                  <button onClick={copyLink} className="bg-gradient-to-r from-accent-start to-accent-end text-white font-bold py-3 px-6 rounded-lg active:scale-95 transition-transform">{t('teamPage.referralLink.copy')}</button>
+                  {/* [NEXUS VISUAL SYNC] - Botón "Copiar" actualizado */}
+                  <button onClick={copyLink} className="bg-accent text-white font-bold py-3 px-6 rounded-lg active:scale-95 transition-transform">{t('teamPage.referralLink.copy')}</button>
                 </div>
                 <h3 className="text-base font-semibold text-white pt-2">{t('teamPage.referralLink.shareOn')}</h3>
                 <div className="grid grid-cols-7 gap-2">
@@ -137,7 +131,8 @@ const TeamPage = () => {
         </AnimatePresence>
       </div>
       <div className="fixed bottom-[100px] left-0 right-0 w-full max-w-lg mx-auto px-4 z-40">
-        <button onClick={() => { triggerImpactHaptic('heavy'); handleShare('telegram'); }} className="w-full py-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-lg font-bold rounded-full shadow-lg shadow-purple-500/40 transform active:scale-95 transition-all">
+        {/* [NEXUS VISUAL SYNC] - Botón principal "Compartir" actualizado */}
+        <button onClick={() => { triggerImpactHaptic('heavy'); handleShare('telegram'); }} className="w-full py-4 bg-accent text-white text-lg font-bold rounded-full shadow-lg shadow-accent/40 transform active:scale-95 transition-all">
           {t('teamPage.shareWithFriends')}
         </button>
       </div>
