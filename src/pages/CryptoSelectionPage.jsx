@@ -13,7 +13,7 @@ import StaticPageLayout from '../components/layout/StaticPageLayout';
 // Asegúrese de que estos archivos existan en `public/assets/network/`.
 const cryptoLogos = {
     'BEP20-USDT': '/assets/images/networks/bep20-usdt.png',
-    'TRC20-USDT': '/assets/images/networks/trc20-usdt.svg',
+    'TRC20-USDT': '/assets/images/networks/trc20-usdt.png',
     'BNB': '/assets/images/networks/bnb.png',
     'TRX': '/assets/images/networks/tron.png',
     'LTC': '/assets/images/networks/litecoin.png',
