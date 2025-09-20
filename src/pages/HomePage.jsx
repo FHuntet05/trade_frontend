@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/HomePage.jsx (VERSIÓN NEXUS - LAYOUT SIMPLIFICADO)
+// RUTA: frontend/src/pages/HomePage.jsx (VERSIÓN "NEXUS - DYNAMIC MINING CYCLE")
 import React from 'react';
 import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
@@ -13,37 +13,75 @@ import { useMiningLogic } from '../hooks/useMiningLogic';
 
 const HomePage = () => {
   const { user, updateUser } = useUserStore();
+  
+  // Extraemos todos los datos necesarios del usuario. Usamos '??' para valores por defecto seguros.
   const lastClaim = user?.lastMiningClaim;
   const miningRate = user?.effectiveMiningRate ?? 0;
-  const { accumulatedNtx, countdown, progress, isClaimable } = useMiningLogic(lastClaim, miningRate);
+  const miningStatus = user?.miningStatus ?? 'IDLE';
+
+  // [NEXUS CYCLE FIX] Pasamos el miningStatus al hook para que controle la lógica.
+  const { accumulatedNtx, countdown, progress, isClaimable } = useMiningLogic(lastClaim, miningRate, miningStatus);
+
+  // --- ACCIONES DEL USUARIO ---
 
   const handleClaim = async () => {
     if (!isClaimable) {
       toast.error('Aún no puedes reclamar.');
       return;
     }
-    toast.loading('Reclamando...', { id: 'claim' });
-    try {
-      const response = await api.post('/wallet/claim');
-      updateUser(response.data.user);
-      toast.success(response.data.message, { id: 'claim' });
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error al reclamar.';
-      toast.error(errorMessage, { id: 'claim' });
-    }
+    const claimPromise = api.post('/wallet/claim');
+    toast.promise(claimPromise, {
+      loading: 'Reclamando ganancias...',
+      success: (response) => {
+        updateUser(response.data.user); // Actualiza el usuario con el nuevo estado 'IDLE'.
+        return response.data.message;
+      },
+      error: (error) => error.response?.data?.message || 'Error al reclamar.',
+    });
+  };
+  
+  // [NEXUS CYCLE FIX] Nueva función para iniciar el ciclo de minado.
+  const handleStartMining = async () => {
+    // Solo se puede iniciar si el estado es IDLE.
+    if (miningStatus !== 'IDLE') return;
+
+    const startPromise = api.post('/wallet/start-mining');
+    toast.promise(startPromise, {
+        loading: 'Iniciando ciclo de minado...',
+        success: (response) => {
+            updateUser(response.data.user); // Actualiza el usuario con el nuevo estado 'MINING'.
+            return response.data.message;
+        },
+        error: (error) => error.response?.data?.message || 'No se pudo iniciar el minado.'
+    });
   };
 
+  // --- LÓGICA DE RENDERIZADO DEL BOTÓN DINÁMICO ---
+  
+  let buttonText = 'Cargando...';
+  let buttonAction = () => {};
+  let isButtonDisabled = true;
+
+  if (miningStatus === 'IDLE') {
+    buttonText = 'EMPEZAR A MINAR';
+    buttonAction = handleStartMining;
+    isButtonDisabled = false; // Se puede hacer clic para empezar.
+  } else if (miningStatus === 'MINING') {
+    if (isClaimable) {
+      buttonText = 'RECLAMAR GANANCIAS';
+      buttonAction = handleClaim;
+      isButtonDisabled = false; // Se puede hacer clic para reclamar.
+    } else {
+      buttonText = 'MINANDO...';
+      isButtonDisabled = true; // No se puede hacer clic mientras se mina.
+    }
+  }
+
   return (
-    // ======================= CORRECCIÓN CRÍTICA =======================
-    // Eliminamos 'h-full' y 'flex flex-col'. La página ya no gestiona su propia altura ni scroll.
-    // Ahora es un contenedor simple cuyo tamaño se basa en su contenido.
-    // El 'Layout.jsx' se encargará del scroll si el contenido es demasiado largo.
-    // Mantenemos el padding y el gap para la separación visual de los elementos.
     <div className="animate-fade-in space-y-4 pt-6 px-4 pb-4">
       <UserInfoHeader />
       <RealTimeClock />
 
-      {/* Se elimina el 'flex-grow' de este contenedor. Los elementos fluyen naturalmente. */}
       <div className="flex flex-col items-center justify-center text-center">
         <video
           src="/assets/mining-animation.webm"
@@ -71,13 +109,14 @@ const HomePage = () => {
         </div>
       </div>
       
+      {/* [NEXUS CYCLE FIX] El botón ahora es completamente dinámico. */}
       <div className="w-full">
         <button 
-          onClick={handleClaim}
-          disabled={!isClaimable}
+          onClick={buttonAction}
+          disabled={isButtonDisabled}
           className="w-full py-4 bg-gradient-to-r from-accent-start to-accent-end text-white text-lg font-bold rounded-full shadow-glow transform active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
         >
-          RECLAMAR GANANCIAS
+          {buttonText}
         </button>
       </div>
       
