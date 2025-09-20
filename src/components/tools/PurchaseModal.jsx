@@ -1,10 +1,8 @@
-// RUTA: frontend/src/components/tools/PurchaseModal.jsx (VERSIÓN "NEXUS - GLOBAL STYLE SYNC")
+// RUTA: frontend/src/components/tools/PurchaseModal.jsx (VERSIÓN "NEXUS - TYPO FIX")
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { HiXMark, HiOutlineCreditCard, HiOutlineCurrencyDollar, HiMinus, HiPlus } from 'react-icons/hi2';
 import useUserStore from '../../store/userStore';
-import toast from 'react-hot-toast';
-import api from '../../api/axiosConfig';
 
 const PurchaseModal = ({ tool, onClose, onPurchaseWithBalance, onRedirectToDeposit }) => {
   const { user } = useUserStore();
@@ -59,10 +57,8 @@ const PurchaseModal = ({ tool, onClose, onPurchaseWithBalance, onRedirectToDepos
           <div className="flex items-center justify-center my-4 p-3 bg-dark-primary/50 rounded-lg">
             <span className="text-text-secondary mr-4">Cantidad:</span>
             <div className="flex items-center">
-                {/* [NEXUS STYLE SYNC] - Se actualiza el color del hover */}
                 <button onClick={handleDecrease} disabled={quantity <= 1} className="p-2 bg-dark-primary rounded-l-lg disabled:opacity-40 hover:bg-accent transition"><HiMinus className="w-5 h-5" /></button>
                 <span className="px-4 py-1 bg-dark-primary text-white font-bold text-lg">{quantity}</span>
-                {/* [NEXUS STYLE SYNC] - Se actualiza el color del hover */}
                 <button onClick={handleIncrease} disabled={quantity >= MAX_QUANTITY} className="p-2 bg-dark-primary rounded-r-lg disabled:opacity-40 hover:bg-accent transition"><HiPlus className="w-5 h-5" /></button>
             </div>
           </div>
@@ -79,14 +75,14 @@ const PurchaseModal = ({ tool, onClose, onPurchaseWithBalance, onRedirectToDepos
           </div>
         
           <div className="mt-6">
-            {/* [NEXUS STYLE SYNC] - Se reemplaza el gradiente por el color de acento sólido */}
             <button 
               onClick={handlePrimaryAction}
               disabled={isProcessing}
               className="w-full flex items-center justify-center gap-3 p-3 rounded-full bg-accent text-white font-bold disabled:bg-gray-600 disabled:opacity-50 transition-all"
             >
               {canPayWithBalance ? <HiOutlineCurrencyDollar className="w-6 h-6" /> : <HiOutlineCreditCard className="w-6 h-6" />}
-              <span>{canPayWithAmmount ? `Comprar Ahora (${totalCost.toFixed(2)} USDT)` : `Depositar para Comprar`}</span>
+              {/* [NEXUS TYPO FIX] - Se corrige la variable 'canPayWithAmmount' a 'canPayWithBalance' */}
+              <span>{canPayWithBalance ? `Comprar Ahora (${totalCost.toFixed(2)} USDT)` : `Depositar para Comprar`}</span>
             </button>
           </div>
       </motion.div>
