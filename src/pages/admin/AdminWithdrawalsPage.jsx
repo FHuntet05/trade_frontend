@@ -1,19 +1,28 @@
-// RUTA: frontend/src/pages/admin/AdminWithdrawalsPage.jsx (VERSIÓN "NEXUS - ENHANCED UI")
+// RUTA: frontend/src/pages/admin/AdminWithdrawalsPage.jsx (VERSIÓN "NEXUS - DATA INTEGRITY FIX")
 import React, { useState, useEffect, useCallback } from 'react';
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import Loader from '@/components/common/Loader';
-import Pagination from '@/components/common/Pagination'; // Usamos el componente de paginación estándar
+import Pagination from '@/components/common/Pagination';
 import { HiOutlineClipboardDocument, HiOutlineClipboardDocumentCheck, HiOutlineReceiptRefund } from 'react-icons/hi2';
 
-// Sub-componente para la celda de montos, mostrando un desglose completo.
+// Sub-componente para la celda de montos, ahora "blindado" contra datos nulos.
 const AmountCell = ({ withdrawal }) => {
   const { grossAmount, feeAmount, netAmount } = withdrawal;
+  
+  // [NEXUS DATA INTEGRITY FIX] - INICIO DE LA CORRECCIÓN CRÍTICA
+  // Se utiliza '(valor || 0).toFixed(2)' para asegurar que siempre se opera sobre un número.
+  // Esto previene el crash si la API envía un valor nulo o indefinido.
+  const formattedNetAmount = (netAmount || 0).toFixed(2);
+  const formattedGrossAmount = (grossAmount || 0).toFixed(2);
+  const formattedFeeAmount = (feeAmount || 0).toFixed(2);
+  // [NEXUS DATA INTEGRITY FIX] - FIN DE LA CORRECCIÓN CRÍTICA
+
   return (
     <div className="font-mono">
-      <p className="font-bold text-lg text-green-400">{netAmount?.toFixed(2) || 'N/A'}</p>
-      <p className="text-xs text-text-secondary mt-1">Solicitado: {grossAmount?.toFixed(2) || 'N/A'}</p>
-      <p className="text-xs text-text-secondary">Comisión: -{feeAmount?.toFixed(2) || 'N/A'}</p>
+      <p className="font-bold text-lg text-green-400">{formattedNetAmount}</p>
+      <p className="text-xs text-text-secondary mt-1">Solicitado: {formattedGrossAmount}</p>
+      <p className="text-xs text-text-secondary">Comisión: -{formattedFeeAmount}</p>
     </div>
   );
 };
@@ -47,7 +56,7 @@ const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
             <tr key={tx._id} className="hover:bg-dark-tertiary">
               <td className="p-3">
                 <div className="flex items-center gap-3">
-                  <img className="w-8 h-8 rounded-full" src={tx.user?.photoUrl} alt="avatar" />
+                  <img className="w-8 h-8 rounded-full bg-dark-primary object-cover" src={tx.user?.photoUrl} alt="avatar" />
                   <span>{tx.user?.username}</span>
                 </div>
               </td>
@@ -87,7 +96,6 @@ const AdminWithdrawalsPage = () => {
   const fetchWithdrawals = useCallback(async (pageToFetch = 1) => {
     setIsLoading(true);
     try {
-      // Endpoint corregido para ser consistente con el backend
       const { data: responseData } = await adminApi.get('/admin/withdrawals', { params: { page: pageToFetch } });
       setData(responseData);
     } catch (err) {
@@ -123,7 +131,7 @@ const AdminWithdrawalsPage = () => {
     toast.promise(promise, {
         loading: 'Procesando solicitud...',
         success: (res) => {
-            fetchWithdrawals(data.page); // Recargar la página actual
+            fetchWithdrawals(data.page);
             return res.data.message || `Retiro procesado.`;
         },
         error: (err) => err.response?.data?.message || 'No se pudo procesar el retiro.'
