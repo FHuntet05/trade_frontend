@@ -87,12 +87,7 @@ const DepositDetailsPage = () => {
           </div>
         </div>
 
-        {/* Advertencia de Red */}
-        <div className="w-full p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-300 text-sm">
-          <p className="font-bold">¡Atención!</p>
-          <p>{option.warning}</p>
-        </div>
-        
+      
       </div>
     </StaticPageLayout>
   );
