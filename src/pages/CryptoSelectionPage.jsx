@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/CryptoSelectionPage.jsx (VERSIÓN "NEXUS DEPOSIT FLOW - STABLE ICONS & LOGIC")
+// RUTA: frontend/src/pages/CryptoSelectionPage.jsx (VERSIÓN "NEXUS - STATIC BNB FLOW SYNC")
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -8,21 +8,16 @@ import Loader from '../components/common/Loader';
 import { HiChevronRight } from 'react-icons/hi2';
 import StaticPageLayout from '../components/layout/StaticPageLayout';
 
-// [NEXUS DEPOSIT FLOW] - Paso 1: Mapeo de iconos locales.
-// Ignoramos la URL de la API y usamos nuestros propios iconos para fiabilidad.
-// Asegúrese de que estos archivos existan en `public/assets/network/`.
 const cryptoLogos = {
     'BEP20-USDT': '/assets/images/networks/bep20-usdt.png',
     'TRC20-USDT': '/assets/images/networks/trc20-usdt.png',
     'BNB': '/assets/images/networks/bnb.png',
     'TRX': '/assets/images/networks/tron.png',
     'LTC': '/assets/images/networks/litecoin.png',
-    // Añada aquí más mapeos si agrega más monedas.
 };
 
-// Función de ayuda para obtener el logo correcto o un placeholder.
 const getCryptoLogo = (name) => {
-    return cryptoLogos[name] || '/assets/network/default.svg'; // Un ícono por defecto si no se encuentra.
+    return cryptoLogos[name] || '/assets/network/default.svg';
 };
 
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
@@ -40,7 +35,6 @@ const DepositOptionItem = ({ option, onSelect, index, totalItems }) => {
             onClick={() => onSelect(option)}
             className={`w-full flex items-center p-4 hover:bg-white/10 transition-colors ${borderClasses}`}
         >
-            {/* Usamos nuestra función getCryptoLogo en lugar de option.logo */}
             <img src={getCryptoLogo(option.name)} alt={option.name} className="w-10 h-10 rounded-full mr-4 bg-dark-primary object-cover" />
             <span className="font-bold text-white text-lg">{option.name}</span>
             <HiChevronRight className="w-6 h-6 text-text-secondary ml-auto" />
@@ -51,9 +45,7 @@ const DepositOptionItem = ({ option, onSelect, index, totalItems }) => {
 const CryptoSelectionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
   const { amountNeeded } = location.state || { amountNeeded: 0 };
-
   const [depositOptions, setDepositOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [prices, setPrices] = useState(null);
@@ -78,23 +70,17 @@ const CryptoSelectionPage = () => {
   }, []);
 
   const handleOptionSelected = (option) => {
-    // [NEXUS DEPOSIT FLOW] - Paso 2: Lógica de Monto Condicional.
-    const fixedAmountCryptos = ['BEP20-USDT', 'TRC20-USDT', 'BNB'];
-    let amountToSend = null; // Por defecto, no enviamos monto (depósito manual).
+    // [NEXUS REFINEMENT] - Se elimina 'BNB' de la lista de monedas con monto fijo.
+    // Ahora solo los USDT requieren un monto exacto. BNB se tratará como TRX y LTC.
+    const fixedAmountCryptos = ['BEP20-USDT', 'TRC20-USDT'];
+    let amountToSend = null;
 
     if (amountNeeded > 0 && fixedAmountCryptos.includes(option.name)) {
-        if (option.name === 'BNB') {
-            const price = prices[option.chain]; // Usamos la cadena 'BNB' para obtener el precio.
-            if (price > 0) {
-                amountToSend = amountNeeded / price;
-            }
-        } else {
-            // Para USDT, el monto es directo.
-            amountToSend = amountNeeded;
-        }
+        // La lógica para BNB que estaba aquí ahora es innecesaria.
+        // Solo aplica para USDT.
+        amountToSend = amountNeeded;
     }
 
-    // Para TRX, LTC, y cualquier otra, amountToSend permanecerá como null.
     navigate('/deposit-details', { 
       state: { 
         option, 
@@ -111,7 +97,6 @@ const CryptoSelectionPage = () => {
                 className="text-sm text-text-secondary px-1 pb-2">
               Selecciona una moneda para realizar tu depósito.
             </motion.p>
-
             {isLoading 
             ? <div className="flex justify-center pt-10"><Loader text="Cargando opciones..." /></div>
             : (
