@@ -1,4 +1,5 @@
-// RUTA: frontend/src/pages/admin/AdminTransactionsPage.jsx (VERSIÓN "NEXUS - ENHANCED UI")
+// RUTA: frontend/src/pages/admin/AdminTransactionsPage.jsx (VERSIÓN "NEXUS - UI SYNC")
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import adminApi from '@/pages/admin/api/adminApi';
@@ -7,19 +8,23 @@ import Loader from '@/components/common/Loader';
 import Pagination from '@/components/common/Pagination';
 import { HiOutlineReceiptRefund, HiMagnifyingGlass } from 'react-icons/hi2';
 
-// Mapeo de colores y textos para los tipos de transacción.
+// [NEXUS UI SYNC] - INICIO DE LA CORRECCIÓN
+// Mapeo de colores y textos para los tipos de transacción. Se actualiza para
+// incluir 'commission' y eliminar tipos obsoletos.
 const transactionTypeInfo = {
   deposit: { label: 'Depósito', color: 'bg-green-500/20 text-green-300' },
   withdrawal: { label: 'Retiro', color: 'bg-red-500/20 text-red-300' },
   purchase: { label: 'Compra', color: 'bg-blue-500/20 text-blue-300' },
   mining_claim: { label: 'Reclamo Minería', color: 'bg-teal-500/20 text-teal-300' },
-  referral_commission: { label: 'Comisión Ref.', color: 'bg-purple-500/20 text-purple-300' },
-  task_reward: { label: 'Recompensa Tarea', color: 'bg-indigo-500/20 text-indigo-300' },
+  commission: { label: 'Comisión', color: 'bg-purple-500/20 text-purple-300' }, // <-- CORREGIDO Y AÑADIDO
   admin_credit: { label: 'Crédito Admin', color: 'bg-sky-500/20 text-sky-300' },
   admin_debit: { label: 'Débito Admin', color: 'bg-orange-500/20 text-orange-300' },
   swap_ntx_to_usdt: { label: 'Swap NTX > USDT', color: 'bg-cyan-500/20 text-cyan-300' },
+  sweep: { label: 'Barrido', color: 'bg-yellow-500/20 text-yellow-300' },
+  // 'referral_commission' y 'task_reward' han sido eliminados por ser obsoletos o estar consolidados.
   default: { label: 'Desconocido', color: 'bg-gray-500/20 text-gray-300' }
 };
+// [NEXUS UI SYNC] - FIN DE LA CORRECCIÓN
 
 const TransactionTypeBadge = ({ type }) => {
   const { label, color } = transactionTypeInfo[type] || transactionTypeInfo.default;
