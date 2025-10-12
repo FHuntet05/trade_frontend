@@ -13,10 +13,21 @@ export default defineConfig({
   resolve: {
     alias: {
       buffer: 'buffer/',
-      // [REMEDIATIO - SOLUCIÓN ESTRUCTURAL]
-      // Se crea un alias para que '@' apunte a la carpeta 'src'.
-      // Esto nos permite usar rutas absolutas y robustas en toda la aplicación.
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    include: ['@react-spring/web']
+  },
+  build: {
+    rollupOptions: {
+      external: [],
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'animation-vendor': ['@react-spring/web', 'framer-motion'],
+        }
+      }
+    }
+  }
 });

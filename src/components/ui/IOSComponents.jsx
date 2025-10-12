@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useSpring, animated } from 'react-spring';
+import { useSpring, animated } from '@react-spring/web';
 
 export const IOSButton = ({ children, variant = 'primary', onClick, disabled }) => {
   const baseClasses = 'font-ios px-4 py-2 rounded-ios-button transition-all duration-300 active:scale-95';
@@ -109,5 +109,22 @@ export const TreasureChest = ({ isOpening, onOpenComplete }) => {
     >
       {/* Contenido del cofre */}
     </animated.div>
+  );
+};
+
+// Componente Badge al estilo iOS
+export const IOSBadge = ({ children, variant = 'primary', className = '' }) => {
+  const variants = {
+    primary: 'bg-ios-green text-white',
+    secondary: 'bg-system-secondary text-ios-green',
+    warning: 'bg-yellow-500 text-white',
+    error: 'bg-red-500 text-white',
+    success: 'bg-green-500 text-white'
+  };
+
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-ios font-medium ${variants[variant]} ${className}`}>
+      {children}
+    </span>
   );
 };
