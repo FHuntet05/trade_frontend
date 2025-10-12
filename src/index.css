@@ -8,11 +8,8 @@
 /* Se utiliza @layer base para aplicar estilos fundamentales al body */
 @layer base {
   body {
-    /* 1. Se aplica la clase del fondo azul que definimos en tailwind.config.js */
-    @apply bg-internal-background; 
-    
-    /* 2. Se aplica el color de texto primario por defecto */
-    @apply text-text-primary;
+    /* 1. Se aplica el fondo y color de texto predeterminados */
+    @apply bg-internal-background text-text-primary min-h-screen;
 
     /* 3. Se añaden propiedades para asegurar que la imagen de fondo cubra
        toda la pantalla, no se repita y se mantenga fija durante el scroll. */

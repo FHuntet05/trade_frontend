@@ -22,6 +22,11 @@ export default {
           grouped: '#F2F2F7',
           'grouped-secondary': '#FFFFFF',
         },
+        'internal': {
+          background: '#F5F7FA',
+          card: '#FFFFFF',
+          highlight: '#EDF2F7',
+        },
         'text': {
           primary: '#000000',
           secondary: '#3C3C43',
