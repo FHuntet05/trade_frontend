@@ -8,13 +8,14 @@ import {
   HiOutlineUsers, 
   HiOutlineReceiptRefund, 
   HiOutlineQuestionMarkCircle, 
-  HiOutlineWrenchScrewdriver, // El ícono se mantiene por ser genérico.
+  HiOutlineWrenchScrewdriver,
   HiOutlineCog6Tooth, 
   HiOutlineBuildingLibrary, 
   HiOutlineShieldCheck, 
   HiOutlineFunnel, 
   HiOutlineMegaphone, 
-  HiOutlineCommandLine 
+  HiOutlineCommandLine,
+  HiOutlineChartBar
 } from 'react-icons/hi2';
 
 // La lista de enlaces de navegación para el panel de administración.
@@ -23,6 +24,7 @@ const navLinks = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: HiOutlineHome },
   { name: 'Usuarios', href: '/admin/users', icon: HiOutlineUsers },
   { name: 'Transacciones', href: '/admin/transactions', icon: HiOutlineReceiptRefund },
+  { name: 'Inversiones', href: '/admin/investments', icon: HiOutlineChartBar },
   { name: 'Retiros Pendientes', href: '/admin/withdrawals', icon: HiOutlineQuestionMarkCircle },
   { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary },
   { name: 'Dispensador Gas', href: '/admin/gas-dispenser', icon: HiOutlineFunnel },

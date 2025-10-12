@@ -22,6 +22,7 @@ import SweepControlPage from '../pages/admin/SweepControlPage';
 import GasDispenserPage from '../pages/admin/GasDispenserPage';
 import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from '../pages/admin/AdminBlockchainMonitorPage';
+import AdminInvestmentsPage from '../pages/admin/AdminInvestmentsPage';
 
 function AdminApp() {
   const { isAuthenticated, _hasHydrated } = useAdminStore();
@@ -57,6 +58,7 @@ function AdminApp() {
             <Route path="sweep-control" element={<SweepControlPage />} />
             <Route path="gas-dispenser" element={<GasDispenserPage />} />
             <Route path="blockchain-monitor" element={<AdminBlockchainMonitorPage />} />
+            <Route path="investments" element={<AdminInvestmentsPage />} />
             {/* Redirección: si se accede a /admin, ir a dashboard */}
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
