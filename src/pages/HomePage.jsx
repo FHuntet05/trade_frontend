@@ -127,7 +127,8 @@ const HomePage = () => {
           </motion.div>
         </div>
 
-          {/* Action Buttons */}
+        {/* Action Buttons */}
+        <div className="p-4">
           <div className="flex space-x-4">
             <motion.button
               whileTap={{ scale: 0.95 }}
@@ -220,68 +221,71 @@ const HomePage = () => {
             </div>
           </div>
 
-        {/* Top Cryptos */}
-        <div className="mt-2">
-          <CryptoList cryptos={TOP_CRYPTOS} />
-        </div>
+          {/* Top Cryptos */}
+          <div className="mt-2">
+            <CryptoList cryptos={TOP_CRYPTOS} />
+          </div>
+        </motion.div>
 
         {/* Misiones Diarias Modal */}
-        {showMissions && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-dark-secondary rounded-2xl w-full max-w-md p-6"
+        <AnimatePresence>
+          {showMissions && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">Misiones Diarias</h2>
-                <button 
-                  onClick={() => setShowMissions(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10"
-                >
-                  <CloseIcon className="w-5 h-5" />
-                </button>
-              </div>
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-dark-secondary rounded-2xl w-full max-w-md p-6"
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold">Misiones Diarias</h2>
+                  <button 
+                    onClick={() => setShowMissions(false)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10"
+                  >
+                    <CloseIcon className="w-5 h-5" />
+                  </button>
+                </div>
 
-              <div className="space-y-4">
-                {rewardStore.dailyMissions?.map(mission => (
-                  <div key={mission.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
-                    <div>
-                      <p className="font-medium">{mission.description}</p>
-                      <p className="text-sm text-text-secondary">
-                        Recompensa: {mission.xp} XP
-                      </p>
+                <div className="space-y-4">
+                  {rewardStore.dailyMissions?.map(mission => (
+                    <div key={mission.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                      <div>
+                        <p className="font-medium">{mission.description}</p>
+                        <p className="text-sm text-text-secondary">
+                          Recompensa: {mission.xp} XP
+                        </p>
+                      </div>
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleMissionComplete(mission.id)}
+                        disabled={rewardStore.completedMissions[mission.id]}
+                        className={`px-4 py-2 rounded-xl font-medium ${
+                          rewardStore.completedMissions[mission.id]
+                            ? 'bg-accent/20 text-accent'
+                            : 'bg-accent text-white'
+                        }`}
+                      >
+                        {rewardStore.completedMissions[mission.id] ? 'Completado' : 'Reclamar'}
+                      </motion.button>
                     </div>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleMissionComplete(mission.id)}
-                      disabled={rewardStore.completedMissions[mission.id]}
-                      className={`px-4 py-2 rounded-xl font-medium ${
-                        rewardStore.completedMissions[mission.id]
-                          ? 'bg-accent/20 text-accent'
-                          : 'bg-accent text-white'
-                      }`}
-                    >
-                      {rewardStore.completedMissions[mission.id] ? 'Completado' : 'Reclamar'}
-                    </motion.button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              <div className="mt-6 pt-6 border-t border-white/10">
-                <p className="text-center text-text-secondary">
-                  Racha actual: <span className="text-accent font-medium">{rewardStore.dailyStreak} días</span>
-                </p>
-              </div>
+                <div className="mt-6 pt-6 border-t border-white/10">
+                  <p className="text-center text-text-secondary">
+                    Racha actual: <span className="text-accent font-medium">{rewardStore.dailyStreak} días</span>
+                  </p>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
