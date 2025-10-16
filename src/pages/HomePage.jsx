@@ -14,14 +14,17 @@ const HomePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useUserStore();
-  const { prices, startSimulation, stopSimulation } = usePriceStore();
+  const { prices, fetchPrices } = usePriceStore(); // Usamos fetchPrices en lugar de la simulación
 
   useEffect(() => {
-    startSimulation();
-    return () => {
-      stopSimulation();
-    };
-  }, [startSimulation, stopSimulation]);
+    // Usamos fetchPrices que tiene la lógica de caché de 3 minutos
+    const interval = setInterval(() => {
+      fetchPrices();
+    }, 60000); // Podemos llamarlo cada minuto, la caché interna lo protegerá
+    fetchPrices(); // Llamada inicial
+
+    return () => clearInterval(interval);
+  }, [fetchPrices]);
 
   const handleDeposit = () => navigate('/deposit');
   const handleClaimBonus = () => navigate('/bonus');
@@ -36,10 +39,15 @@ const HomePage = () => {
     { name: 'Tether', symbol: 'USDT', price: prices.USDT || 1.00, change: 0.0 },
   ];
   
+  // --- INICIO DE LA CORRECCIÓN CRÍTICA ---
+  // Accedemos de forma segura al balance del usuario.
+  const userBalance = user?.balance?.usdt || 0;
+  // --- FIN DE LA CORRECCIÓN CRÍTICA ---
+
   return (
     <div className="min-h-screen bg-system-background">
       <IOSHeader 
-        balance={user?.balance?.usdt || 0}
+        balance={userBalance}
         onDeposit={handleDeposit}
       />
 
@@ -71,7 +79,7 @@ const HomePage = () => {
         >
           <p className="text-text-secondary text-sm mb-1 font-ios">{t('home.availableWithdrawal')}</p>
           <p className="text-3xl font-ios-display font-bold text-text-primary mb-3">
-            {formatters.formatCurrency(user?.balance?.usdt || 0)}
+            {formatters.formatCurrency(userBalance)}
           </p>
           <div className="bg-system-secondary rounded-ios p-3 inline-flex items-center justify-center">
             <p className="text-text-secondary text-sm font-ios">
