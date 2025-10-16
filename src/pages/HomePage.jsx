@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '../store/userStore';
+import usePriceStore from '../store/priceStore';
+import useIndicatorStore from '../store/indicatorStore';
+import useRewardStore from '../store/rewardStore';
 import api from '../api/axiosConfig';
-import { AccountCard, CryptoCard, SettlementTimer, TradingInfoCard, NavigationBar } from '../components/market/MarketComponents';
-import { IOSLayout } from '../components/ui/IOSComponents';
+import { IOSLayout, IOSCard, IOSButton } from '../components/ui/IOSComponents';
 import toast from 'react-hot-toast';
 
 const cryptoList = [
@@ -39,69 +41,81 @@ const HomePage = () => {
   };
 
   const handleDeposit = () => {
-    navigate('/crypto-selection');
+    navigate('/deposit');
+  };
+
+  const handleClaimBonus = () => {
+    toast.success('¡Bono reclamado!');
+  };
+
+  const handleSupport = () => {
+    navigate('/support');
   };
 
   const [showMissions, setShowMissions] = useState(false);
-  const [showAchievements, setShowAchievements] = useState(false);
   const priceStore = usePriceStore();
   const indicatorStore = useIndicatorStore();
   const rewardStore = useRewardStore();
 
   useEffect(() => {
-    // Iniciar simulación de precios
     priceStore.startSimulation();
-    // Verificar misiones diarias
     rewardStore.checkDailyMissions();
     
     return () => {
       priceStore.stopSimulation();
     };
-  }, []);
+  }, [priceStore, rewardStore]);
 
   const handleMissionComplete = (missionId) => {
     rewardStore.completeMission(missionId);
     toast.success('¡Misión completada!');
   };
 
+  const formatNumber = (num) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
+    return num.toFixed(2);
+  };
+
   return (
     <IOSLayout>
       <div className="min-h-screen bg-system-background pb-20">
-        {/* Header Section */}
-        <div className="bg-system-primary p-4 sticky top-0 z-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 rounded-full bg-ios-green flex items-center justify-center text-white">
-                🏆
-              </div>
-              <div>
-                <span className="font-ios-display font-semibold text-lg">
-                  Trade Bot
-                </span>
-                <div className="flex items-center text-sm text-text-secondary">
-                  <span>Nivel {rewardStore.level}</span>
-                  <div className="w-20 h-1 bg-system-secondary rounded-full ml-2">
-                    <div 
-                      className="h-full bg-ios-green rounded-full"
-                      style={{ width: `${(rewardStore.xp / (rewardStore.level * 1000)) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
+        {/* Header Balance Section */}
+        <div className="bg-gradient-to-r from-ios-green to-ios-green-light p-6 text-white sticky top-0 z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-white/80 text-sm">Saldo Disponible</p>
+              <p className="text-2xl font-ios-display font-bold">
+                ${(user.balance?.usdt || 0).toFixed(2)} USDT
+              </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <button 
-                className="text-2xl relative"
-                onClick={() => setShowMissions(true)}
-              >
-                📋
-                {Object.keys(rewardStore.completedMissions).length < rewardStore.dailyMissions.length && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-ios-green rounded-full" />
-                )}
-              </button>
-              <button className="text-2xl">🔔</button>
-              <button className="text-2xl" onClick={() => navigate('/profile')}>⚙️</button>
-            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleDeposit}
+              className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-ios text-white font-ios"
+            >
+              💰 Depósito
+            </motion.button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex space-x-4">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleClaimBonus}
+              className="flex-1 bg-white/20 backdrop-blur-sm p-3 rounded-ios flex items-center justify-center space-x-2"
+            >
+              <span>🎁</span>
+              <span className="text-sm font-ios">Reclamar Bono</span>
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSupport}
+              className="flex-1 bg-white/20 backdrop-blur-sm p-3 rounded-ios flex items-center justify-center space-x-2"
+            >
+              <span>🎧</span>
+              <span className="text-sm font-ios">Soporte</span>
+            </motion.button>
           </div>
         </div>
 
@@ -110,17 +124,18 @@ const HomePage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="p-4 space-y-6"
         >
-          {/* Account Balance Card */}
-          <AccountCard
-            balance={user.balance?.usdt || 0}
-            onDeposit={handleDeposit}
-          />
-
-          {/* Settlement Timer */}
-          <SettlementTimer hours={23} minutes={39} />
-
-          {/* Trading Info */}
-          <TradingInfoCard percentage="2-12%" />
+          {/* Withdrawal Balance */}
+          <IOSCard className="text-center">
+            <p className="text-text-secondary text-sm mb-2">Disponible para Retiro</p>
+            <p className="text-3xl font-ios-display font-bold text-ios-green mb-4">
+              ${((user.balance?.usdt || 0) * 0.8).toFixed(2)}
+            </p>
+            <div className="bg-system-secondary rounded-ios p-3">
+              <p className="text-text-secondary text-sm">
+                ⏰ Próxima ganancia en: <span className="font-semibold text-ios-green">23:39:42</span>
+              </p>
+            </div>
+          </IOSCard>
 
           {/* Live Market Data */}
           <div className="space-y-4">
@@ -136,72 +151,43 @@ const HomePage = () => {
               </button>
             </div>
 
-            <div className="grid gap-4">
-              {Object.entries(priceStore.prices).map(([symbol, price]) => {
-                const change24h = priceStore.changes24h[symbol] || 0;
-                const volume = priceStore.volumes[symbol] || 0;
-                const indicators = indicatorStore.indicators[symbol] || {};
-                
-                return (
-                  <motion.div
-                    key={symbol}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate(`/trade/${symbol}`)}
-                    className="bg-white rounded-ios-xl p-4 shadow-ios"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center space-x-3">
-                        <img 
-                          src={`/assets/crypto/${symbol.toLowerCase()}.svg`}
-                          alt={symbol}
-                          className="w-10 h-10"
-                        />
-                        <div>
-                          <h3 className="font-ios-display font-semibold">
-                            {symbol}
-                          </h3>
-                          <p className="text-sm text-text-secondary">
-                            Vol: ${formatNumber(volume)}
-                          </p>
-                        </div>
+            <div className="space-y-3">
+              {cryptoList.slice(0, 5).map((crypto, index) => (
+                <motion.div
+                  key={crypto.symbol}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white rounded-ios-xl p-4 shadow-ios-card"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-ios-green/10 rounded-full flex items-center justify-center">
+                        <span className="font-ios-display font-bold text-ios-green">
+                          {crypto.symbol.charAt(0)}
+                        </span>
                       </div>
-                      
-                      <div className="text-right">
-                        <p className="font-ios-display font-semibold">
-                          ${formatNumber(price)}
-                        </p>
-                        <p className={`text-sm ${
-                          change24h >= 0 ? 'text-ios-green' : 'text-[#FF3B30]'
-                        }`}>
-                          {change24h >= 0 ? '↑' : '↓'} {Math.abs(change24h).toFixed(2)}%
+                      <div>
+                        <h3 className="font-ios-display font-semibold">
+                          {crypto.name}
+                        </h3>
+                        <p className="text-sm text-text-secondary">
+                          {crypto.symbol}
                         </p>
                       </div>
                     </div>
-
-                    {/* Indicadores Técnicos */}
-                    <div className="mt-3 flex items-center space-x-4 text-xs text-text-secondary">
-                      {indicators.rsi && (
-                        <span className={
-                          indicators.rsi > 70 ? 'text-[#FF3B30]' :
-                          indicators.rsi < 30 ? 'text-ios-green' :
-                          'text-text-secondary'
-                        }>
-                          RSI: {indicators.rsi.toFixed(2)}
-                        </span>
-                      )}
-                      {indicators.macd && (
-                        <span className={
-                          indicators.macd > 0 ? 'text-ios-green' : 'text-[#FF3B30]'
-                        }>
-                          MACD: {indicators.macd.toFixed(4)}
-                        </span>
-                      )}
+                    
+                    <div className="text-right">
+                      <p className="font-ios-display font-semibold">
+                        ${crypto.price}
+                      </p>
+                      <p className="text-sm text-ios-green">
+                        +{crypto.day}
+                      </p>
                     </div>
-                  </motion.div>
-                );
-              })}
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
 
@@ -255,12 +241,6 @@ const HomePage = () => {
             </motion.div>
           )}
         </motion.div>
-
-        {/* Navigation Bar */}
-        <NavigationBar
-          selected={selectedTab}
-          onSelect={setSelectedTab}
-        />
       </div>
     </IOSLayout>
   );

@@ -128,3 +128,44 @@ export const IOSBadge = ({ children, variant = 'primary', className = '' }) => {
     </span>
   );
 };
+
+// Layout principal estilo iOS
+export const IOSLayout = ({ children, className = '', showBackButton = false, title = '', onBack }) => (
+  <div className={`min-h-screen bg-system-background ${className}`}>
+    {(showBackButton || title) && (
+      <div className="sticky top-0 z-10 bg-system-background border-b border-system-separator">
+        <div className="flex items-center justify-between px-4 py-3">
+          {showBackButton && (
+            <IOSBackButton onClick={onBack} />
+          )}
+          {title && (
+            <h1 className="text-lg font-ios font-semibold text-text-primary">{title}</h1>
+          )}
+          <div className="w-8" />
+        </div>
+      </div>
+    )}
+    <div className="pb-20">
+      {children}
+    </div>
+  </div>
+);
+
+// Botón de regreso estilo iOS
+export const IOSBackButton = ({ onClick }) => (
+  <button
+    onClick={onClick}
+    className="flex items-center space-x-1 text-ios-green font-ios"
+  >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path 
+        d="M15 18L9 12L15 6" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      />
+    </svg>
+    <span>Atrás</span>
+  </button>
+);
