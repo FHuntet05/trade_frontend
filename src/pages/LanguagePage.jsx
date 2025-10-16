@@ -2,7 +2,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import StaticPageLayout from '../components/layout/StaticPageLayout'; // <-- AÑADIMOS LA IMPORTACIÓN
-import { HiCheck } from 'react-icons/hi2';
+import { CheckmarkIcon } from '@/components/icons/AppIcons';
 
 const languages = [
   { code: 'es', name: 'Español' },

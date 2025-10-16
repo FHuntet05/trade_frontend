@@ -11,7 +11,7 @@ import Loader from '../../components/common/Loader';
 import Pagination from '../../components/common/Pagination';
 import WithdrawalsTable from './components/WithdrawalsTable';
 import ProcessWithdrawalModal from './components/ProcessWithdrawalModal';
-import { HiOutlineQuestionMarkCircle } from 'react-icons/hi2';
+import { QuestionIcon } from '@/components/icons/AppIcons';
 
 const PendingWithdrawalsPage = () => {
     // --- Estado de la Página ---
@@ -91,7 +91,7 @@ const PendingWithdrawalsPage = () => {
             <div className="space-y-6">
                 <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
                     <h1 className="text-2xl font-semibold flex items-center gap-3">
-                        <HiOutlineQuestionMarkCircle /> Retiros Pendientes
+                        <QuestionIcon className="w-6 h-6" /> Retiros Pendientes
                     </h1>
                     <p className="text-text-secondary mt-1">Aprueba o rechaza las solicitudes de retiro de los usuarios.</p>
                 </div>

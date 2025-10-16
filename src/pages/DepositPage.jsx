@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next'; // i18n
-import { HiChevronLeft, HiOutlineClipboardDocument, HiExclamationTriangle } from 'react-icons/hi2';
+import { BackIcon, CopyIcon, AlertIcon } from '@/components/icons/AppIcons';
 import api from '../api/axiosConfig';
 
 const DepositPage = () => {
@@ -51,7 +51,7 @@ const DepositPage = () => {
             <div className="w-full bg-gray-900/50 border border-white/20 rounded-lg p-2 flex items-center gap-2">
               <span className="text-sm break-all flex-grow px-2">{depositInfo.address}</span>
               <button onClick={handleCopy} className="bg-pink-500 rounded p-2 flex-shrink-0">
-                {copySuccess ? 'OK' : <HiOutlineClipboardDocument />}
+                {copySuccess ? <CheckmarkIcon className="w-5 h-5" /> : <CopyIcon className="w-5 h-5" />}
               </button>
             </div>
 

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import useAdminStore from '../../store/adminStore';
 import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
-import { FaSpinner } from 'react-icons/fa';
+import { LoaderIcon } from '@/components/icons/AppIcons';
 
 const SweepControlPage = () => {
   const [wallets, setWallets] = useState([]);

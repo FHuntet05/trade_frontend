@@ -14,8 +14,7 @@ import Loader from '../components/common/Loader';
 import TeamLevelDetailsModal from '../components/team/TeamLevelDetailsModal';
 import { triggerImpactHaptic, triggerNotificationHaptic } from '../utils/haptics';
 
-import { FaTelegram, FaXTwitter, FaFacebookF, FaLinkedinIn, FaWhatsapp, FaInstagram, FaTiktok } from "react-icons/fa6";
-import { HiUsers, HiBanknotes, HiArrowDownTray, HiArrowUpTray } from 'react-icons/hi2';
+import { TeamIcon, WalletIcon, DepositIcon, WithdrawIcon, TelegramIcon, TwitterIcon } from '@/components/icons/AppIcons';
 
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
 const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };

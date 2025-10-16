@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react'; // [NEXUS DEPOSIT FLOW] Usamos la librería base para un QR limpio.
 import toast from 'react-hot-toast';
-import { HiOutlineClipboardDocument, HiCheckCircle } from 'react-icons/hi2';
+import { CopyIcon, CheckmarkIcon } from '@/components/icons/AppIcons';
 import StaticPageLayout from '../components/layout/StaticPageLayout';
 
 const DepositDetailsPage = () => {
@@ -62,7 +62,7 @@ const DepositDetailsPage = () => {
               className="w-full mt-2 p-3 bg-dark-secondary rounded-lg border border-white/10 flex items-center justify-between cursor-pointer"
             >
                 <p className="text-xl font-mono font-bold text-accent-start break-all">{parseFloat(amountToSend).toFixed(8)} {option.chain}</p>
-                <HiOutlineClipboardDocument className="w-6 h-6 text-text-secondary flex-shrink-0 ml-2" />
+                <CopyIcon className="w-6 h-6 text-text-secondary flex-shrink-0 ml-2" />
             </div>
           </div>
         ) : (
@@ -82,7 +82,7 @@ const DepositDetailsPage = () => {
             <span className="font-mono text-sm break-all text-left">{option.address}</span>
             {copied 
               ? <HiCheckCircle className="w-6 h-6 text-green-400 flex-shrink-0 ml-2" />
-              : <HiOutlineClipboardDocument className="w-6 h-6 text-text-secondary flex-shrink-0 ml-2" />
+              : <CopyIcon className="w-6 h-6 text-text-secondary flex-shrink-0 ml-2" />
             }
           </div>
         </div>
