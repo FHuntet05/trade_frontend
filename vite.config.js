@@ -1,3 +1,5 @@
+// RUTA: frontend/vite.config.js
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -17,7 +19,13 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
       '@hooks': path.resolve(__dirname, './src/hooks'),
       '@assets': path.resolve(__dirname, './src/assets'),
-      buffer: 'buffer/',
+      'buffer': 'buffer/',
+      // --- INICIO DE LA CORRECCIÓN CRÍTICA ---
+      // Este alias resuelve el error de build en Vercel.
+      // Le dice a Vite que cuando un archivo busque "react-spring",
+      // debe usar el paquete "@react-spring/web" que está instalado.
+      'react-spring': '@react-spring/web',
+      // --- FIN DE LA CORRECCIÓN CRÍTICA ---
     },
     extensions: ['.js', '.jsx', '.json'],
   },

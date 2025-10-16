@@ -1,160 +1,156 @@
+// RUTA: frontend/src/components/market/InvestmentModal.jsx
+
 import React, { useState, useEffect } from 'react';
-import { Dialog } from '@headlessui/react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import useMarketStore from '@/store/marketStore'; // Asumimos que la lógica de compra estará aquí
+import useUserStore from '@/store/userStore';
+import { CryptoIcon } from '@/components/icons/CryptoIcons';
+import { formatters } from '@/utils/formatters';
+import toast from 'react-hot-toast';
+import api from '@/api/axiosConfig';
 
-function InvestmentModal({ isOpen, onClose, crypto, userBalance, onInvest }) {
-  const [amount, setAmount] = useState(crypto?.minInvestment || 0);
-  const [estimatedProfit, setEstimatedProfit] = useState(0);
+const InvestmentModal = ({ isOpen, onClose, item, userBalance }) => {
+  const { t } = useTranslation();
+  const { fetchMarketItems } = useMarketStore();
+  const { updateUser } = useUserStore();
+  
+  const [amount, setAmount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (crypto) {
-      setAmount(crypto.minInvestment);
+    if (item) {
+      setAmount(item.minInvestment);
+      setError('');
     }
-  }, [crypto]);
+  }, [item]);
+  
+  if (!item) return null;
 
-  useEffect(() => {
-    if (crypto && amount) {
-      const profitPercentage = (
-        Math.random() * (crypto.profitRange.max - crypto.profitRange.min) + 
-        crypto.profitRange.min
-      );
-      setEstimatedProfit((amount * profitPercentage) / 100);
-    }
-  }, [amount, crypto]);
+  const estimatedProfit = (amount * item.dailyProfitPercentage) / 100;
+  const totalReturn = amount + (estimatedProfit * item.durationDays);
 
   const handleAmountChange = (e) => {
-    const value = Number(e.target.value);
-    setAmount(value);
+    const value = e.target.value;
+    setAmount(value === '' ? '' : Number(value));
+    
+    if (Number(value) < item.minInvestment) {
+      setError(`El mínimo es ${item.minInvestment} USDT`);
+    } else if (Number(value) > item.maxInvestment) {
+      setError(`El máximo es ${item.maxInvestment} USDT`);
+    } else if (Number(value) > userBalance) {
+      setError('Saldo insuficiente');
+    } else {
+      setError('');
+    }
   };
-
-  const handleSubmit = (e) => {
+  
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onInvest({
-      symbol: crypto.symbol,
-      amount: Number(amount)
-    });
-  };
+    if (error || isLoading) return;
 
-  if (!crypto) return null;
+    setIsLoading(true);
+    try {
+      const response = await api.post('/investments/purchase', {
+        itemId: item._id,
+        amount: Number(amount),
+      });
+
+      if (response.data.success) {
+        toast.success('Compra realizada con éxito!');
+        updateUser({ balance: { usdt: response.data.data.newBalance } });
+        fetchMarketItems(); // Opcional: para refrescar datos si fuera necesario
+        onClose();
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || 'Error al procesar la compra.';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <Dialog
-      open={isOpen}
-      onClose={onClose}
-      className="fixed inset-0 z-50 overflow-y-auto"
-    >
-      <div className="flex items-center justify-center min-h-screen">
-        <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="relative bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <img 
-                src={crypto.icon} 
-                alt={crypto.name}
-                className="w-10 h-10 rounded-full"
-              />
-              <div className="ml-3">
-                <Dialog.Title className="text-xl font-bold">
-                  Invertir en {crypto.name}
-                </Dialog.Title>
-                <p className="text-sm text-gray-500">{crypto.symbol}</p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <XMarkIcon className="w-6 h-6" />
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Monto a Invertir (USDT)
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={handleAmountChange}
-                  min={crypto.minInvestment}
-                  max={Math.min(crypto.maxInvestment, userBalance)}
-                  step="1"
-                  className="block w-full border border-gray-300 rounded-lg shadow-sm px-4 py-3 text-lg"
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <span className="text-gray-500">USDT</span>
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 50 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="relative bg-system-background rounded-ios-2xl w-full max-w-sm overflow-hidden"
+          >
+            <div className="p-5">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                  <CryptoIcon symbol={item.symbol} className="w-8 h-8 text-text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-ios-display font-bold text-xl text-text-primary">
+                    Comprar {item.name}
+                  </h3>
+                  <p className="font-ios text-text-secondary">
+                    Saldo disponible: {formatters.formatCurrency(userBalance)}
+                  </p>
                 </div>
               </div>
-              <p className="mt-1 text-sm text-gray-500">
-                Balance disponible: {userBalance.toFixed(2)} USDT
-              </p>
-            </div>
 
-            <div className="bg-blue-50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-blue-800 mb-2">
-                Detalles de la Inversión
-              </h4>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-blue-600">Ganancia Diaria</span>
-                  <span className="font-semibold text-blue-800">
-                    {estimatedProfit.toFixed(2)} USDT ({(estimatedProfit / amount * 100).toFixed(2)}%)
-                  </span>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="font-ios text-sm text-text-secondary mb-1 block">
+                    Monto (USDT)
+                  </label>
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={handleAmountChange}
+                    placeholder={`Min: ${item.minInvestment}`}
+                    className="w-full bg-system-secondary p-3 rounded-ios-button text-text-primary font-ios text-lg focus:outline-none focus:ring-2 focus:ring-ios-green"
+                  />
+                  {error && <p className="text-red-500 text-xs mt-1 font-ios">{error}</p>}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-blue-600">Duración</span>
-                  <span className="font-semibold text-blue-800">24 horas</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-blue-600">Total a Recibir</span>
-                  <span className="font-semibold text-blue-800">
-                    {(amount + estimatedProfit).toFixed(2)} USDT
-                  </span>
-                </div>
-              </div>
-            </div>
 
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={amount < crypto.minInvestment || amount > Math.min(crypto.maxInvestment, userBalance)}
-                className={`w-full py-3 px-4 rounded-lg font-bold text-white transition-colors ${
-                  amount < crypto.minInvestment || amount > Math.min(crypto.maxInvestment, userBalance)
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-500 hover:bg-green-600'
-                }`}
-              >
-                Confirmar Inversión
-              </button>
-              {amount < crypto.minInvestment && (
-                <p className="mt-2 text-sm text-red-600 text-center">
-                  El monto mínimo es {crypto.minInvestment} USDT
-                </p>
-              )}
-              {amount > crypto.maxInvestment && (
-                <p className="mt-2 text-sm text-red-600 text-center">
-                  El monto máximo es {crypto.maxInvestment} USDT
-                </p>
-              )}
-              {amount > userBalance && (
-                <p className="mt-2 text-sm text-red-600 text-center">
-                  Saldo insuficiente
-                </p>
-              )}
+                <div className="bg-system-secondary rounded-ios-card p-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-ios text-text-secondary">Ganancia Diaria Estimada</span>
+                    <span className="font-ios font-semibold text-ios-green">
+                      ~{formatters.formatCurrency(estimatedProfit, 4)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-ios text-text-secondary">Retorno Total Estimado</span>
+                    <span className="font-ios font-semibold text-text-primary">
+                      ~{formatters.formatCurrency(totalReturn)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    disabled={isLoading || !!error || amount === ''}
+                    className="w-full bg-ios-green text-white py-3.5 rounded-ios-button font-ios font-semibold text-base disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Procesando...' : 'Confirmar Compra'}
+                  </motion.button>
+                </div>
+              </form>
             </div>
-          </form>
-        </motion.div>
-      </div>
-    </Dialog>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
-}
+};
 
 export default InvestmentModal;
