@@ -1,54 +1,41 @@
-// frontend/src/store/userStore.js (VERSIÓN FINAL v32.0 - A VERIFICAR)
+// RUTA: frontend/src/store/userStore.js
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../api/axiosConfig';
 
-// Interceptores (SIN CAMBIOS)
-api.interceptors.request.use(
-  (config) => {
-    const token = useUserStore.getState().token;
-    if (token) config.headers['Authorization'] = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response && error.response.status === 401) {
-      const useUserStore = (await import('./userStore')).default;
-      useUserStore.getState().logout();
-    }
-    return Promise.reject(error);
-  }
-);
-
 const useUserStore = create(
   persist(
     (set) => ({
-      // --- ESTADOS DEL STORE ---
       user: null, 
       token: null, 
       isAuthenticated: false, 
       isLoadingAuth: true, 
       settings: null,
+      error: null, // <-- AÑADIMOS UN ESTADO PARA EL ERROR
       
       syncUserWithBackend: async (telegramUser) => {
-        set({ isLoadingAuth: true });
+        console.log('[Depuración] Iniciando syncUserWithBackend...');
+        set({ isLoadingAuth: true, error: null });
         try {
-          console.log('[Store] Enviando datos de usuario al backend para sincronizar...', telegramUser);
+          console.log('[Depuración] Datos de Telegram a enviar:', JSON.stringify(telegramUser));
+          
           const response = await api.post('/auth/sync', { 
             telegramUser,
             timestamp: Date.now(),
             platform: 'telegram_web_app'
           });
+
+          console.log('[Depuración] Respuesta RECIBIDA del backend:', JSON.stringify(response.data));
+          
           const { token, user, settings } = response.data;
           
           if (!token || !user) {
+            console.error('[Depuración] ERROR CRÍTICO: Token o User faltan en la respuesta.');
             throw new Error('Respuesta inválida del servidor: faltan token o datos de usuario');
           }
           
+          console.log('[Depuración] Sincronización exitosa. Actualizando estado...');
           set({ 
             user, 
             token, 
@@ -56,39 +43,37 @@ const useUserStore = create(
             settings, 
             isLoadingAuth: false 
           });
-          
-          console.log('[Store] Sincronización completada con éxito.');
+          console.log('[Depuración] Estado actualizado. El usuario debería ver la app.');
           return true;
+
         } catch (error) {
-          console.error('[Store] Error fatal al sincronizar usuario:', error);
+          console.error('[Depuración] ERROR CATASTRÓFICO en syncUserWithBackend:', error);
+          const errorMessage = error.response?.data?.message || error.message || 'Error desconocido durante la sincronización.';
+          console.error('[Depuración] Mensaje de error a guardar:', errorMessage);
+          
           set({ 
             user: null, 
             token: null, 
             isAuthenticated: false, 
             isLoadingAuth: false,
-            error: error.message || 'Error de sincronización'
+            error: errorMessage // <-- GUARDAMOS EL MENSAJE DE ERROR
           });
           return false;
         }
       },
 
-      updateUser: (newUserData) => {
-        set((state) => ({
-          user: state.user ? { ...state.user, ...newUserData } : newUserData,
-        }));
-      },
-      
       logout: () => {
         set({
           user: null,
           token: null,
           isAuthenticated: false,
-          isLoadingAuth: false
+          isLoadingAuth: false,
+          error: null,
         })
       }
     }),
     {
-      name: 'neuro-link-storage',
+      name: 'ai-brok-trade-pro-user-storage', // Nombre actualizado para evitar conflictos de caché
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token }),
     }
