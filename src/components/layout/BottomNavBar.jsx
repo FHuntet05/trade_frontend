@@ -81,24 +81,26 @@ const NavItem = ({ to, labelKey, Icon }) => {
 
 const BottomNavBar = () => {
   return (
-    <motion.nav 
-      className="fixed bottom-0 left-0 right-0 mx-auto max-w-md h-[4.5rem] flex justify-around items-center bg-dark-secondary/80 backdrop-blur-xl border-t border-white/5 px-2"
+    <motion.div 
+      className="fixed bottom-0 left-0 right-0 z-50"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
     >
-      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-      <div className="flex justify-around items-center w-full max-w-sm mx-auto relative z-10">
-        {navItems.map((item, index) => (
-          <NavItem 
-            key={index} 
-            to={item.to} 
-            labelKey={item.labelKey} 
-            Icon={item.Icon} 
-          />
-        ))}
-      </div>
-    </motion.nav>
+      <nav className="mx-auto max-w-md h-[4.5rem] flex justify-around items-center bg-dark-secondary/90 backdrop-blur-xl border-t border-white/5 px-2">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+        <div className="flex justify-around items-center w-full max-w-sm mx-auto relative z-10">
+          {navItems.map((item, index) => (
+            <NavItem 
+              key={index} 
+              to={item.to} 
+              labelKey={item.labelKey} 
+              Icon={item.Icon} 
+            />
+          ))}
+        </div>
+      </nav>
+    </motion.div>
   );
 };
 

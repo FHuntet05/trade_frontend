@@ -127,8 +127,7 @@ const HomePage = () => {
           </motion.div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="p-4">
+          {/* Action Buttons */}
           <div className="flex space-x-4">
             <motion.button
               whileTap={{ scale: 0.95 }}
