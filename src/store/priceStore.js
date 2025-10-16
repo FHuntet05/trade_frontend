@@ -59,13 +59,18 @@ const usePriceStore = create(
 
       // Detener simulación
       stopSimulation: () => {
-        const { socket } = get();
-        if (socket) {
-          clearInterval(socket);
-          set({ 
-            isConnected: false,
-            socket: null
-          });
+        try {
+          const { socket } = get();
+          if (socket) {
+            clearInterval(socket);
+            set({ 
+              isConnected: false,
+              socket: null,
+              prices: {} // Limpiamos los precios al detener
+            });
+          }
+        } catch (error) {
+          console.error('Error al detener la simulación:', error);
         }
       },
 

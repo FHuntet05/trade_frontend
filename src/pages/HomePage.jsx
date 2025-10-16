@@ -55,12 +55,22 @@ const HomePage = () => {
   const rewardStore = useRewardStore();
 
   useEffect(() => {
-    priceStore.startSimulation();
-    rewardStore.checkDailyMissions();
-    
-    return () => {
-      priceStore.stopSimulation();
-    };
+    try {
+      priceStore.startSimulation();
+      rewardStore.checkDailyMissions();
+      
+      const cleanup = () => {
+        try {
+          priceStore.stopSimulation();
+        } catch (error) {
+          console.error('Error during cleanup:', error);
+        }
+      };
+      
+      return cleanup;
+    } catch (error) {
+      console.error('Error in HomePage useEffect:', error);
+    }
   }, [priceStore, rewardStore]);
 
   const handleMissionComplete = (missionId) => {
