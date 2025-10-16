@@ -1,23 +1,24 @@
-// RUTA: src/components/layout/BottomNavBar.jsx (VERSIÓN "NEXUS - iOS STYLE")
+// RUTA: src/components/layout/BottomNavBar.jsx
+
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HomeIcon, ChartIcon, ToolsIcon, TeamIcon, ProfileIcon } from './IOSIcons';
+import { FiHome, FiBarChart2, FiArchive, FiGift, FiUser } from 'react-icons/fi';
 import { triggerImpactHaptic } from '@/utils/haptics';
 
 const navItems = [
-  { to: '/home', labelKey: 'nav.home', Icon: HomeIcon },
-  { to: '/ranking', labelKey: 'nav.ranking', Icon: ChartIcon },
-  { to: '/tools', labelKey: 'nav.upgrade', Icon: ToolsIcon },
-  { to: '/team', labelKey: 'nav.team', Icon: TeamIcon },
-  { to: '/profile', labelKey: 'nav.profile', Icon: ProfileIcon },
+  { to: '/home', labelKey: 'nav.home', Icon: FiHome },
+  { to: '/market', labelKey: 'nav.market', Icon: FiBarChart2 },
+  { to: '/quantitative', labelKey: 'nav.quantitative', Icon: FiArchive },
+  { to: '/wheel', labelKey: 'nav.wheel', Icon: FiGift },
+  { to: '/profile', labelKey: 'nav.profile', Icon: FiUser },
 ];
 
 const NavItem = ({ to, labelKey, Icon }) => {
   const { t } = useTranslation();
   const location = useLocation();
-  const isActive = location.pathname === to || (to === '/home' && location.pathname === '/');
+  const isActive = location.pathname === to;
 
   const handleClick = () => {
     triggerImpactHaptic('light');
@@ -26,11 +27,10 @@ const NavItem = ({ to, labelKey, Icon }) => {
   return (
     <NavLink
       to={to}
-      end={to === '/home'}
       onClick={handleClick}
       className="flex-1 flex flex-col items-center justify-center text-xs h-full relative group z-10"
     >
-      <motion.div 
+      <motion.div
         className="flex flex-col items-center justify-center w-full h-full pt-1"
         initial={false}
         animate={{
@@ -42,9 +42,9 @@ const NavItem = ({ to, labelKey, Icon }) => {
         <div className="relative mb-1">
           <Icon
             className={`w-6 h-6 transition-all duration-300 ${
-              isActive 
-                ? 'text-accent-500 scale-110' 
-                : 'text-text-secondary group-hover:text-white/80'
+              isActive
+                ? 'text-ios-green'
+                : 'text-text-secondary group-hover:text-text-primary'
             }`}
           />
           <AnimatePresence>
@@ -53,27 +53,20 @@ const NavItem = ({ to, labelKey, Icon }) => {
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
-                className="absolute inset-0 bg-accent/20 rounded-full blur-lg"
+                className="absolute inset-0 bg-ios-green/20 rounded-full blur-md"
               />
             )}
           </AnimatePresence>
         </div>
         <span
           className={`text-[10px] font-medium transition-colors duration-300 ${
-            isActive 
-              ? 'text-accent-500 font-semibold' 
-              : 'text-text-secondary group-hover:text-white/80'
+            isActive
+              ? 'text-ios-green font-semibold'
+              : 'text-text-secondary group-hover:text-text-primary'
           }`}
         >
           {t(labelKey)}
         </span>
-        {isActive && (
-          <motion.div
-            layoutId="nav-indicator"
-            className="absolute inset-0 bg-accent/10 rounded-2xl border border-accent/20 backdrop-blur-sm z-[-1]"
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          />
-        )}
       </motion.div>
     </NavLink>
   );
@@ -81,26 +74,20 @@ const NavItem = ({ to, labelKey, Icon }) => {
 
 const BottomNavBar = () => {
   return (
-    <motion.div 
-      className="fixed bottom-0 left-0 right-0 z-50"
-      initial={{ y: 100 }}
-      animate={{ y: 0 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-    >
-      <nav className="mx-auto max-w-md h-[4.5rem] flex justify-around items-center bg-dark-secondary/90 backdrop-blur-xl border-t border-white/5 px-2">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-        <div className="flex justify-around items-center w-full max-w-sm mx-auto relative z-10">
-          {navItems.map((item, index) => (
-            <NavItem 
-              key={index} 
-              to={item.to} 
-              labelKey={item.labelKey} 
-              Icon={item.Icon} 
+    <div className="fixed bottom-0 left-0 right-0 w-full max-w-lg mx-auto z-50">
+      <nav className="h-[5rem] flex justify-around items-center bg-system-secondary/80 backdrop-blur-xl border-t border-gray-200/80">
+        <div className="flex justify-around items-center w-full h-full">
+          {navItems.map((item) => (
+            <NavItem
+              key={item.to}
+              to={item.to}
+              labelKey={item.labelKey}
+              Icon={item.Icon}
             />
           ))}
         </div>
       </nav>
-    </motion.div>
+    </div>
   );
 };
 

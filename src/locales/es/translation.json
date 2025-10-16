@@ -1,77 +1,83 @@
 {
   "nav": {
-    "home": "Mío",
-    "ranking": "Clasificación",
-    "upgrade": "Mejora",
-    "team": "Equipo",
-    "profile": "A mí"
+    "home": "Inicio",
+    "market": "Mercado",
+    "quantitative": "Cuantitativo",
+    "wheel": "Ruleta",
+    "profile": "Perfil",
+    "upgrade": "Mejorar",
+    "ranking": "Ranking",
+    "team": "Equipo"
   },
-  "tasks": {
-    "title": "Centro de Tareas",
-    "noTasks": "No hay tareas disponibles en este momento.",
-    "boughtUpgrade": {
-      "title": "Primera Mejora",
-      "description": "Compra cualquier herramienta VIP."
-    },
-    "inviteFriends": {
-      "title": "Invitar 10 Amigos",
-      "description": "Tu equipo debe tener {{count}} miembros."
-    },
-    "joinedTelegram": {
-      "title": "Unirse al Canal",
-      "description": "Únete a nuestra comunidad oficial."
-    }
-  },
-  "profile": {
-    "recharge": "Recargar",
-    "withdraw": "Retirar",
-    "records": "Registros",
-    "exchange": "NTX/USDT",
-    "invite": "Invitar",
-    "password": "Contraseña",
-    "language": "Idioma",
-    "faq": "FAQ",
-    "about": "Sobre nosotros",
-    "support": "Atención al Cliente",
-    "logout": "Cerrar Sesión",
-    "comingSoon": {
-      "withdraw": "Función de retiro próximamente.",
-      "records": "Historial financiero próximamente.",
-      "exchange": "Intercambio NTX/USDT próximamente.",
-      "password": "Gestión de contraseña próximamente.",
-      "faq": "Preguntas frecuentes próximamente.",
-      "about": "Página 'Sobre nosotros' próximamente.",
-      "support": "Contacto con soporte próximamente."
-    }
-  },
-  "tools": {
-    "title": "Herramientas de Minería",
-    "subtitle": "Mejora tu equipamiento para aumentar tus ganancias.",
-    "loading": "Cargando...",
-    "error": "No se pudieron cargar las herramientas."
+  "home": {
+    "claimBonus": "Reclamar Bono",
+    "support": "Soporte",
+    "availableWithdrawal": "Disponible para Retiro",
+    "nextProfitIn": "Próxima ganancia en:",
+    "marketWidgetTitle": "Mercado en Vivo"
   },
   "common": {
-    "error": "Error",
-    "copied": "¡Copiado!",
-    "continue": "Continuar",
+    "seeMore": "Ver Más",
     "loading": "Cargando...",
-    "close": "Cerrar"
+    "error": "Ha ocurrido un error",
+    "success": "Operación exitosa",
+    "comingSoon": "Próximamente",
+    "insufficientBalance": "Saldo insuficiente"
   },
-  "homePage": {
-    "buttons": {
-      "start": "INICIAR",
-      "claim": "RECLAMAR"
-    },
+  "profile": {
+    "title": "Perfil",
+    "security": "Seguridad",
+    "finances": "Finanzas",
+    "withdrawBalance": "Retirar Saldo",
+    "settings": "Configuración",
+    "aboutUs": "Sobre Nosotros",
+    "logout": "Cerrar Sesión",
+    "withdrawalPassword": "Contraseña de Retiro",
+    "withdrawalWallet": "Billetera de Retiro"
+  },
+  "deposit": {
+    "title": "Depósito",
+    "amount": "Monto",
+    "selectCurrency": "Seleccionar Moneda",
+    "depositAddress": "Dirección de Depósito",
+    "copyAddress": "Copiar Dirección",
+    "addressCopied": "Dirección copiada al portapapeles"
+  },
+  "market": {
+    "title": "Mercado",
+    "investNow": "Invertir Ahora",
+    "dailyProfit": "Ganancia Diaria",
+    "duration": "Duración",
+    "minInvestment": "Inversión Mínima"
+  },
+  "quantitative": {
+    "title": "Cuantitativo",
+    "stakeNow": "Hacer Staking Ahora",
+    "return": "Retorno",
+    "period": "Período",
+    "lockedAmount": "Monto Bloqueado"
+  },
+  "wheel": {
+    "title": "Ruleta de la Suerte",
+    "spin": "Girar",
+    "spinsLeft": "Giros restantes",
+    "yourPrizes": "Tus Premios",
+    "xpBalance": "Balance de XP",
+    "claimXP": "Reclamar XP"
+  },
+  "auth": {
+    "authError": "Error de Autenticación",
+    "authErrorDescription": "No se pudo verificar tu sesión. Por favor, reinicia la aplicación desde Telegram."
+  },
     "toasts": {
       "startingCycle": "Iniciando ciclo...",
       "cycleStarted": "¡Ciclo de minado iniciado!",
       "claiming": "Reclamando..."
     },
-    "errors": {
-      "noUser": "Error: No se pudo obtener la información del usuario. Intente reiniciar la aplicación."
-    },
-    "taskCenter": "Centro de Tareas"
+  "errors": {
+    "noUser": "Error: No se pudo obtener la información del usuario. Intente reiniciar la aplicación."
   },
+  "taskCenter": "Centro de Tareas",
   "profilePage": {
     "balanceNtxLabel": "Cartera de Valor (NTX)",
     "balanceUsdtLabel": "Cartera de Corretaje (USDT)",

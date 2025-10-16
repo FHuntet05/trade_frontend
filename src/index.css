@@ -1,44 +1,33 @@
-/* RUTA: frontend/src/index.css (CON FONDO PREDETERMINADO GLOBAL) */
+/* RUTA: frontend/src/index.css */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* --- INICIO DE LA MODIFICACIÓN CRÍTICA --- */
-/* Se utiliza @layer base para aplicar estilos fundamentales al body */
 @layer base {
   body {
-    /* 1. Se aplica el fondo y color de texto predeterminados */
-    @apply bg-internal-background text-text-primary min-h-screen;
-
-    /* 3. Se añaden propiedades para asegurar que la imagen de fondo cubra
-       toda la pantalla, no se repita y se mantenga fija durante el scroll. */
+    @apply bg-system-background text-text-primary min-h-screen font-ios;
+    
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
 
-    /* Propiedades de fuente originales (se mantienen) */
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 }
-/* --- FIN DE LA MODIFICACIÓN CRÍTICA --- */
 
-
-/* Utilidad para ocultar la barra de desplazamiento (se mantiene) */
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
   .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
-/* Clase de animación original (se mantiene) */
 .fan-blades {
   animation-name: spin;
   animation-timing-function: linear;

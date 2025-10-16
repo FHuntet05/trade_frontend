@@ -1,3 +1,5 @@
+// RUTA: src/pages/LoadingPage.jsx
+
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useSpring, animated } from 'react-spring';
@@ -5,7 +7,6 @@ import { useSpring, animated } from 'react-spring';
 const LoadingPage = () => {
   const [progress, setProgress] = useState(0);
 
-  // Animación del progreso
   const progressAnimation = useSpring({
     width: `${progress}%`,
     config: {
@@ -29,8 +30,7 @@ const LoadingPage = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-system-background flex flex-col items-center justify-center ios-safe-top ios-safe-bottom">
-      {/* Logo animado */}
+    <div className="fixed inset-0 bg-system-background flex flex-col items-center justify-center">
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -40,13 +40,11 @@ const LoadingPage = () => {
         }}
         className="mb-12"
       >
-        <div className="w-24 h-24 rounded-2xl bg-gradient-to-r from-ios-green-light to-ios-green-dark flex items-center justify-center shadow-ios-card">
-          {/* Aquí puedes poner tu logo */}
-          <span className="text-4xl text-white">💱</span>
+        <div className="w-24 h-24 rounded-ios-2xl bg-gradient-to-br from-ios-green-light to-ios-green-dark flex items-center justify-center shadow-ios-card">
+          <span className="text-5xl text-white font-ios-display font-bold">AI</span>
         </div>
       </motion.div>
 
-      {/* Barra de progreso estilo iOS */}
       <div className="w-48 h-1.5 bg-system-secondary rounded-full overflow-hidden">
         <animated.div
           style={progressAnimation}
@@ -54,7 +52,6 @@ const LoadingPage = () => {
         />
       </div>
 
-      {/* Porcentaje */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -63,8 +60,7 @@ const LoadingPage = () => {
         {Math.round(progress)}%
       </motion.div>
 
-      {/* Indicador de actividad estilo iOS */}
-      <div className="mt-8 flex items-center space-x-2">
+      <div className="absolute bottom-10 flex items-center space-x-2">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{
@@ -72,10 +68,10 @@ const LoadingPage = () => {
             repeat: Infinity,
             ease: "linear"
           }}
-          className="w-5 h-5 border-2 border-ios-green border-t-transparent rounded-full"
+          className="w-5 h-5 border-2 border-text-tertiary border-t-transparent rounded-full"
         />
         <span className="font-ios text-text-secondary text-sm">
-          Iniciando aplicación...
+          Cargando datos...
         </span>
       </div>
     </div>

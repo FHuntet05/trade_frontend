@@ -1,123 +1,59 @@
+// RUTA: src/store/priceStore.js
+
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import api from '@/api/axiosConfig';
+
+const CACHE_DURATION = 3 * 60 * 1000; // 3 minutos en milisegundos
 
 const usePriceStore = create(
   persist(
     (set, get) => ({
       prices: {},
-      volumes: {},
-      changes24h: {},
       lastUpdate: null,
-      socket: null,
-      isConnected: false,
-      
-      // Función para actualizar precios manualmente o desde WebSocket
-      updatePrice: (symbol, data) => {
-        const { prices, changes24h, volumes } = get();
-        set({
-          prices: { ...prices, [symbol]: data.price },
-          changes24h: { ...changes24h, [symbol]: data.change24h },
-          volumes: { ...volumes, [symbol]: data.volume },
-          lastUpdate: Date.now()
-        });
-      },
+      isLoading: false,
 
-      // Función para simular datos en tiempo real (cuando no hay API)
-      simulateRealTimeData: () => {
-        const symbols = ['BTC', 'ETH', 'USDT', 'BNB', 'ADA', 'DOT', 'XRP'];
-        const { prices } = get();
+      fetchPrices: async () => {
+        const now = Date.now();
+        const lastUpdate = get().lastUpdate;
+        const isLoading = get().isLoading;
 
-        // Simular cambios realistas basados en el último precio
-        symbols.forEach(symbol => {
-          const currentPrice = prices[symbol] || getBasePrice(symbol);
-          const change = (Math.random() - 0.5) * 0.001 * currentPrice; // ±0.1% cambio
-          const newPrice = currentPrice + change;
-          const volume = Math.random() * 1000000;
-          const change24h = (Math.random() - 0.5) * 10; // ±5% cambio 24h
-
-          get().updatePrice(symbol, {
-            price: newPrice,
-            volume,
-            change24h
-          });
-        });
-      },
-
-      // Iniciar simulación
-      startSimulation: () => {
-        if (!get().isConnected) {
-          const interval = setInterval(() => {
-            get().simulateRealTimeData();
-          }, 3000); // Actualizar cada 3 segundos
-          
-          set({ 
-            isConnected: true,
-            socket: interval
-          });
+        if (isLoading || (lastUpdate && (now - lastUpdate < CACHE_DURATION))) {
+          return;
         }
-      },
 
-      // Detener simulación
-      stopSimulation: () => {
+        set({ isLoading: true });
+
         try {
-          const { socket } = get();
-          if (socket) {
-            clearInterval(socket);
-            set({ 
-              isConnected: false,
-              socket: null,
-              prices: {} // Limpiamos los precios al detener
+          const response = await api.get('/prices'); // Endpoint que crearemos en el backend
+          if (response.data && response.data.success) {
+            
+            const newPrices = response.data.data.reduce((acc, crypto) => {
+              acc[crypto.ticker] = crypto.priceUsd;
+              return acc;
+            }, {});
+
+            set({
+              prices: newPrices,
+              lastUpdate: Date.now(),
+              isLoading: false,
             });
           }
         } catch (error) {
-          console.error('Error al detener la simulación:', error);
+          console.error('Error fetching crypto prices:', error);
+          set({ isLoading: false });
         }
       },
-
-      // Obtener datos históricos simulados
-      getHistoricalData: (symbol, timeframe = '1d') => {
-        const dataPoints = 100;
-        const basePrice = getBasePrice(symbol);
-        const data = [];
-        let currentPrice = basePrice;
-
-        for (let i = 0; i < dataPoints; i++) {
-          const time = Date.now() - (dataPoints - i) * 86400000; // 1 día en ms
-          const change = (Math.random() - 0.5) * 0.02 * currentPrice;
-          currentPrice += change;
-          
-          data.push({
-            time,
-            price: currentPrice,
-            volume: Math.random() * 1000000
-          });
-        }
-
-        return data;
-      }
     }),
     {
-      name: 'price-store',
-      partialize: (state) => ({ 
+      name: 'ai-brok-trade-pro-price-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
         prices: state.prices,
-        lastUpdate: state.lastUpdate
-      })
+        lastUpdate: state.lastUpdate,
+      }),
     }
   )
 );
-
-// Precios base para simulación
-const getBasePrice = (symbol) => {
-  const basePrices = {
-    'BTC': 35000,
-    'ETH': 2000,
-    'USDT': 1,
-    'BNB': 220,
-    'ADA': 0.5,
-    'DOT': 7,
-    'XRP': 0.5
-  };
-  return basePrices[symbol] || 1;
-};
 
 export default usePriceStore;
