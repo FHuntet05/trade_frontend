@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { IOSCard, IOSInput, IOSButton } from '../../../components/ui/IOSComponents';
-import { IOSIcon } from '../../../components/ui/IOSIcons';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { IOSCard, IOSInput, IOSButton, IOSLoader } from '@components/ui/IOSComponents';
+import { IOSIcon } from '@components/ui/IOSIcons';
 import { CurrencyDollarIcon, ClockIcon, StarIcon } from '@heroicons/react/24/outline';
+import { usePackageStore } from '@store';
+import toast from 'react-hot-toast';
 
 const PackageManagementPage = () => {
   const [packages, setPackages] = useState([
@@ -68,11 +70,11 @@ const PackageCard = ({ package: pkg }) => {
         
         <motion.button
           whileTap={{ scale: 0.95 }}
-          className={\`px-4 py-1 rounded-full text-sm font-ios \${
+          className={
             pkg.enabled 
-              ? 'bg-ios-green text-white' 
-              : 'bg-gray-200 text-gray-500'
-          }\`}
+              ? 'px-4 py-1 rounded-full text-sm font-ios bg-ios-green text-white' 
+              : 'px-4 py-1 rounded-full text-sm font-ios bg-gray-200 text-gray-500'
+          }
         >
           {pkg.enabled ? 'Activo' : 'Inactivo'}
         </motion.button>

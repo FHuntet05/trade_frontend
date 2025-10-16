@@ -1,6 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion';
 import confetti from 'canvas-confetti';
+
+// Memoizar funciones de utilidad para evitar recálculos innecesarios
+const createConfetti = (options = {}) => {
+  requestAnimationFrame(() => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      ...options
+    });
+  });
+};
 
 // Componente de la ruleta
 export const SpinningWheel = ({ 
@@ -65,7 +77,7 @@ export const SpinningWheel = ({
               className="absolute top-1/2 left-1/2 -translate-x-1/2 text-white font-ios text-sm"
               style={{
                 transformOrigin: '0 0',
-                transform: \`rotate(\${rotation}deg) translateY(-\${size/3}px)\`
+                transform: `rotate(${rotation}deg) translateY(-${size/3}px)`
               }}
             >
               {reward.type === 'xp' ? '✨' : reward.type === 'usdt' ? '💰' : '🎮'}

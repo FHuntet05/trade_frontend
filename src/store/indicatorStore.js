@@ -109,3 +109,5 @@ const useIndicatorStore = create((set, get) => ({
     });
   }
 }));
+
+export default useIndicatorStore;

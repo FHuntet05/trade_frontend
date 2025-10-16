@@ -1,13 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { IOSCard, IOSSegmentedControl } from '../../../components/ui/IOSComponents';
-import { IOSIcon } from '../../../components/ui/IOSIcons';
-import { BanknotesIcon, ChartBarIcon, UsersIcon, CogIcon } from '@heroicons/react/24/outline';
+import { IOSCard, IOSSegmentedControl, IOSLoader } from '@components/ui/IOSComponents';
+import { IOSIcon } from '@components/ui/IOSIcons';
+import { 
+  BanknotesIcon, 
+  ChartBarIcon, 
+  UsersIcon, 
+  CogIcon,
+  ArrowTrendingUpIcon,
+  UserGroupIcon,
+  CurrencyDollarIcon,
+  ArrowDownTrayIcon
+} from '@heroicons/react/24/outline';
+import { useAdminStore } from '@store';
+import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
   const [selectedSection, setSelectedSection] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    users: { total: 0, active: 0, new: 0 },
+    trading: { volume24h: 0, totalVolume: 0 },
+    deposits: { today: 0, total: 0 },
+    withdrawals: { pending: 0, total: 0 }
+  });
+
   const navigate = useNavigate();
+  const { admin, api } = useAdminStore();
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/admin/dashboard/stats');
+      setStats(response.data);
+    } catch (error) {
+      toast.error('Error al cargar estadísticas');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const sections = {
     overview: { icon: ChartBarIcon, title: 'Vista General' },
@@ -15,6 +52,14 @@ const AdminDashboard = () => {
     trading: { icon: BanknotesIcon, title: 'Trading' },
     settings: { icon: CogIcon, title: 'Ajustes' }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-system-background flex items-center justify-center">
+        <IOSLoader size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-system-background pb-20">
@@ -31,11 +76,11 @@ const AdminDashboard = () => {
             key={key}
             whileTap={{ scale: 0.95 }}
             onClick={() => setSelectedSection(key)}
-            className={\`\${
+            className={
               selectedSection === key 
-                ? 'bg-ios-green text-white' 
-                : 'bg-white text-text-primary'
-            } p-4 rounded-ios-xl shadow-ios-card flex flex-col items-center justify-center gap-2\`}
+                ? 'bg-ios-green text-white p-4 rounded-ios-xl shadow-ios-card flex flex-col items-center justify-center gap-2' 
+                : 'bg-white text-text-primary p-4 rounded-ios-xl shadow-ios-card flex flex-col items-center justify-center gap-2'
+            }
           >
             <IOSIcon icon={icon} size="lg" className={selectedSection === key ? 'text-white' : 'text-ios-green'} />
             <span className="font-ios text-sm">{title}</span>
@@ -45,48 +90,76 @@ const AdminDashboard = () => {
 
       {/* Contenido de la sección */}
       <div className="p-4">
-        {selectedSection === 'overview' && (
-          <OverviewSection />
-        )}
-        {selectedSection === 'users' && (
-          <UsersSection />
-        )}
-        {selectedSection === 'trading' && (
-          <TradingSection />
-        )}
-        {selectedSection === 'settings' && (
-          <SettingsSection />
-        )}
+        {selectedSection === 'overview' && <OverviewSection stats={stats} />}
+        {selectedSection === 'users' && <UsersSection stats={stats.users} />}
+        {selectedSection === 'trading' && <TradingSection stats={stats.trading} />}
+        {selectedSection === 'settings' && <SettingsSection />}
       </div>
     </div>
   );
 };
 
-const OverviewSection = () => {
-  const stats = [
-    { title: 'Usuarios Activos', value: '2,345', change: '+15%' },
-    { title: 'Trading 24h', value: '$12,456', change: '+23%' },
-    { title: 'Depósitos Hoy', value: '$5,678', change: '+8%' },
-    { title: 'Retiros Pendientes', value: '34', change: '-5%' }
+const OverviewSection = ({ stats }) => {
+  const overviewStats = [
+    { 
+      title: 'Usuarios Activos', 
+      value: stats.users.active.toLocaleString(),
+      change: '+15%',
+      icon: UserGroupIcon,
+      color: 'text-blue-500'
+    },
+    { 
+      title: 'Trading 24h', 
+      value: `$${stats.trading.volume24h.toLocaleString()}`,
+      change: '+23%',
+      icon: ArrowTrendingUpIcon,
+      color: 'text-green-500'
+    },
+    { 
+      title: 'Depósitos Hoy', 
+      value: `$${stats.deposits.today.toLocaleString()}`,
+      change: '+8%',
+      icon: ArrowDownTrayIcon,
+      color: 'text-purple-500'
+    },
+    { 
+      title: 'Retiros Pendientes', 
+      value: stats.withdrawals.pending.toLocaleString(),
+      change: '-5%',
+      icon: CurrencyDollarIcon,
+      color: 'text-orange-500'
+    }
   ];
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
-        {stats.map(stat => (
+        {overviewStats.map(stat => (
           <IOSCard key={stat.title} className="p-4">
-            <p className="text-text-secondary text-sm">{stat.title}</p>
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`p-2 rounded-full ${stat.color} bg-opacity-10`}>
+                <IOSIcon icon={stat.icon} size="sm" className={stat.color} />
+              </div>
+              <p className="text-text-secondary text-sm">{stat.title}</p>
+            </div>
             <p className="text-xl font-ios-display font-bold">{stat.value}</p>
-            <p className={\`text-sm \${
-              stat.change.startsWith('+') ? 'text-ios-green' : 'text-red-500'
-            }\`}>
+            <p className={
+              stat.change.startsWith('+') 
+                ? 'text-sm text-ios-green' 
+                : 'text-sm text-red-500'
+            }>
               {stat.change}
             </p>
           </IOSCard>
         ))}
       </div>
 
-      {/* Más estadísticas y gráficos aquí */}
+      <IOSCard className="p-4">
+        <h3 className="font-ios-display font-semibold mb-4">
+          Resumen de Actividad
+        </h3>
+        {/* Aquí irían los gráficos */}
+      </IOSCard>
     </div>
   );
 };
@@ -134,8 +207,7 @@ const CoinManagement = () => {
       enabled: true,
       minInvestment: 10,
       profitRange: { min: 2, max: 8 }
-    },
-    // Más monedas...
+    }
   ]);
 
   return (
@@ -164,11 +236,11 @@ const CoinManagement = () => {
             
             <motion.button
               whileTap={{ scale: 0.95 }}
-              className={\`px-4 py-1 rounded-full text-sm font-ios \${
+              className={
                 coin.enabled 
-                  ? 'bg-ios-green text-white' 
-                  : 'bg-gray-200 text-gray-500'
-              }\`}
+                  ? 'px-4 py-1 rounded-full text-sm font-ios bg-ios-green text-white'
+                  : 'px-4 py-1 rounded-full text-sm font-ios bg-gray-200 text-gray-500'
+              }
             >
               {coin.enabled ? 'Activa' : 'Inactiva'}
             </motion.button>
