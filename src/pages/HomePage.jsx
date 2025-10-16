@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUserStore, usePriceStore, useIndicatorStore, useRewardStore } from '@store';
 import api from '../api/axiosConfig';
-import { IOSLayout, IOSCard, IOSButton } from '../components/ui/IOSComponents';
+import { IOSHeader } from '@/components/ui/ios/Header';
+import { CryptoList } from '@/components/ui/ios/CryptoList';
+import { CloseIcon } from '@/components/icons/AppIcons';
 import toast from 'react-hot-toast';
 
 const cryptoList = [
@@ -17,11 +19,18 @@ const cryptoList = [
   { name: 'Cardano', symbol: 'ADA', price: 0.4729999, day: '2-10%' }
 ];
 
+const TOP_CRYPTOS = [
+  { name: 'Bitcoin', symbol: 'BTC', price: 66240.50, change: 2.4 },
+  { name: 'Ethereum', symbol: 'ETH', price: 3218.75, change: 1.8 },
+  { name: 'BNB', symbol: 'BNB', price: 456.32, change: -0.5 },
+  { name: 'Solana', symbol: 'SOL', price: 128.45, change: 5.2 },
+  { name: 'Tether', symbol: 'USDT', price: 1.00, change: 0.1 },
+];
+
 const HomePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, updateUser } = useUserStore();
-  const [selectedTab, setSelectedTab] = useState('home');
   
   const handleInvest = async (crypto) => {
     try {
@@ -85,25 +94,38 @@ const HomePage = () => {
   };
 
   return (
-    <IOSLayout>
-      <div className="min-h-screen bg-system-background pb-20">
-        {/* Header Balance Section */}
-        <div className="bg-gradient-to-r from-ios-green to-ios-green-light p-6 text-white sticky top-0 z-10">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-white/80 text-sm">Saldo Disponible</p>
-              <p className="text-2xl font-ios-display font-bold">
-                ${(user.balance?.usdt || 0).toFixed(2)} USDT
+    <div className="min-h-screen bg-dark-primary text-white">
+      <IOSHeader 
+        balance={user.balance?.usdt || 0}
+        onDeposit={handleDeposit}
+        onClaimBonus={handleClaimBonus}
+        onSupport={handleSupport}
+      />
+
+      {/* Main Content */}
+      <div className="pb-24">
+        {/* Stats Card */}
+        <div className="p-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-accent/20 to-accent/5 rounded-2xl p-4 border border-accent/20"
+          >
+            <div className="text-center mb-4">
+              <p className="text-text-secondary text-sm">Retiro Disponible</p>
+              <p className="text-2xl font-bold text-accent mt-1">
+                ${((user.balance?.usdt || 0) * 0.8).toFixed(2)}
               </p>
             </div>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleDeposit}
-              className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-ios text-white font-ios"
-            >
-              💰 Depósito
-            </motion.button>
-          </div>
+
+            <div className="bg-dark-secondary/50 backdrop-blur-sm rounded-xl p-3 flex items-center justify-center gap-2">
+              <div className="w-2 h-2 bg-accent rounded-full animate-pulse" />
+              <p className="text-sm text-text-secondary">
+                Próxima ganancia en: <span className="font-medium text-accent">23:39:42</span>
+              </p>
+            </div>
+          </motion.div>
+        </div>
 
           {/* Action Buttons */}
           <div className="flex space-x-4">
@@ -198,58 +220,70 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Misiones Diarias */}
-          {showMissions && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+        {/* Top Cryptos */}
+        <div className="mt-2">
+          <CryptoList cryptos={TOP_CRYPTOS} />
+        </div>
+
+        {/* Misiones Diarias Modal */}
+        {showMissions && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-dark-secondary rounded-2xl w-full max-w-md p-6"
             >
-              <IOSCard className="w-full max-w-md p-6 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-ios-display font-bold">
-                    Misiones Diarias
-                  </h2>
-                  <button onClick={() => setShowMissions(false)}>✕</button>
-                </div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold">Misiones Diarias</h2>
+                <button 
+                  onClick={() => setShowMissions(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10"
+                >
+                  <CloseIcon className="w-5 h-5" />
+                </button>
+              </div>
 
-                <div className="space-y-4">
-                  {rewardStore.dailyMissions.map(mission => {
-                    const isCompleted = rewardStore.completedMissions[mission.id];
-                    return (
-                      <div key={mission.id} className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold">{mission.description}</p>
-                          <p className="text-sm text-text-secondary">
-                            Recompensa: {mission.xp} XP
-                          </p>
-                        </div>
-                        {isCompleted ? (
-                          <span className="text-ios-green">✓</span>
-                        ) : (
-                          <IOSButton
-                            variant="primary"
-                            onClick={() => handleMissionComplete(mission.id)}
-                          >
-                            Reclamar
-                          </IOSButton>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="space-y-4">
+                {rewardStore.dailyMissions?.map(mission => (
+                  <div key={mission.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                    <div>
+                      <p className="font-medium">{mission.description}</p>
+                      <p className="text-sm text-text-secondary">
+                        Recompensa: {mission.xp} XP
+                      </p>
+                    </div>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleMissionComplete(mission.id)}
+                      disabled={rewardStore.completedMissions[mission.id]}
+                      className={`px-4 py-2 rounded-xl font-medium ${
+                        rewardStore.completedMissions[mission.id]
+                          ? 'bg-accent/20 text-accent'
+                          : 'bg-accent text-white'
+                      }`}
+                    >
+                      {rewardStore.completedMissions[mission.id] ? 'Completado' : 'Reclamar'}
+                    </motion.button>
+                  </div>
+                ))}
+              </div>
 
-                <div className="pt-4 border-t border-system-secondary">
-                  <p className="text-center text-text-secondary">
-                    Racha actual: {rewardStore.dailyStreak} días
-                  </p>
-                </div>
-              </IOSCard>
+              <div className="mt-6 pt-6 border-t border-white/10">
+                <p className="text-center text-text-secondary">
+                  Racha actual: <span className="text-accent font-medium">{rewardStore.dailyStreak} días</span>
+                </p>
+              </div>
             </motion.div>
-          )}
-        </motion.div>
+          </motion.div>
+        )}
       </div>
-    </IOSLayout>
+    </div>
   );
 };
 
