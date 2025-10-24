@@ -1,5 +1,34 @@
 // RUTA: frontend/src/routes/index.jsx
+// RUTA: frontend/src/routes/index.jsx (VERSIÓN DE PRUEBA DE AISLAMIENTO)
 
+import React from 'react';
+
+// Ignoramos todas las importaciones y rutas complejas temporalmente.
+
+const AppRoutes = () => {
+  // En lugar de renderizar el complejo árbol de componentes,
+  // devolvemos el elemento más simple posible para verificar si la app puede renderizar ALGO.
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100vh',
+      backgroundColor: '#34C759', // Verde iOS
+      color: 'white',
+      fontSize: '24px',
+      fontFamily: 'sans-serif',
+      fontWeight: 'bold',
+      textAlign: 'center',
+      padding: '20px'
+    }}>
+      Si ves este mensaje verde, la autenticación funciona. El error está en un componente de la UI.
+    </div>
+  );
+};
+
+export default AppRoutes;
+/*
 import React from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -30,8 +59,8 @@ const AppRoutes = () => {
           <Route path="/wheel" element={<WheelPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
-        
-        {/* Rutas sin el layout principal (BottomNavBar) */}
+
+      {/* Rutas sin el layout principal (BottomNavBar) }
         <Route path="/deposit" element={<DepositPage />} />
         <Route path="/history" element={<FinancialHistoryPage />} />
         <Route path="/language" element={<LanguagePage />} />
@@ -44,4 +73,4 @@ const AppRoutes = () => {
   );
 };
 
-export default AppRoutes;
+export default AppRoutes;*/
