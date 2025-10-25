@@ -113,9 +113,11 @@ const WheelPage = () => {
                     }}
                   >
                     {/* Contenedor de Contenido: Usa Flexbox para centrar y orientar el premio. */}
-                    <div className='transform -rotate-90 flex flex-col items-center text-center'>
-                      {reward.icon}
-                      <p className="font-ios font-semibold text-xs mt-2 break-words">{reward.text}</p>
+                    <div className='transform -rotate-90 flex flex-col items-center justify-start pt-4 text-center'>
+                      <p className="font-ios font-semibold text-xs break-words">{reward.text}</p>
+                      <div className="mt-2">
+                        {reward.icon}
+                      </div>
                     </div>
                   </div>
                 </li>
