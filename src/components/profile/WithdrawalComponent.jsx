@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUserStore } from '@/store';
+import useUserStore from '@/store/userStore';
 import { IOSButton } from '../ui/IOSComponents';
 import { FiX } from 'react-icons/fi';
 
@@ -12,16 +12,13 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
   const [walletAddress, setWalletAddress] = useState('');
   const [amount, setAmount] = useState('');
 
-  // Lógica de Negocio: Obtener el saldo retirable y el mínimo de retiro.
   const withdrawableBalance = user?.withdrawableBalance || 0;
-  const minimumWithdrawal = settings?.minimumWithdrawal || 10; // Default a 10 si no está en settings
+  const minimumWithdrawal = settings?.minimumWithdrawal || 10;
 
-  // Lógica de Deshabilitación: El botón se deshabilita si el saldo es menor que el mínimo.
   const isWithdrawalDisabled = useMemo(() => {
     return withdrawableBalance < minimumWithdrawal;
   }, [withdrawableBalance, minimumWithdrawal]);
 
-  // Texto de ayuda (helper text) dinámico.
   const helperText = useMemo(() => {
     if (withdrawableBalance < minimumWithdrawal) {
       return `No posees saldo suficiente para retirar. Mínimo: ${minimumWithdrawal} USDT.`;
@@ -30,14 +27,9 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
   }, [withdrawableBalance, minimumWithdrawal]);
 
   const handleConfirmWithdrawal = () => {
-    // Aquí iría la lógica para llamar a la API de retiro.
-    console.log({
-      withdrawalPassword,
-      walletAddress,
-      amount
-    });
-    // Validaciones adicionales antes de enviar...
-    onClose(); // Cerrar el modal tras la acción.
+    console.log({ withdrawalPassword, walletAddress, amount });
+    // Aquí iría la lógica de validación y llamada a la API de retiro.
+    onClose();
   };
 
   const backdropVariants = {
@@ -53,12 +45,17 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
   return (
     <AnimatePresence>
       {isVisible && (
+        // --- INICIO DE LA CORRECCIÓN CRÍTICA (Z-INDEX) ---
+        // Se incrementa el z-index de z-50 a z-60.
+        // Esto asegura que el contenedor del modal (fondo oscuro y el propio modal)
+        // se renderice en una capa superior a la barra de navegación inferior (que tiene z-50).
         <motion.div
-          className="fixed inset-0 bg-black/60 flex items-end justify-center z-50"
+          className="fixed inset-0 bg-black/60 flex items-end justify-center z-60"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
           exit="hidden"
+          onClick={onClose} // Permite cerrar el modal al hacer clic en el fondo
         >
           <motion.div
             className="w-full max-w-lg bg-system-background rounded-t-ios-2xl p-4 flex flex-col"
@@ -66,7 +63,10 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
             initial="hidden"
             animate="visible"
             exit="hidden"
+            onClick={(e) => e.stopPropagation()} // Evita que el clic dentro del modal se propague al fondo
           >
+            {/* --- FIN DE LA CORRECCIÓN CRÍTICA --- */}
+
             <div className="flex justify-between items-center mb-4">
               <h2 className="font-ios-display text-xl font-bold text-text-primary">
                 Retirar Saldo
@@ -77,7 +77,6 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
             </div>
 
             <div className="space-y-4">
-              {/* Campo Contraseña de Retiro */}
               <div>
                 <label className="font-ios text-sm text-text-secondary ml-1 mb-1 block">Contraseña de Retiro</label>
                 <input
@@ -88,8 +87,6 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
                   className="w-full p-3 bg-internal-card border border-gray-300 rounded-ios focus:outline-none focus:ring-2 focus:ring-ios-green"
                 />
               </div>
-
-              {/* Campo Dirección de Billetera */}
               <div>
                 <label className="font-ios text-sm text-text-secondary ml-1 mb-1 block">Dirección de Billetera USDT (BEP20)</label>
                 <input
@@ -100,8 +97,6 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
                   className="w-full p-3 bg-internal-card border border-gray-300 rounded-ios focus:outline-none focus:ring-2 focus:ring-ios-green"
                 />
               </div>
-
-              {/* Campo Monto a Retirar */}
               <div>
                 <label className="font-ios text-sm text-text-secondary ml-1 mb-1 block">Monto a Retirar</label>
                 <input
@@ -127,7 +122,6 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
                 Confirmar Retiro
               </IOSButton>
             </div>
-
           </motion.div>
         </motion.div>
       )}

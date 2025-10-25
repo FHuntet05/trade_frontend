@@ -15,27 +15,20 @@ const useUserStore = create(
       error: null,
       
       syncUserWithBackend: async (telegramUser) => {
-        console.log('[Depuración] Iniciando syncUserWithBackend...');
         set({ isLoadingAuth: true, error: null });
         try {
-          console.log('[Depuración] Datos de Telegram a enviar:', JSON.stringify(telegramUser));
-          
           const response = await api.post('/auth/sync', { 
             telegramUser,
             timestamp: Date.now(),
             platform: 'telegram_web_app'
           });
-
-          console.log('[Depuración] Respuesta RECIBIDA del backend:', JSON.stringify(response.data));
           
           const { token, user, settings } = response.data;
           
           if (!token || !user) {
-            console.error('[Depuración] ERROR CRÍTICO: Token o User faltan en la respuesta.');
             throw new Error('Respuesta inválida del servidor: faltan token o datos de usuario');
           }
           
-          console.log('[Depuración] Sincronización exitosa. Actualizando estado...');
           set({ 
             user, 
             token, 
@@ -43,14 +36,10 @@ const useUserStore = create(
             settings, 
             isLoadingAuth: false 
           });
-          console.log('[Depuración] Estado actualizado. El usuario debería ver la app.');
           return true;
 
         } catch (error) {
-          console.error('[Depuración] ERROR CATASTRÓFICO en syncUserWithBackend:', error);
           const errorMessage = error.response?.data?.message || error.message || 'Error desconocido durante la sincronización.';
-          console.error('[Depuración] Mensaje de error a guardar:', errorMessage);
-          
           set({ 
             user: null, 
             token: null, 
@@ -62,36 +51,40 @@ const useUserStore = create(
         }
       },
 
-      // --- INICIO DE LA NUEVA LÓGICA (Ruleta) ---
+      // --- INICIO DE LA LÓGICA CRÍTICA PARA LA RULETA ---
       /**
-       * Acción para actualizar los saldos del usuario localmente en el store.
-       * Será llamada por la página de la ruleta después de un giro exitoso.
-       * @param {object} newBalances - Objeto con los nuevos saldos. Ej: { spins: 9, withdrawable: 10.1 }
+       * Acción para actualizar los saldos del usuario de forma centralizada.
+       * Esta función es llamada por 'WheelPage' después de una respuesta exitosa de la API.
+       * Actualiza el estado de manera inmutable para asegurar la reactividad.
+       * @param {object} newBalances - Objeto con los nuevos saldos. Ej: { spins: 9, withdrawable: 10.1, xp: 500 }
        */
       updateUserBalances: (newBalances) => {
         set((state) => {
-          if (!state.user) return state; // No hacer nada si no hay usuario
+          // Si no hay un usuario logueado, no se hace nada para prevenir errores.
+          if (!state.user) return state;
 
-          // Crear un nuevo objeto de usuario para evitar mutaciones directas del estado
-          const updatedUser = { ...state.user };
+          // Se crea una copia profunda del usuario para evitar mutaciones directas del estado.
+          // Esto es una buena práctica en Zustand y React.
+          const updatedUser = JSON.parse(JSON.stringify(state.user));
 
-          // Actualizar saldo de giros
+          // Se actualiza el saldo de giros si viene en la respuesta.
           if (newBalances.spins !== undefined) {
             updatedUser.balance.spins = newBalances.spins;
           }
-          // Actualizar XP (ntx)
+          // Se actualiza el XP (ntx) si viene en la respuesta.
           if (newBalances.xp !== undefined) {
             updatedUser.balance.ntx = newBalances.xp;
           }
-          // Actualizar saldo retirable
+          // Se actualiza el saldo retirable si viene en la respuesta.
           if (newBalances.withdrawable !== undefined) {
             updatedUser.withdrawableBalance = newBalances.withdrawable;
           }
 
+          // Se devuelve el nuevo estado con el objeto de usuario actualizado.
           return { user: updatedUser };
         });
       },
-      // --- FIN DE LA NUEVA LÓGICA (Ruleta) ---
+      // --- FIN DE LA LÓGICA CRÍTICA PARA LA RULETA ---
 
       logout: () => {
         set({
@@ -106,7 +99,6 @@ const useUserStore = create(
     {
       name: 'ai-brok-trade-pro-user-storage',
       storage: createJSONStorage(() => localStorage),
-      // Ahora el token y el usuario completo se persisten para una recarga más fluida
       partialize: (state) => ({ token: state.token, user: state.user, settings: state.settings }),
     }
   )

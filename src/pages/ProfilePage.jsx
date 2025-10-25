@@ -1,3 +1,4 @@
+// RUTA: frontend/src/pages/ProfilePage.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -11,22 +12,16 @@ import {
   AboutSection,
   LogoutButton
 } from '../components/profile/ProfileComponents';
-// --- INICIO DE LA MODIFICACIÓN ---
-// 1. Se eliminan las importaciones de los modales antiguos y se importa el nuevo componente.
 import { IOSLayout, IOSBackButton, IOSButton } from '../components/ui/IOSComponents';
 import WithdrawalComponent from '../components/profile/WithdrawalComponent';
-// --- FIN DE LA MODIFICACIÓN ---
 import api from '../api/axiosConfig';
 
-// Estados locales
+// El estado local se mantiene sin cambios.
 const ProfileState = () => {
   const [withdrawalPassword, setWithdrawalPassword] = useState('');
   const [wallet, setWallet] = useState('');
   const [loading, setLoading] = useState(false);
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // 2. Se simplifica el estado del modal a un booleano para el nuevo componente.
   const [isWithdrawalModalVisible, setIsWithdrawalModalVisible] = useState(false);
-  // --- FIN DE LA MODIFICACIÓN ---
   
   return {
     withdrawalPassword,
@@ -35,10 +30,8 @@ const ProfileState = () => {
     setWallet,
     loading,
     setLoading,
-    // --- INICIO DE LA MODIFICACIÓN ---
     isWithdrawalModalVisible,
     setIsWithdrawalModalVisible
-    // --- FIN DE LA MODIFICACIÓN ---
   };
 };
 
@@ -53,10 +46,8 @@ const ProfilePage = () => {
     setWallet,
     loading,
     setLoading,
-    // --- INICIO DE LA MODIFICACIÓN ---
     isWithdrawalModalVisible,
     setIsWithdrawalModalVisible
-    // --- FIN DE LA MODIFICACIÓN ---
   } = ProfileState();
 
   useEffect(() => {
@@ -65,13 +56,12 @@ const ProfilePage = () => {
     }
   }, [user]);
 
+  // Las funciones de manejo de eventos (handleAvatarChange, handlePasswordSave, etc.) se mantienen sin cambios.
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const formData = new FormData();
     formData.append('avatar', file);
-
     try {
       setLoading(true);
       const response = await api.post('/user/avatar', formData);
@@ -88,9 +78,7 @@ const ProfilePage = () => {
   const handlePasswordSave = async () => {
     try {
       setLoading(true);
-      await api.post('/user/withdrawal-password', {
-        password: withdrawalPassword
-      });
+      await api.post('/user/withdrawal-password', { password: withdrawalPassword });
       setWithdrawalPassword('');
     } catch (error) {
       console.error('Error al guardar contraseña:', error);
@@ -102,12 +90,8 @@ const ProfilePage = () => {
   const handleWalletSave = async () => {
     try {
       setLoading(true);
-      await api.post('/user/wallet', {
-        address: wallet
-      });
-      useUserStore.setState(state => ({
-        user: { ...state.user, wallet }
-      }));
+      await api.post('/user/wallet', { address: wallet });
+      useUserStore.setState(state => ({ user: { ...state.user, wallet } }));
     } catch (error) {
       console.error('Error al guardar billetera:', error);
     } finally {
@@ -138,23 +122,35 @@ const ProfilePage = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex-1 p-4 space-y-6 pb-24" // Añadido padding bottom
+            className="flex-1 p-4 space-y-6 pb-24"
           >
             <ProfileHeader
               user={user}
               onAvatarChange={handleAvatarChange}
             />
 
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
-            {/* 3. Se añade un botón prominente para abrir el modal de retiro. */}
-            <IOSButton 
-              variant="primary" 
-              className="w-full"
-              onClick={() => setIsWithdrawalModalVisible(true)}
-            >
-              Retirar Saldo
-            </IOSButton>
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
+            {/* --- INICIO DE LA MODIFICACIÓN CRÍTICA (Bloque de Acciones Financieras) --- */}
+            {/*
+              - Se crea un contenedor grid con dos columnas para alinear los botones.
+              - El botón "Depositar" es nuevo y su 'onClick' navega a la página de depósito.
+              - El botón "Retirar" se mantiene, y su 'onClick' abre el modal de retiro.
+              - Se ajusta el texto de los botones para ser más conciso y encajar mejor.
+            */}
+            <div className="grid grid-cols-2 gap-4">
+              <IOSButton 
+                variant="primary" 
+                onClick={() => navigate('/deposit')}
+              >
+                Depositar
+              </IOSButton>
+              <IOSButton 
+                variant="secondary" // Usamos un variant secundario para diferenciar la acción.
+                onClick={() => setIsWithdrawalModalVisible(true)}
+              >
+                Retirar
+              </IOSButton>
+            </div>
+            {/* --- FIN DE LA MODIFICACIÓN CRÍTICA --- */}
 
             <SecuritySection
               withdrawalPassword={withdrawalPassword}
@@ -182,13 +178,11 @@ const ProfilePage = () => {
         </div>
       </IOSLayout>
       
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
-      {/* 4. Se renderiza el nuevo componente modal, pasando el estado y la función de cierre. */}
+      {/* El componente de retiro se mantiene, su visibilidad es controlada por el estado. */}
       <WithdrawalComponent 
         isVisible={isWithdrawalModalVisible}
         onClose={() => setIsWithdrawalModalVisible(false)}
       />
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
     </>
   );
 };

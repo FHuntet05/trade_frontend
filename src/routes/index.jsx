@@ -16,6 +16,8 @@ import AboutPage from '@/pages/AboutPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import DepositPage from '@/pages/DepositPage';
 import FinancialHistoryPage from '@/pages/FinancialHistoryPage';
+import PurchasePlanPage from '@/pages/PurchasePlanPage';
+import PendingDepositPage from '../pages/PendingDepositPage';
 
 const AppRoutes = () => {
   return (
@@ -28,6 +30,8 @@ const AppRoutes = () => {
         <Route path="/home" element={<HomePage />} />
         <Route path="/market" element={<MarketPage />} />
         <Route path="/quantitative" element={<QuantitativePage />} />
+        <Route path="/quantitative/purchase/:planId" element={<PurchasePlanPage />} />
+        <Route path="/deposit/pending/:ticketId" element={<PendingDepositPage />} />
         <Route path="/wheel" element={<WheelPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
@@ -36,6 +40,7 @@ const AppRoutes = () => {
       <Route path="/deposit" element={<DepositPage />} />
       <Route path="/history" element={<FinancialHistoryPage />} />
       <Route path="/language" element={<LanguagePage />} />
+      
       <Route path="/support" element={<SupportPage />} />
       <Route path="/about" element={<AboutPage />} />
 
