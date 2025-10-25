@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { IOSCard, IOSSegmentedControl } from '../components/ui/IOSComponents';
 import Accordion from '../components/ui/Accordion';
 import api from '@/api/axiosConfig'; // Se importa el cliente de API.
-import { Loader } from '@/components/common/Loader'; // Se importa un componente de carga.
+import Loader from '@/components/common/Loader'; // Se importa un componente de carga.
 
 const QuantitativePage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState(0); // El estado del filtro se mantiene.
