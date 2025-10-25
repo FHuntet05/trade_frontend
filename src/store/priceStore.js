@@ -2,55 +2,47 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import api from '@/api/axiosConfig';
 
-const CACHE_DURATION = 3 * 60 * 1000; // 3 minutos en milisegundos
+// --- INICIO DE LA CORRECCIÓN CRÍTICA ---
+// Se elimina la lógica de caché y fetch a la API REST.
+// El store ahora actúa como un simple contenedor de estado que es actualizado
+// por el hook de WebSocket.
+// --- FIN DE LA CORRECCIÓN CRÍTICA ---
 
 const usePriceStore = create(
   persist(
     (set, get) => ({
-      prices: {},
-      lastUpdate: null,
-      isLoading: false,
-
-      fetchPrices: async () => {
-        const now = Date.now();
-        const lastUpdate = get().lastUpdate;
-        const isLoading = get().isLoading;
-
-        if (isLoading || (lastUpdate && (now - lastUpdate < CACHE_DURATION))) {
-          return;
-        }
-
-        set({ isLoading: true });
-
-        try {
-          const response = await api.get('/prices'); // Endpoint que crearemos en el backend
-          if (response.data && response.data.success) {
-            
-            const newPrices = response.data.data.reduce((acc, crypto) => {
-              acc[crypto.ticker] = crypto.priceUsd;
-              return acc;
-            }, {});
-
-            set({
-              prices: newPrices,
-              lastUpdate: Date.now(),
-              isLoading: false,
-            });
-          }
-        } catch (error) {
-          console.error('Error fetching crypto prices:', error);
-          set({ isLoading: false });
-        }
+      prices: {
+        // Inicializamos con valores por defecto para evitar errores de renderizado
+        BTC: 0,
+        ETH: 0,
+        BNB: 0,
+        SOL: 0,
+        USDT: 1.0,
       },
+      
+      // --- INICIO DE LA NUEVA LÓGICA ---
+      /**
+       * Acción para actualizar los precios en el store.
+       * Combina los precios existentes con los nuevos recibidos del WebSocket.
+       * @param {object} newPrices - Un objeto con los nuevos precios, ej: { BTC: 65000, ETH: 3000 }
+       */
+      setPrices: (newPrices) => {
+        set((state) => ({
+          prices: { ...state.prices, ...newPrices }
+        }));
+      },
+      // --- FIN DE LA NUEVA LÓGICA ---
+
+      // La función fetchPrices y los estados lastUpdate/isLoading se eliminan por ser obsoletos.
     }),
     {
       name: 'ai-brok-trade-pro-price-storage',
       storage: createJSONStorage(() => localStorage),
+      // Solo persistimos los precios para que el usuario vea los últimos valores
+      // conocidos al recargar la app, antes de que el WebSocket conecte.
       partialize: (state) => ({
         prices: state.prices,
-        lastUpdate: state.lastUpdate,
       }),
     }
   )
