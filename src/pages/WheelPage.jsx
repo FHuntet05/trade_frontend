@@ -1,5 +1,5 @@
 // RUTA: frontend/src/pages/WheelPage.jsx
-// --- VERSIÓN FINAL, VALIDADA Y COMENTADA PARA TRANSFERENCIA DE CONOCIMIENTO ---
+// --- VERSIÓN FINAL CON CORRECCIÓN VISUAL CRÍTICA EN LA RULETA ---
 
 import React, { useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 import api from '@/api/axiosConfig';
 
-// Configuración visual para el renderizado. El backend es la fuente de la verdad para los premios.
+// Configuración visual. El backend sigue siendo la fuente de la verdad para los premios.
 const rewards = [
     { text: '1 USDT', icon: <img src="/assets/images/USDT.png" alt="USDT" className="w-8 h-8" /> },
     { text: '+1 Giro', icon: <FiGift className="w-8 h-8 text-yellow-500"/> },
@@ -21,8 +21,8 @@ const rewards = [
     { text: 'NADA', icon: <span className="text-2xl">😢</span> },
     { text: '10 USDT', icon: <img src="/assets/images/USDT.png" alt="USDT" className="w-8 h-8" /> },
 ];
-const SEGMENT_COUNT = rewards.length; // -> 8 segmentos
-const SEGMENT_ANGLE = 360 / SEGMENT_COUNT; // -> 45 grados por segmento
+const SEGMENT_COUNT = rewards.length;
+const SEGMENT_ANGLE = 360 / SEGMENT_COUNT; // 45 grados
 
 const WheelPage = () => {
   const { user, updateUserBalances } = useUserStore();
@@ -40,11 +40,6 @@ const WheelPage = () => {
     try {
       const response = await api.post('/api/wheel/spin');
       const { resultIndex, newBalances, prize } = response.data;
-      
-      // Lógica de rotación:
-      // 1. (5 * 360): Da 5 vueltas completas para crear suspense.
-      // 2. (360 - (resultIndex * SEGMENT_ANGLE)): Gira en sentido contrario a las agujas del reloj para alinear el segmento ganador con el marcador.
-      // 3. -(SEGMENT_ANGLE / 2): Centra el premio exactamente debajo del marcador.
       const finalAngle = (5 * 360) + (360 - (resultIndex * SEGMENT_ANGLE) - (SEGMENT_ANGLE / 2));
 
       await wheelControl.start({
@@ -95,7 +90,8 @@ const WheelPage = () => {
               <div className="w-full h-full bg-ios-green shadow-lg" />
             </div>
 
-             <motion.ul
+            {/* --- INICIO DE LA ESTRUCTURA VISUAL CORREGIDA --- */}
+            <motion.ul
               className="w-full h-full rounded-full relative overflow-hidden border-4 border-white shadow-xl"
               animate={wheelControl}
               initial={{ rotate: 0 }}
@@ -106,38 +102,27 @@ const WheelPage = () => {
                   className="absolute top-0 left-0 w-1/2 h-1/2 origin-bottom-right"
                   style={{
                     transform: `rotate(${index * SEGMENT_ANGLE}deg) skewY(-${90 - SEGMENT_ANGLE}deg)`,
-                    // Lógica para alternar el fondo entre blanco y gris claro, como solicitaste.
                     backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#F2F2F7',
                   }}
                 >
+                  {/* Contenedor de Corrección: Este div anula la transformación del padre. */}
                   <div
-                    // Se aplica la transformación inversa para enderezar el contenido
-                    className="absolute w-full h-full"
+                    className="absolute w-full h-full flex items-center justify-center"
                     style={{
                       transform: `skewY(${90 - SEGMENT_ANGLE}deg) rotate(${SEGMENT_ANGLE / 2}deg)`,
                     }}
                   >
-                    {/* 
-                      CONTENEDOR DEL CONTENIDO CORREGIDO:
-                      1. flex, flex-col-reverse: Apila los elementos verticalmente y pone el último (el ícono) abajo.
-                      2. items-center, justify-center: Centra todo perfectamente.
-                      3. -rotate-90: Orienta el bloque completo hacia afuera.
-                    */}
-                    <div className='w-full h-full flex flex-col-reverse items-center justify-center transform -rotate-90 p-1'>
-                        <div className="text-center">
-                            {reward.icon}
-                        </div>
-                        <p className="font-ios font-semibold text-xs mt-1 break-words text-center">
-                            {reward.text}
-                        </p>
+                    {/* Contenedor de Contenido: Usa Flexbox para centrar y orientar el premio. */}
+                    <div className='transform -rotate-90 flex flex-col items-center text-center'>
+                      {reward.icon}
+                      <p className="font-ios font-semibold text-xs mt-2 break-words">{reward.text}</p>
                     </div>
-
                   </div>
                 </li>
               ))}
             </motion.ul>
+            {/* --- FIN DE LA ESTRUCTURA VISUAL CORREGIDA --- */}
           </div>
-
         </div>
 
         <IOSButton
