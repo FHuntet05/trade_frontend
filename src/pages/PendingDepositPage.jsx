@@ -1,16 +1,20 @@
 // RUTA: frontend/src/pages/PendingDepositPage.jsx
-// --- INICIO DE LA NUEVA PÁGINA DE DEPÓSITO PENDIENTE ---
+// --- INICIO DE LA SOLUCIÓN DEFINITIVA CON IMPORTACIÓN DINÁMICA ---
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react'; // 1. Se añaden 'lazy' y 'Suspense' de React.
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { QRCode } from 'qrcode.react'; 
+// 2. La importación 'import { QRCode } from 'qrcode.react';' SE ELIMINA de aquí.
 import useCountdown from '@/hooks/useCountdown';
 import api from '@/api/axiosConfig';
 import { IOSLayout, IOSBackButton, IOSButton, IOSCard } from '@/components/ui/IOSComponents';
-import  Loader  from '@/components/common/Loader';
+import Loader from '@/components/common/Loader';
 import { FiCopy } from 'react-icons/fi';
+
+// 3. Se define el componente QRCode para que se cargue de forma "perezosa" (lazy).
+//    React no cargará el código de esta librería hasta que sea estrictamente necesario.
+const QRCode = lazy(() => import('qrcode.react'));
 
 const PendingDepositPage = () => {
   const { ticketId } = useParams();
@@ -25,7 +29,6 @@ const PendingDepositPage = () => {
 
   useEffect(() => {
     const fetchTicketDetails = async () => {
-      // NOTA: Asume un nuevo endpoint GET /api/user/pending-purchase/:ticketId
       try {
         const response = await api.get(`/api/user/pending-purchase/${ticketId}`);
         if (response.data.success) {
@@ -51,7 +54,6 @@ const PendingDepositPage = () => {
     setIsConfirming(true);
     toast.loading('Verificando pago...');
     try {
-      // Llama al endpoint que ya existe para la confirmación manual
       const response = await api.post(`/api/quantitative/confirm-manual/${ticketId}`);
       toast.dismiss();
       toast.success(response.data.message || '¡Pago verificado y compra completada!');
@@ -93,7 +95,13 @@ const PendingDepositPage = () => {
           <IOSCard className="flex flex-col items-center">
             <p className="text-sm text-text-secondary mb-4">Escanea o copia la dirección de depósito</p>
             <div className="p-2 bg-white rounded-lg">
-              <QRCode value={ticket.depositAddress} size={160} />
+              {/* 4. Se envuelve el componente QRCode en <Suspense>.
+                  - 'fallback' define qué mostrar mientras el código del QR se descarga.
+                  - Esto evita que la página crashee o muestre un error.
+              */}
+              <Suspense fallback={<div style={{ width: 160, height: 160, backgroundColor: '#f0f0f0', borderRadius: '8px' }} />}>
+                <QRCode value={ticket.depositAddress} size={160} />
+              </Suspense>
             </div>
             <div 
               className="mt-4 p-3 bg-system-secondary rounded-ios w-full text-center font-mono text-sm break-all cursor-pointer flex items-center justify-between"
@@ -123,4 +131,3 @@ const PendingDepositPage = () => {
 };
 
 export default PendingDepositPage;
-// --- FIN DE LA NUEVA PÁGINA DE DEPÓSITO PENDIENTE ---
