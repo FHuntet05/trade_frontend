@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import QRCode from 'qrcode.react';
+import { QRCode } from 'qrcode.react'; 
 import useCountdown from '@/hooks/useCountdown';
 import api from '@/api/axiosConfig';
 import { IOSLayout, IOSBackButton, IOSButton, IOSCard } from '@/components/ui/IOSComponents';
