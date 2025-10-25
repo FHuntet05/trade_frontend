@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import useUserStore from '@/store/userStore';
 import api from '@/api/axiosConfig';
 import { IOSLayout, IOSBackButton, IOSButton, IOSCard } from '@/components/ui/IOSComponents';
-import { Loader } from '@/components/common/Loader';
+import  Loader  from '@/components/common/Loader';
 import { formatters } from '@/utils/formatters';
 
 // Hook simple para debouncing

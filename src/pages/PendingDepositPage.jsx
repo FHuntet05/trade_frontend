@@ -9,7 +9,7 @@ import QRCode from 'qrcode.react';
 import useCountdown from '@/hooks/useCountdown';
 import api from '@/api/axiosConfig';
 import { IOSLayout, IOSBackButton, IOSButton, IOSCard } from '@/components/ui/IOSComponents';
-import { Loader } from '@/components/common/Loader';
+import  Loader  from '@/components/common/Loader';
 import { FiCopy } from 'react-icons/fi';
 
 const PendingDepositPage = () => {
