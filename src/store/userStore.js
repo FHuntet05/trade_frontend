@@ -6,13 +6,13 @@ import api from '../api/axiosConfig';
 
 const useUserStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null, 
       token: null, 
       isAuthenticated: false, 
       isLoadingAuth: true, 
       settings: null,
-      error: null, // <-- AÑADIMOS UN ESTADO PARA EL ERROR
+      error: null,
       
       syncUserWithBackend: async (telegramUser) => {
         console.log('[Depuración] Iniciando syncUserWithBackend...');
@@ -56,11 +56,42 @@ const useUserStore = create(
             token: null, 
             isAuthenticated: false, 
             isLoadingAuth: false,
-            error: errorMessage // <-- GUARDAMOS EL MENSAJE DE ERROR
+            error: errorMessage
           });
           return false;
         }
       },
+
+      // --- INICIO DE LA NUEVA LÓGICA (Ruleta) ---
+      /**
+       * Acción para actualizar los saldos del usuario localmente en el store.
+       * Será llamada por la página de la ruleta después de un giro exitoso.
+       * @param {object} newBalances - Objeto con los nuevos saldos. Ej: { spins: 9, withdrawable: 10.1 }
+       */
+      updateUserBalances: (newBalances) => {
+        set((state) => {
+          if (!state.user) return state; // No hacer nada si no hay usuario
+
+          // Crear un nuevo objeto de usuario para evitar mutaciones directas del estado
+          const updatedUser = { ...state.user };
+
+          // Actualizar saldo de giros
+          if (newBalances.spins !== undefined) {
+            updatedUser.balance.spins = newBalances.spins;
+          }
+          // Actualizar XP (ntx)
+          if (newBalances.xp !== undefined) {
+            updatedUser.balance.ntx = newBalances.xp;
+          }
+          // Actualizar saldo retirable
+          if (newBalances.withdrawable !== undefined) {
+            updatedUser.withdrawableBalance = newBalances.withdrawable;
+          }
+
+          return { user: updatedUser };
+        });
+      },
+      // --- FIN DE LA NUEVA LÓGICA (Ruleta) ---
 
       logout: () => {
         set({
@@ -73,9 +104,10 @@ const useUserStore = create(
       }
     }),
     {
-      name: 'ai-brok-trade-pro-user-storage', // Nombre actualizado para evitar conflictos de caché
+      name: 'ai-brok-trade-pro-user-storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ token: state.token }),
+      // Ahora el token y el usuario completo se persisten para una recarga más fluida
+      partialize: (state) => ({ token: state.token, user: state.user, settings: state.settings }),
     }
   )
 );

@@ -1,10 +1,14 @@
 // RUTA: src/pages/HomePage.jsx
 
-import React, { useEffect } from 'react';
+import React from 'react'; // Se elimina useEffect ya que no se usará
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useUserStore, usePriceStore } from '@/store';
+// --- INICIO DE LA CORRECCIÓN CRÍTICA ---
+// Se corrigen las importaciones para que sean explícitas y se elimina la importación de 'usePriceStore' desde un índice.
+import useUserStore from '@/store/userStore';
+import usePriceStore from '@/store/priceStore';
+// --- FIN DE LA CORRECCIÓN CRÍTICA ---
 import { IOSHeader } from '@/components/ui/ios/Header';
 import { CryptoList } from '@/components/ui/ios/CryptoList';
 import { FiGift, FiMessageSquare } from 'react-icons/fi';
@@ -14,27 +18,20 @@ const HomePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useUserStore();
-  const { prices, fetchPrices } = usePriceStore(); // Usamos fetchPrices en lugar de la simulación
+  // --- INICIO DE LA CORRECCIÓN CRÍTICA ---
+  // Se obtiene únicamente 'prices' del store. 'fetchPrices' ya no existe.
+  const { prices } = usePriceStore();
 
-  useEffect(() => {
-    // Usamos fetchPrices que tiene la lógica de caché de 3 minutos
-    const interval = setInterval(() => {
-      fetchPrices();
-    }, 60000); // Podemos llamarlo cada minuto, la caché interna lo protegerá
-    fetchPrices(); // Llamada inicial
-
-    return () => clearInterval(interval);
-  }, [fetchPrices]);
+  // Se ELIMINA por completo el 'useEffect' que intentaba llamar a 'fetchPrices'.
+  // La actualización de precios ahora es gestionada globalmente por el hook 'usePriceWebSocket' en App.jsx.
+  // --- FIN DE LA CORRECCIÓN CRÍTICA ---
 
   const handleDeposit = () => navigate('/deposit');
-  const handleClaimBonus = () => navigate('/bonus');
+  const handleClaimBonus = () => navigate('/bonus'); // Esta ruta deberá ser creada
   const handleSupport = () => navigate('/support');
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Se elimina la función handleViewMarket ya que no se usará.
-  // const handleViewMarket = () => navigate('/market');
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const topCryptos = [
+    // Los datos ahora se leen directamente del 'prices' store, que es actualizado por el WebSocket.
     { name: 'Bitcoin', symbol: 'BTC', price: prices.BTC || 0, change: 2.4 },
     { name: 'Ethereum', symbol: 'ETH', price: prices.ETH || 0, change: 1.8 },
     { name: 'BNB', symbol: 'BNB', price: prices.BNB || 0, change: -0.5 },
@@ -42,8 +39,10 @@ const HomePage = () => {
     { name: 'Tether', symbol: 'USDT', price: prices.USDT || 1.00, change: 0.0 },
   ];
   
-  // Accedemos de forma segura al balance del usuario.
+  // Se accede de forma segura al saldo del usuario.
   const userBalance = user?.balance?.usdt || 0;
+  // Se accede al nuevo saldo retirable.
+  const withdrawableBalance = user?.withdrawableBalance || 0;
 
   return (
     <div className="min-h-screen bg-system-background">
@@ -78,12 +77,14 @@ const HomePage = () => {
           transition={{ delay: 0.1 }}
           className="bg-internal-card rounded-ios-card p-4 shadow-ios-card text-center"
         >
+          {/* Se usa el nuevo campo 'withdrawableBalance' */}
           <p className="text-text-secondary text-sm mb-1 font-ios">{t('home.availableWithdrawal')}</p>
           <p className="text-3xl font-ios-display font-bold text-text-primary mb-3">
-            {formatters.formatCurrency(userBalance)}
+            {formatters.formatCurrency(withdrawableBalance)}
           </p>
           <div className="bg-system-secondary rounded-ios p-3 inline-flex items-center justify-center">
             <p className="text-text-secondary text-sm font-ios">
+              {/* NOTA: Este temporizador sigue siendo estático. Se corregirá en un paso posterior. */}
               ⏰ {t('home.nextProfitIn')} <span className="font-semibold text-text-primary">23:39:42</span>
             </p>
           </div>
@@ -91,14 +92,11 @@ const HomePage = () => {
       </div>
 
       <div className="mt-4 pb-24">
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
-        {/* Se elimina el botón "Ver Más" y su contenedor flex. El título ahora ocupa todo el ancho. */}
         <div className="px-4 mb-3">
           <h2 className="font-ios-display text-xl font-bold text-text-primary">
-            {t('home.marketWidgetTitle')}
+            Mercado en Vivo
           </h2>
         </div>
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
         <CryptoList cryptos={topCryptos} />
       </div>
     </div>
