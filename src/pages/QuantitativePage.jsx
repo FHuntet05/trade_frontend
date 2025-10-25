@@ -24,13 +24,17 @@ const QuantitativePage = () => {
     const fetchPlans = async () => {
       try {
         setIsLoading(true);
-        const response = await api.get('/api/quantitative/plans');
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Se elimina el prefijo '/api' duplicado. La llamada ahora es relativa a la baseURL.
+        const response = await api.get('/quantitative/plans'); 
+        // --- FIN DE LA CORRECCIÓN ---
         if (response.data.success) {
           setPlans(response.data.data);
         } else {
           throw new Error('La respuesta de la API no fue exitosa.');
         }
       } catch (err) {
+        // La ruta del error ahora mostrará la ruta correcta.
         setError(err.response?.data?.message || 'No se pudieron cargar los planes.');
         console.error("Error fetching quantitative plans:", err);
       } finally {

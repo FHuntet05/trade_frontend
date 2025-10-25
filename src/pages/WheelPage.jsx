@@ -1,16 +1,16 @@
 // RUTA: frontend/src/pages/WheelPage.jsx
-// --- INICIO DE LA VERSIÓN FINAL Y CORREGIDA ---
+// --- VERSIÓN FINAL, VALIDADA Y COMENTADA PARA TRANSFERENCIA DE CONOCIMIENTO ---
 
 import React, { useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import useUserStore from '@/store/userStore';
 import { IOSButton, IOSCard } from '../components/ui/IOSComponents';
-import { FiCopy, FiGift, FiPlusCircle } from 'react-icons/fi';
+import { FiCopy, FiGift } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 import api from '@/api/axiosConfig';
 
-// Configuración visual para el renderizado. El backend sigue siendo la fuente de la verdad para los premios.
+// Configuración visual para el renderizado. El backend es la fuente de la verdad para los premios.
 const rewards = [
     { text: '1 USDT', icon: <img src="/assets/images/USDT.png" alt="USDT" className="w-8 h-8" /> },
     { text: '+1 Giro', icon: <FiGift className="w-8 h-8 text-yellow-500"/> },
@@ -21,8 +21,8 @@ const rewards = [
     { text: 'NADA', icon: <span className="text-2xl">😢</span> },
     { text: '10 USDT', icon: <img src="/assets/images/USDT.png" alt="USDT" className="w-8 h-8" /> },
 ];
-const SEGMENT_COUNT = rewards.length;
-const SEGMENT_ANGLE = 360 / SEGMENT_COUNT; // 45 grados por segmento
+const SEGMENT_COUNT = rewards.length; // -> 8 segmentos
+const SEGMENT_ANGLE = 360 / SEGMENT_COUNT; // -> 45 grados por segmento
 
 const WheelPage = () => {
   const { user, updateUserBalances } = useUserStore();
@@ -40,6 +40,11 @@ const WheelPage = () => {
     try {
       const response = await api.post('/api/wheel/spin');
       const { resultIndex, newBalances, prize } = response.data;
+      
+      // Lógica de rotación:
+      // 1. (5 * 360): Da 5 vueltas completas para crear suspense.
+      // 2. (360 - (resultIndex * SEGMENT_ANGLE)): Gira en sentido contrario a las agujas del reloj para alinear el segmento ganador con el marcador.
+      // 3. -(SEGMENT_ANGLE / 2): Centra el premio exactamente debajo del marcador.
       const finalAngle = (5 * 360) + (360 - (resultIndex * SEGMENT_ANGLE) - (SEGMENT_ANGLE / 2));
 
       await wheelControl.start({
@@ -77,8 +82,8 @@ const WheelPage = () => {
 
         <IOSCard className="w-full mb-6">
           <div className="flex justify-between items-center">
-            <span className="font-ios text-text-secondary">Balance de XP</span>
-            <span className="font-ios-display text-3xl font-bold text-ios-green">{user?.balance?.ntx.toFixed(2) || '0.00'}</span>
+            <span className="font-ios text-text-secondary">Giros disponibles</span>
+            <span className="font-ios-display text-3xl font-bold text-ios-green">{availableSpins}</span>
           </div>
         </IOSCard>
         
@@ -90,7 +95,7 @@ const WheelPage = () => {
               <div className="w-full h-full bg-ios-green shadow-lg" />
             </div>
 
-            {/* --- INICIO DE LA ESTRUCTURA VISUAL CORREGIDA --- */}
+            {/* --- ESTRUCTURA VISUAL DE LA RULETA --- */}
             <motion.ul
               className="w-full h-full rounded-full relative overflow-hidden border-4 border-white shadow-xl"
               animate={wheelControl}
@@ -99,19 +104,28 @@ const WheelPage = () => {
               {rewards.map((reward, index) => (
                 <li
                   key={index}
+                  // Punto Clave 1: `origin-bottom-right` hace que el pivote de la transformación
+                  // sea el centro del círculo de la ruleta.
                   className="absolute top-0 left-0 w-1/2 h-1/2 origin-bottom-right"
                   style={{
+                    // Punto Clave 2: La transformación que crea el segmento.
+                    // `rotate` posiciona el segmento en su lugar.
+                    // `skewY` deforma el cuadrado en un sector triangular. El cálculo `90 - SEGMENT_ANGLE`
+                    // (90-45=45) es la fórmula para obtener el ángulo de sesgado correcto.
                     transform: `rotate(${index * SEGMENT_ANGLE}deg) skewY(-${90 - SEGMENT_ANGLE}deg)`,
-                    backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#F2F2F7',
+                    backgroundColor: index % 2 === 0 ? '#F2F2F7' : '#FFFFFF',
                   }}
                 >
                   <div
                     className="absolute w-full h-full flex flex-col items-center justify-center text-center p-4"
                     style={{
-                      // Se aplica la transformación inversa para enderezar el contenido
+                      // Punto Clave 3: La transformación inversa para el contenido.
+                      // `skewY` positivo anula el sesgado del contenedor padre, enderezando el contenido.
+                      // `rotate` centra el contenido dentro del segmento.
                       transform: `skewY(${90 - SEGMENT_ANGLE}deg) rotate(${SEGMENT_ANGLE / 2}deg)`,
                     }}
                   >
+                    {/* Punto Clave 4: Rotación final para orientar el texto e icono hacia afuera. */}
                     <div className='transform -rotate-90'>
                         {reward.icon}
                         <p className="font-ios font-semibold text-xs mt-2 break-words">{reward.text}</p>
@@ -120,10 +134,9 @@ const WheelPage = () => {
                 </li>
               ))}
             </motion.ul>
-            {/* --- FIN DE LA ESTRUCTURA VISUAL CORREGIDA --- */}
+            {/* --- FIN DE LA ESTRUCTURA VISUAL --- */}
           </div>
 
-          <p className="font-ios text-text-secondary mt-4">Giros restantes: <span className="font-bold text-ios-green text-lg">{availableSpins}</span></p>
         </div>
 
         <IOSButton
@@ -136,25 +149,18 @@ const WheelPage = () => {
         </IOSButton>
 
         <IOSCard className="w-full">
-          <h3 className="font-ios-display font-semibold text-lg mb-4 text-text-primary">Misiones de Giros</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center bg-system-secondary p-3 rounded-ios">
-               <div className="flex items-center gap-3"><FiPlusCircle className="w-5 h-5 text-ios-green" /><span className="font-ios text-sm text-text-secondary">Invita a 10 amigos</span></div>
-               <span className="font-semibold text-ios-green">+5 Giros</span>
-             </div>
-             <div className="flex justify-between items-center bg-system-secondary p-3 rounded-ios">
-               <div className="flex items-center gap-3"><FiPlusCircle className="w-5 h-5 text-ios-green" /><span className="font-ios text-sm text-text-secondary">Invita a 50 amigos</span></div>
-               <span className="font-semibold text-ios-green">+30 Giros</span>
-             </div>
-          </div>
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={handleCopyReferralLink}
-            className="w-full mt-4 bg-ios-green/10 text-ios-green py-3 rounded-ios font-ios text-center flex items-center justify-center gap-2"
-          >
-            <FiCopy />
-            Copiar mi enlace de referido
-          </motion.button>
+            <h3 className="font-ios-display font-semibold text-lg mb-4 text-text-primary">Gana más giros</h3>
+            <p className="font-ios text-sm text-text-secondary mb-4">
+                Obtienes un giro por cada amigo que se una con tu enlace. ¡Comparte para ganar!
+            </p>
+            <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={handleCopyReferralLink}
+                className="w-full bg-ios-green/10 text-ios-green py-3 rounded-ios font-ios text-center flex items-center justify-center gap-2"
+            >
+                <FiCopy />
+                Copiar mi enlace de referido
+            </motion.button>
         </IOSCard>
       </div>
     </div>
@@ -162,4 +168,3 @@ const WheelPage = () => {
 };
 
 export default WheelPage;
-// --- FIN DE LA VERSIÓN FINAL Y CORREGIDA ---
