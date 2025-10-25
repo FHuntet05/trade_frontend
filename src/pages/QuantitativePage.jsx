@@ -1,6 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { IOSCard, IOSSegmentedControl } from '../components/ui/IOSComponents';
+// --- INICIO DE LA MODIFICACIÓN ---
+// 1. Se importa el nuevo componente Accordion.
+import Accordion from '../components/ui/Accordion';
+// --- FIN DE LA MODIFICACIÓN ---
 
 const QuantitativePage = () => {
   const [selectedPeriod, setSelectedPeriod] = React.useState(0);
@@ -23,9 +27,21 @@ const QuantitativePage = () => {
   return (
     <div className="min-h-screen bg-system-background ios-safe-top pb-20">
       <div className="px-4 pt-6">
-        <h1 className="text-2xl font-ios-display font-bold text-text-primary mb-6">
+        <h1 className="text-2xl font-ios-display font-bold text-text-primary mb-4">
           Stock Trading
         </h1>
+        
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        {/* 2. Se implementa el componente Accordion debajo del título. */}
+        <div className="mb-6">
+          <Accordion title="¿Qué es el Stock Trading y cómo funciona?">
+            <p className="space-y-2">
+              El Stock Trading Cuantitativo es una estrategia de inversión que utiliza modelos matemáticos y algoritmos para tomar decisiones de trading. 
+              Nuestros planes te permiten participar en estas estrategias, depositando tus fondos por un período fijo para recibir un retorno diario basado en el rendimiento de los algoritmos.
+            </p>
+          </Accordion>
+        </div>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         <div className="mb-6">
           <IOSSegmentedControl
@@ -94,7 +110,10 @@ const QuantitativePage = () => {
                 className="w-full mt-6 bg-ios-green text-white py-3 rounded-ios font-ios text-center"
                 onClick={() => {/* Lógica de suscripción */}}
               >
-                Suscribir Plan
+                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                {/* 3. Se unifica la terminología del botón. */}
+                Comprar Plan
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
               </motion.button>
             </IOSCard>
           </motion.div>

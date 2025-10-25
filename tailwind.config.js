@@ -17,7 +17,11 @@ export default {
         },
         // Semantic Colors
         'system': {
-          background: '#FFFFFF',
+          // --- INICIO DE LA MODIFICACIÓN ---
+          // Lógica de Negocio: Es imperativo que el color de fondo de la aplicación 
+          // sea el gris estándar de iOS para vistas de sistema (#F2F2F7).
+          background: '#F2F2F7',
+          // --- FIN DE LA MODIFICACIÓN ---
           secondary: '#F2F2F7',
           grouped: '#F2F2F7',
           'grouped-secondary': '#FFFFFF',

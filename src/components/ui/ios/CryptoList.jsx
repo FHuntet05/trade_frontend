@@ -2,7 +2,10 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CryptoIcon } from '@/components/icons/CryptoIcons';
+// --- INICIO DE LA MODIFICACIÓN ---
+// Se elimina la importación de 'CryptoIcon' ya que será reemplazado por <img>.
+// import { CryptoIcon } from '@/components/icons/CryptoIcons'; 
+// --- FIN DE LA MODIFICACIÓN ---
 import { formatters } from '@/utils/formatters';
 
 export const CryptoList = ({ cryptos }) => {
@@ -26,9 +29,16 @@ export const CryptoList = ({ cryptos }) => {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <CryptoIcon symbol={crypto.symbol} className="w-8 h-8" />
-              </div>
+              {/* --- INICIO DE LA MODIFICACIÓN --- */}
+              {/* Se reemplaza el div con CryptoIcon por un tag <img>. */}
+              {/* La ruta apunta a /public/assets/images/{SYMBOL}.png (asumiendo que las imágenes se colocarán allí). */}
+              {/* Se aplican estilos para que la imagen sea circular y del tamaño adecuado. */}
+              <img 
+                src={`/assets/images/${crypto.symbol.toUpperCase()}.png`} 
+                alt={`${crypto.name} icon`}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+              {/* --- FIN DE LA MODIFICACIÓN --- */}
               <div>
                 <h3 className="font-ios-display font-semibold text-text-primary">
                   {crypto.name}

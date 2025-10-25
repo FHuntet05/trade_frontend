@@ -11,8 +11,12 @@ const useMarketStore = create((set) => ({
   fetchMarketItems: async () => {
     set({ isLoading: true, error: null });
     try {
-      // Este endpoint lo crearemos en los siguientes pasos del backend
-      const response = await api.get('/market/items');
+      // --- INICIO DE LA CORRECCIÓN CRÍTICA ---
+      // El endpoint correcto, según la arquitectura del backend (investmentController), 
+      // no es '/market/items', sino '/investments/items'.
+      const response = await api.get('/investments/items');
+      // --- FIN DE LA CORRECCIÓN CRÍTICA ---
+      
       if (response.data && response.data.success) {
         set({
           marketItems: response.data.data,

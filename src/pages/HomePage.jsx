@@ -29,7 +29,10 @@ const HomePage = () => {
   const handleDeposit = () => navigate('/deposit');
   const handleClaimBonus = () => navigate('/bonus');
   const handleSupport = () => navigate('/support');
-  const handleViewMarket = () => navigate('/market');
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Se elimina la función handleViewMarket ya que no se usará.
+  // const handleViewMarket = () => navigate('/market');
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const topCryptos = [
     { name: 'Bitcoin', symbol: 'BTC', price: prices.BTC || 0, change: 2.4 },
@@ -39,10 +42,8 @@ const HomePage = () => {
     { name: 'Tether', symbol: 'USDT', price: prices.USDT || 1.00, change: 0.0 },
   ];
   
-  // --- INICIO DE LA CORRECCIÓN CRÍTICA ---
   // Accedemos de forma segura al balance del usuario.
   const userBalance = user?.balance?.usdt || 0;
-  // --- FIN DE LA CORRECCIÓN CRÍTICA ---
 
   return (
     <div className="min-h-screen bg-system-background">
@@ -90,17 +91,14 @@ const HomePage = () => {
       </div>
 
       <div className="mt-4 pb-24">
-        <div className="flex justify-between items-center px-4 mb-3">
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        {/* Se elimina el botón "Ver Más" y su contenedor flex. El título ahora ocupa todo el ancho. */}
+        <div className="px-4 mb-3">
           <h2 className="font-ios-display text-xl font-bold text-text-primary">
             {t('home.marketWidgetTitle')}
           </h2>
-          <button 
-            className="text-ios-green font-ios font-semibold"
-            onClick={handleViewMarket}
-          >
-            {t('common.seeMore')}
-          </button>
         </div>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
         <CryptoList cryptos={topCryptos} />
       </div>
     </div>
