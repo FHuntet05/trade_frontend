@@ -1,47 +1,61 @@
 // RUTA: src/pages/HomePage.jsx
+// --- INICIO DE LA REFACTORIZACIÓN COMPLETA PARA DATOS DINÁMICOS ---
 
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // Se añade useState y useEffect
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '@/store/userStore';
-import usePriceStore from '@/store/priceStore';
+import api from '@/api/axiosConfig'; // 1. Se importa el cliente de API.
+// import usePriceStore from '@/store/priceStore'; // 2. Se elimina la dependencia del priceStore obsoleto.
+
 import { IOSHeader } from '@/components/ui/ios/Header';
 import { CryptoList } from '@/components/ui/ios/CryptoList';
 import { FiGift, FiMessageSquare } from 'react-icons/fi';
 import { formatters } from '@/utils/formatters';
-// --- INICIO DE LA MODIFICACIÓN CRÍTICA (Importación del Countdown) ---
-import useCountdown from '@/hooks/useCountdown'; // 1. Se importa el nuevo hook.
-// --- FIN DE LA MODIFICACIÓN CRÍTICA ---
+import useCountdown from '@/hooks/useCountdown';
 
 const HomePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useUserStore();
-  const { prices } = usePriceStore();
+  // const { prices } = usePriceStore(); // Se elimina
 
-  // --- INICIO DE LA MODIFICACIÓN CRÍTICA (Uso del Countdown) ---
-  // 2. Se accede de forma segura a la fecha de finalización de la primera inversión activa.
-  // El '?' (optional chaining) previene errores si 'user' o 'activeInvestments' no existen.
+  // 3. Se introducen estados para manejar los datos del mercado de forma dinámica.
+  const [marketData, setMarketData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 4. Se utiliza useEffect para obtener los datos del mercado cuando el componente se monta.
+  useEffect(() => {
+    const fetchMarketData = async () => {
+      try {
+        setIsLoading(true);
+        // Se llama a nuestro endpoint de backend ya corregido.
+        const response = await api.get('/market/prices');
+        // La respuesta es un objeto, lo convertimos a un array que CryptoList puede usar.
+        const dataArray = Object.values(response.data);
+        setMarketData(dataArray);
+      } catch (error) {
+        console.error("Error al obtener los datos del mercado:", error);
+        // Opcional: manejar el estado de error en la UI.
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMarketData();
+  }, []); // El array vacío asegura que se ejecute solo una vez.
+
+  // La lógica del countdown y de navegación se mantiene intacta.
   const targetEndDate = user?.activeInvestments?.[0]?.endDate;
-
-  // 3. Se llama al hook con la fecha objetivo.
-  // 'timeLeft' contendrá el string "HH:MM:SS" y 'isFinished' nos dirá si mostrarlo.
   const { timeLeft, isFinished } = useCountdown(targetEndDate);
-  // --- FIN DE LA MODIFICACIÓN CRÍTICA ---
-
   const handleDeposit = () => navigate('/deposit');
   const handleClaimBonus = () => navigate('/bonus');
   const handleSupport = () => navigate('/support');
 
-  const topCryptos = [
-    { name: 'Bitcoin', symbol: 'BTC', price: prices.BTC || 0, change: 2.4 },
-    { name: 'Ethereum', symbol: 'ETH', price: prices.ETH || 0, change: 1.8 },
-    { name: 'BNB', symbol: 'BNB', price: prices.BNB || 0, change: -0.5 },
-    { name: 'Solana', symbol: 'SOL', price: prices.SOL || 0, change: 5.2 },
-    { name: 'Tether', symbol: 'USDT', price: prices.USDT || 1.00, change: 0.0 },
-  ];
-  
+  // 5. Se elimina la lista estática 'topCryptos'.
+  /* const topCryptos = [ ... ]; */
+
   const userBalance = user?.balance?.usdt || 0;
   const withdrawableBalance = user?.withdrawableBalance || 0;
 
@@ -53,6 +67,7 @@ const HomePage = () => {
       />
 
       <div className="p-4 space-y-4">
+        {/* El resto de la UI se mantiene igual */}
         <div className="grid grid-cols-2 gap-4">
           <motion.button
             whileTap={{ scale: 0.95 }}
@@ -83,11 +98,6 @@ const HomePage = () => {
             {formatters.formatCurrency(withdrawableBalance)}
           </p>
           <div className="bg-system-secondary rounded-ios p-3 inline-flex items-center justify-center">
-            {/* --- INICIO DE LA MODIFICACIÓN CRÍTICA (Renderizado Condicional del Countdown) --- */}
-            {/* 4. Lógica de renderizado:
-                - Si 'isFinished' es true (no hay inversión o ya terminó), se muestra el mensaje alternativo.
-                - Si es false, se muestra el temporizador dinámico.
-            */}
             {isFinished ? (
               <p className="text-text-secondary text-sm font-ios">
                 Realiza una inversión para ver tus ganancias
@@ -97,7 +107,6 @@ const HomePage = () => {
                 ⏰ {t('home.nextProfitIn')} <span className="font-semibold text-text-primary">{timeLeft}</span>
               </p>
             )}
-            {/* --- FIN DE LA MODIFICACIÓN CRÍTICA --- */}
           </div>
         </motion.div>
       </div>
@@ -108,10 +117,12 @@ const HomePage = () => {
             Mercado en Vivo
           </h2>
         </div>
-        <CryptoList cryptos={topCryptos} />
+        {/* 6. Se pasan los datos dinámicos y el estado de carga al componente CryptoList. */}
+        <CryptoList cryptos={marketData} isLoading={isLoading} />
       </div>
     </div>
   );
 };
 
 export default HomePage;
+// --- FIN DE LA REFACTORIZACIÓN COMPLETA ---

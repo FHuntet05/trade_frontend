@@ -95,8 +95,7 @@ const WheelPage = () => {
               <div className="w-full h-full bg-ios-green shadow-lg" />
             </div>
 
-            {/* --- ESTRUCTURA VISUAL DE LA RULETA --- */}
-            <motion.ul
+             <motion.ul
               className="w-full h-full rounded-full relative overflow-hidden border-4 border-white shadow-xl"
               animate={wheelControl}
               initial={{ rotate: 0 }}
@@ -104,37 +103,39 @@ const WheelPage = () => {
               {rewards.map((reward, index) => (
                 <li
                   key={index}
-                  // Punto Clave 1: `origin-bottom-right` hace que el pivote de la transformación
-                  // sea el centro del círculo de la ruleta.
                   className="absolute top-0 left-0 w-1/2 h-1/2 origin-bottom-right"
                   style={{
-                    // Punto Clave 2: La transformación que crea el segmento.
-                    // `rotate` posiciona el segmento en su lugar.
-                    // `skewY` deforma el cuadrado en un sector triangular. El cálculo `90 - SEGMENT_ANGLE`
-                    // (90-45=45) es la fórmula para obtener el ángulo de sesgado correcto.
                     transform: `rotate(${index * SEGMENT_ANGLE}deg) skewY(-${90 - SEGMENT_ANGLE}deg)`,
-                    backgroundColor: index % 2 === 0 ? '#F2F2F7' : '#FFFFFF',
+                    // Lógica para alternar el fondo entre blanco y gris claro, como solicitaste.
+                    backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#F2F2F7',
                   }}
                 >
                   <div
-                    className="absolute w-full h-full flex flex-col items-center justify-center text-center p-4"
+                    // Se aplica la transformación inversa para enderezar el contenido
+                    className="absolute w-full h-full"
                     style={{
-                      // Punto Clave 3: La transformación inversa para el contenido.
-                      // `skewY` positivo anula el sesgado del contenedor padre, enderezando el contenido.
-                      // `rotate` centra el contenido dentro del segmento.
                       transform: `skewY(${90 - SEGMENT_ANGLE}deg) rotate(${SEGMENT_ANGLE / 2}deg)`,
                     }}
                   >
-                    {/* Punto Clave 4: Rotación final para orientar el texto e icono hacia afuera. */}
-                    <div className='transform -rotate-90'>
-                        {reward.icon}
-                        <p className="font-ios font-semibold text-xs mt-2 break-words">{reward.text}</p>
+                    {/* 
+                      CONTENEDOR DEL CONTENIDO CORREGIDO:
+                      1. flex, flex-col-reverse: Apila los elementos verticalmente y pone el último (el ícono) abajo.
+                      2. items-center, justify-center: Centra todo perfectamente.
+                      3. -rotate-90: Orienta el bloque completo hacia afuera.
+                    */}
+                    <div className='w-full h-full flex flex-col-reverse items-center justify-center transform -rotate-90 p-1'>
+                        <div className="text-center">
+                            {reward.icon}
+                        </div>
+                        <p className="font-ios font-semibold text-xs mt-1 break-words text-center">
+                            {reward.text}
+                        </p>
                     </div>
+
                   </div>
                 </li>
               ))}
             </motion.ul>
-            {/* --- FIN DE LA ESTRUCTURA VISUAL --- */}
           </div>
 
         </div>
