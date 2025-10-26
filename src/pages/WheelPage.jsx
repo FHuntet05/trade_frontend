@@ -1,18 +1,20 @@
 // RUTA: frontend/src/pages/WheelPage.jsx
-// --- VERSIÓN REFACTORIZADA CON REACT-CUSTOM-ROULETTE PARA UN RENDERIZADO PERFECTO ---
+// --- VERSIÓN CON CORRECCIÓN DE CRASH POR IMPORTACIÓN FALTANTE ---
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Wheel } from "react-custom-roulette"; // 1. Se importa la nueva librería.
+import { Wheel } from "react-custom-roulette";
 
 import useUserStore from "@/store/userStore";
 import { IOSButton, IOSCard } from "../components/ui/IOSComponents";
-import { FiGift } from "react-icons/fi";
+// --- INICIO DE LA CORRECCIÓN CRÍTICA ---
+import { FiCopy, FiGift } from "react-icons/fi"; // <<< LÍNEA AÑADIDA PARA CORREGIR EL CRASH
+// --- FIN DE LA CORRECCIÓN CRÍTICA ---
 import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
 import api from "@/api/axiosConfig";
 
-// Definición de recompensas (Fuente de la Verdad)
+// La definición de las recompensas no necesita cambios.
 const rewards = [
   { text: "$1.00", type: 'image', value: "/assets/images/USDT.png" },
   { text: "+1 Giro", type: 'emoji', value: "🎁" },
@@ -28,23 +30,18 @@ const WheelPage = () => {
   const { user, updateUserBalances } = useUserStore();
   const availableSpins = user?.balance?.spins || 0;
   
-  // 2. Estados para controlar la librería de la ruleta
   const [mustSpin, setMustSpin] = useState(false);
   const [prizeNumber, setPrizeNumber] = useState(0);
   const [rouletteData, setRouletteData] = useState([]);
 
-  // 3. useEffect para transformar los datos al formato que la librería necesita
   useEffect(() => {
     const data = rewards.map(reward => {
-      let optionElement;
       if (reward.type === 'image') {
-        // Para imágenes, creamos un objeto con la propiedad 'image'
         return { 
           option: reward.text,
           image: { uri: reward.value, sizeMultiplier: 0.6 }
         };
       }
-      // Para emojis, los combinamos con el texto
       return { option: `${reward.value} ${reward.text}` };
     });
     setRouletteData(data);
@@ -55,7 +52,6 @@ const WheelPage = () => {
       try {
         const response = await api.post("/api/wheel/spin");
         const { resultIndex } = response.data;
-        
         setPrizeNumber(resultIndex);
         setMustSpin(true);
       } catch (error) {
@@ -67,7 +63,6 @@ const WheelPage = () => {
   const handleStopSpinning = async () => {
     setMustSpin(false);
     
-    // Sincronizamos la obtención del premio con la API para evitar trampas.
     try {
         const res = await api.post("/api/wheel/spin");
         const { newBalances, prize } = res.data;
@@ -75,7 +70,6 @@ const WheelPage = () => {
         updateUserBalances(newBalances);
         toast.success(`¡Ganaste ${prize.text}! 🎉`);
         confetti({ particleCount: 120, spread: 85, origin: { y: 0.6 } });
-
     } catch (error) {
         toast.error("Error al confirmar el premio.");
     }
@@ -100,7 +94,6 @@ const WheelPage = () => {
         </div>
       </IOSCard>
 
-      {/* 4. Se reemplaza el div manual por el componente <Wheel> */}
       <div className="relative w-80 h-80 md:w-96 md:h-96 mb-6">
         {rouletteData.length > 0 && (
           <Wheel
@@ -108,8 +101,6 @@ const WheelPage = () => {
             prizeNumber={prizeNumber}
             data={rouletteData}
             onStopSpinning={handleStopSpinning}
-            
-            // --- Estilos para emular tu diseño ---
             backgroundColors={['#FFFFFF', '#F2F2F7']}
             textColors={['#333333']}
             outerBorderColor={"#E2E2E2"}
@@ -122,7 +113,6 @@ const WheelPage = () => {
             textDistance={75}
           />
         )}
-         {/* Flecha indicadora */}
          <div 
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full z-10"
             style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}
@@ -150,6 +140,7 @@ const WheelPage = () => {
           className="w-full bg-ios-green/10 text-ios-green py-3 rounded-ios-card flex justify-center items-center gap-2"
           onClick={copyLink}
         >
+          {/* El error ocurría aquí porque FiCopy no estaba importado */}
           <FiCopy/> Copiar enlace de referido
         </motion.button>
       </IOSCard>
