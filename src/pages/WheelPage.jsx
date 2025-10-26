@@ -12,14 +12,14 @@ import api from "@/api/axiosConfig";
 
 // --- DATA: Segmentos de la ruleta ---
 const rewardsData = [
-  { option: "$1.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } },
-  { option: "🎁 +1 Giro" },
-  { option: "$0.10", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } },
-  { option: "$5.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } },
-  { option: "🎁 +2 Giros" },
-  { option: "$0.50", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } },
-  { option: "😢 NADA" },
-  { option: "$10.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } }
+  { option: "$1.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5, offsetY: 25 } },
+  { option: " +1 Giro 🎁" },
+  { option: "$0.10", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5, offsetY: 25 } },
+  { option: "$5.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5, offsetY: 25 } },
+  { option: "+2 Giros 🎁" },
+  { option: "$0.50", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5, offsetY: 25 } },
+  { option: "NADA 😢" },
+  { option: "$10.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5, offsetY: 25 } }
 ];
 
 const WheelPage = () => {
