@@ -1,30 +1,17 @@
 // RUTA: frontend/src/App.jsx
+// --- VERSIÓN FINAL Y COMPLETA, DEPURADA DE CÓDIGO OBSOLETO ---
 
-
-import React from 'react';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 import AppRoutes from './routes';
 import AuthLoadingPage from './pages/AuthLoadingPage';
-// --- INICIO DE LA CORRECCIÓN CRÍTICA ---
-// 1. Se importa el nuevo hook que gestiona la conexión WebSocket.
-import { usePriceWebSocket } from './hooks/usePriceWebSocket';
-// --- FIN DE LA CORRECCIÓN CRÍTICA ---
+// La importación de 'usePriceWebSocket' ha sido eliminada.
 
-/**
- * Un componente "fantasma" que inicializa la conexión WebSocket
- * una vez que el usuario está autenticado.
- */
-const WebSocketInitializer = () => {
-  // --- INICIO DE LA CORRECCIÓN CRÍTICA ---
-  // 2. Se llama al hook. Esto es todo lo que se necesita para activarlo.
-  // La lógica de conexión, reconexión y actualización del store está encapsulada dentro del hook.
-  usePriceWebSocket();
-  // --- FIN DE LA CORRECCIÓN CRÍTICA ---
-  return null; // Este componente no renderiza nada en la UI.
-};
+// El componente 'WebSocketInitializer' ha sido eliminado por completo.
+// Su lógica de polling ha sido reemplazada por la estrategia de caché
+// centralizada en `marketStore.js`.
 
 const AppInitializer = () => { 
   const { isAuthenticated, syncUserWithBackend } = useUserStore(); 
@@ -32,25 +19,26 @@ const AppInitializer = () => {
   useEffect(() => { 
     if (isAuthenticated) return; 
     
+    // Sincroniza al usuario basándose en los datos de la Web App de Telegram.
     const tg = window.Telegram?.WebApp; 
     if (tg?.initDataUnsafe?.user?.id) { 
       syncUserWithBackend(tg.initDataUnsafe.user); 
     }
   }, [isAuthenticated, syncUserWithBackend]); 
   
+  // Este componente no renderiza nada visible.
   return null; 
 };
 
 const UserGatekeeper = ({ children }) => { 
   const { isAuthenticated, isLoadingAuth, user, error } = useUserStore(); 
   
+  // Muestra una pantalla de carga mientras se verifica la autenticación.
   if (isLoadingAuth || (isAuthenticated && !user)) { 
     return <AuthLoadingPage />;
   } 
   
-  // --- INICIO DE LA MEJORA ---
-  // Se muestra el error de `userStore` si existe, que es más informativo
-  // que el mensaje genérico de "Error de Autenticación".
+  // Si la autenticación falla, muestra una pantalla de error clara.
   if (!isAuthenticated) { 
     return ( 
       <div className="w-full h-screen flex flex-col items-center justify-center text-center p-4 bg-system-background text-text-primary">
@@ -61,25 +49,22 @@ const UserGatekeeper = ({ children }) => {
       </div> 
     ); 
   } 
-  // --- FIN DE LA MEJORA ---
   
-  // --- INICIO DE LA CORRECCIÓN CRÍTICA ---
-  // 3. Se renderiza el inicializador del WebSocket junto con el resto de la app
-  // solo si el usuario ha pasado la barrera de autenticación.
-  return (
-    <>
-      <WebSocketInitializer />
-      {children}
-    </>
-  );
-  // --- FIN DE LA CORRECCIÓN CRÍTICA ---
+  // Si el usuario está autenticado, renderiza la aplicación principal.
+  // No hay necesidad de componentes inicializadores adicionales.
+  return <>{children}</>;
 };
 
 function App() {
   return (
     <Router>
+      {/* Componente para mostrar notificaciones toast */}
       <Toaster position="top-center" reverseOrder={false} />
+      
+      {/* Componente para manejar la sincronización inicial del usuario */}
       <AppInitializer />
+      
+      {/* Guardián que protege las rutas y asegura que el usuario esté autenticado */}
       <UserGatekeeper>
         <AppRoutes />
       </UserGatekeeper>

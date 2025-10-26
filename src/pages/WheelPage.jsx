@@ -1,5 +1,5 @@
 // RUTA: frontend/src/pages/WheelPage.jsx
-// --- VERSIÓN DEFINITIVA CON DEPURACIÓN VISUAL Y AJUSTE DE PRECISIÓN ---
+// --- VERSIÓN FINAL Y DEPURADA ---
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
 import api from "@/api/axiosConfig";
 
-// Datos con estructura unificada para la librería, con tamaños consistentes
+// Estructura de datos unificada para la librería.
 const rewardsData = [
   { option: "$1.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } },
   { option: "🎁 +1 Giro" },
@@ -44,6 +44,7 @@ const WheelPage = () => {
     try {
         const res = await api.post("/api/wheel/spin");
         updateUserBalances(res.data.newBalances);
+        // Usamos el prizeNumber para mostrar el premio correcto sin depender de una segunda llamada a la API
         toast.success(`¡Ganaste ${rewardsData[prizeNumber].option}! 🎉`);
         confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
     } catch (error) { toast.error("Error al confirmar el premio."); }
@@ -68,10 +69,11 @@ const WheelPage = () => {
         </div>
       </IOSCard>
 
-      {/* CONTENEDOR DE LA RULETA Y SU PUNTERO ÚNICO */}
+      {/* --- CONTENEDOR DEPURADO DE LA RULETA --- */}
+      {/* Este div debe contener ÚNICAMENTE el puntero y el componente <Wheel> */}
       <div className="relative w-80 h-80 md:w-96 md:h-96 mb-6 flex items-center justify-center">
         
-        {/* 1. ÚNICO PUNTERO SUPERIOR (TIPO GOTA) - NINGÚN OTRO DEBE EXISTIR */}
+        {/* PUNTERO ÚNICO Y CORRECTO */}
         <div 
             className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-3 w-10 h-12 z-20" 
             style={{ clipPath: 'path("M20 0C8.954 0 0 8.954 0 20C0 24.418 1.582 28.435 4.186 31.814L20 48L35.814 31.814C38.418 28.435 40 24.418 40 20C40 8.954 31.046 0 20 0Z")' }}
@@ -85,22 +87,22 @@ const WheelPage = () => {
             data={rewardsData}
             onStopSpinning={handleStopSpinning}
             
-            // --- AJUSTES FINALES DE PRECISIÓN ---
-            perpendicularText={true}   // 3. ASEGURA LA ORIENTACIÓN CORRECTA DEL TEXTO
-            textDistance={75}          // Ajusta la distancia del texto desde el centro
+            perpendicularText={true}
+            textDistance={75}
             fontSize={14}
             
             backgroundColors={['#FFFFFF', '#F2F2F7']}
             textColors={['#333333']}
             outerBorderColor={"#E2E2E2"}
             outerBorderWidth={5}
-            innerRadius={15}           // 2. CÍRCULO CENTRAL REDUCIDO
+            innerRadius={15}
             innerBorderColor={"#E2E2E2"}
             innerBorderWidth={3}
             radiusLineColor={"#E2E2E2"}
             radiusLineWidth={1}
           />
       </div>
+      {/* --- FIN DEL CONTENEDOR DEPURADO --- */}
 
       <IOSButton
         variant="primary"
