@@ -84,42 +84,48 @@ const WheelPage = () => {
         </div>
       </IOSCard>
 
-      {/* ✅ RUEDA */}
       <div className="relative w-80 h-80 mb-6">
-        
-        {/* ✅ Flecha superior */}
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20">
-          <div className="w-6 h-6 bg-ios-green rotate-180 clip-triangle" />
-        </div>
 
-        <motion.div
-          className="wheel-container"
-          animate={wheelControl}
-          initial={{ rotate: 0 }}
+  {/* Flecha */}
+  <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
+    <div className="w-6 h-6 bg-ios-green clip-triangle shadow-md" />
+  </div>
+
+  <motion.div
+    animate={wheelControl}
+    initial={{ rotate: 0 }}
+    className="wheel"
+  >
+    {rewards.map((reward, index) => {
+      const rotation = index * SEGMENT_ANGLE;
+      return (
+        <div
+          key={index}
+          className="segment"
+          style={{ transform: `rotate(${rotation}deg)` }}
         >
-          {rewards.map((reward, index) => (
-            <div
-              key={index}
-              className="segment"
-              style={{
-                transform: `rotate(${index * SEGMENT_ANGLE}deg)`,
-              }}
-            >
-              <div className="segment-content">
-                <p className="text-sm font-bold">{reward.text}</p>
+          <div
+            className="segment-content"
+            style={{
+              transform: `rotate(${SEGMENT_ANGLE / 2}deg) translate(70px) rotate(${-(rotation + SEGMENT_ANGLE / 2)}deg)`,
+            }}
+          >
+            <span className="text-xs font-bold mb-1">{reward.text}</span>
 
-                {reward.icon === "gift" ? (
-                  <FiGift className="text-2xl text-yellow-500 mt-1" />
-                ) : reward.icon === "sad" ? (
-                  <span className="text-2xl mt-1">😢</span>
-                ) : (
-                  <img src={reward.icon} className="w-7 h-7 mt-1" />
-                )}
-              </div>
-            </div>
-          ))}
-        </motion.div>
-      </div>
+            {reward.icon === "gift" ? (
+              <FiGift className="text-xl text-yellow-500" />
+            ) : reward.icon === "sad" ? (
+              <span className="text-xl">😢</span>
+            ) : (
+              <img src={reward.icon} className="w-6 h-6" />
+            )}
+          </div>
+        </div>
+      );
+    })}
+  </motion.div>
+</div>
+
 
       {/* Botón Spin */}
       <IOSButton
