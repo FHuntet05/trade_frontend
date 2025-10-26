@@ -1,5 +1,4 @@
 // RUTA: frontend/src/pages/WheelPage.jsx
-// --- VERSIÓN FINAL Y DEPURADA ---
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
@@ -11,7 +10,6 @@ import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
 import api from "@/api/axiosConfig";
 
-// Estructura de datos unificada para la librería.
 const rewardsData = [
   { option: "$1.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } },
   { option: "🎁 +1 Giro" },
@@ -35,21 +33,24 @@ const WheelPage = () => {
         const response = await api.post("/api/wheel/spin");
         setPrizeNumber(response.data.resultIndex);
         setMustSpin(true);
-      } catch (error) { toast.error("Error al iniciar el giro."); }
+      } catch (error) {
+        toast.error("Error al iniciar el giro.");
+      }
     }
   };
 
   const handleStopSpinning = async () => {
     setMustSpin(false);
     try {
-        const res = await api.post("/api/wheel/spin");
-        updateUserBalances(res.data.newBalances);
-        // Usamos el prizeNumber para mostrar el premio correcto sin depender de una segunda llamada a la API
-        toast.success(`¡Ganaste ${rewardsData[prizeNumber].option}! 🎉`);
-        confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
-    } catch (error) { toast.error("Error al confirmar el premio."); }
+      const res = await api.post("/api/wheel/spin");
+      updateUserBalances(res.data.newBalances);
+      toast.success(`¡Ganaste ${rewardsData[prizeNumber].option}! 🎉`);
+      confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+    } catch (error) {
+      toast.error("Error al confirmar el premio.");
+    }
   };
-  
+
   const copyLink = () => {
     const bot = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'YOUR_BOT';
     const link = `https://t.me/${bot}?start=${user.referralCode}`;
@@ -59,7 +60,9 @@ const WheelPage = () => {
 
   return (
     <div className="min-h-screen bg-system-background px-4 pt-6 flex flex-col items-center pb-24">
-      <h1 className="text-2xl font-ios-display font-bold text-text-primary mb-1">Ruleta de Premios</h1>
+      <h1 className="text-2xl font-ios-display font-bold text-text-primary mb-1">
+        Ruleta de Premios
+      </h1>
       <p className="text-text-secondary mb-4">Invita y gana más giros.</p>
 
       <IOSCard className="w-full mb-6">
@@ -69,40 +72,43 @@ const WheelPage = () => {
         </div>
       </IOSCard>
 
-      {/* --- CONTENEDOR DEPURADO DE LA RULETA --- */}
-      {/* Este div debe contener ÚNICAMENTE el puntero y el componente <Wheel> */}
       <div className="relative w-80 h-80 md:w-96 md:h-96 mb-6 flex items-center justify-center">
-        
-        {/* PUNTERO ÚNICO Y CORRECTO */}
-        <div 
-            className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-3 w-10 h-12 z-20" 
-            style={{ clipPath: 'path("M20 0C8.954 0 0 8.954 0 20C0 24.418 1.582 28.435 4.186 31.814L20 48L35.814 31.814C38.418 28.435 40 24.418 40 20C40 8.954 31.046 0 20 0Z")' }}
+
+        {/* PUNTERO ÚNICO PERSONALIZADO */}
+        <div
+          className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-3 w-10 h-12 z-20"
+          style={{
+            clipPath:
+              'path("M20 0C8.954 0 0 8.954 0 20C0 24.418 1.582 28.435 4.186 31.814L20 48L35.814 31.814C38.418 28.435 40 24.418 40 20C40 8.954 31.046 0 20 0Z")',
+          }}
         >
-            <div className="w-full h-full bg-red-500"></div>
+          <div className="w-full h-full bg-red-500"></div>
         </div>
 
         <Wheel
-            mustStartSpinning={mustSpin}
-            prizeNumber={prizeNumber}
-            data={rewardsData}
-            onStopSpinning={handleStopSpinning}
-            
-            perpendicularText={true}
-            textDistance={75}
-            fontSize={14}
-            
-            backgroundColors={['#FFFFFF', '#F2F2F7']}
-            textColors={['#333333']}
-            outerBorderColor={"#E2E2E2"}
-            outerBorderWidth={5}
-            innerRadius={15}
-            innerBorderColor={"#E2E2E2"}
-            innerBorderWidth={3}
-            radiusLineColor={"#E2E2E2"}
-            radiusLineWidth={1}
-          />
+          mustStartSpinning={mustSpin}
+          prizeNumber={prizeNumber}
+          data={rewardsData}
+          onStopSpinning={handleStopSpinning}
+
+          pointerAngle={0} // ✅ Desactiva puntero extra
+          disableInitialAnimation={true}
+
+          perpendicularText={true}
+          textDistance={75}
+          fontSize={14}
+
+          backgroundColors={['#FFFFFF', '#F2F2F7']}
+          textColors={['#333333']}
+          outerBorderColor={"#E2E2E2"}
+          outerBorderWidth={5}
+          innerRadius={15}
+          innerBorderColor={"#E2E2E2"}
+          innerBorderWidth={3}
+          radiusLineColor={"#E2E2E2"}
+          radiusLineWidth={1}
+        />
       </div>
-      {/* --- FIN DEL CONTENEDOR DEPURADO --- */}
 
       <IOSButton
         variant="primary"
@@ -123,7 +129,7 @@ const WheelPage = () => {
           className="w-full bg-ios-green/10 text-ios-green py-3 rounded-ios-card flex justify-center items-center gap-2"
           onClick={copyLink}
         >
-          <FiCopy/> Copiar enlace de referido
+          <FiCopy /> Copiar enlace de referido
         </motion.button>
       </IOSCard>
     </div>
