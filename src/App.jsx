@@ -1,5 +1,5 @@
 // RUTA: frontend/src/App.jsx
-// --- VERSIÓN FINAL Y COMPLETA, DEPURADA DE CÓDIGO OBSOLETO ---
+// --- VERSIÓN FINAL Y COMPLETA CON INTEGRACIÓN DE ERROR BOUNDARY ---
 
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
@@ -7,11 +7,7 @@ import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 import AppRoutes from './routes';
 import AuthLoadingPage from './pages/AuthLoadingPage';
-// La importación de 'usePriceWebSocket' ha sido eliminada.
-
-// El componente 'WebSocketInitializer' ha sido eliminado por completo.
-// Su lógica de polling ha sido reemplazada por la estrategia de caché
-// centralizada en `marketStore.js`.
+import ErrorBoundary from './components/ErrorBoundary'; // --- Se importa el nuevo componente ---
 
 const AppInitializer = () => { 
   const { isAuthenticated, syncUserWithBackend } = useUserStore(); 
@@ -19,26 +15,22 @@ const AppInitializer = () => {
   useEffect(() => { 
     if (isAuthenticated) return; 
     
-    // Sincroniza al usuario basándose en los datos de la Web App de Telegram.
     const tg = window.Telegram?.WebApp; 
     if (tg?.initDataUnsafe?.user?.id) { 
       syncUserWithBackend(tg.initDataUnsafe.user); 
     }
   }, [isAuthenticated, syncUserWithBackend]); 
   
-  // Este componente no renderiza nada visible.
   return null; 
 };
 
 const UserGatekeeper = ({ children }) => { 
   const { isAuthenticated, isLoadingAuth, user, error } = useUserStore(); 
   
-  // Muestra una pantalla de carga mientras se verifica la autenticación.
   if (isLoadingAuth || (isAuthenticated && !user)) { 
     return <AuthLoadingPage />;
   } 
   
-  // Si la autenticación falla, muestra una pantalla de error clara.
   if (!isAuthenticated) { 
     return ( 
       <div className="w-full h-screen flex flex-col items-center justify-center text-center p-4 bg-system-background text-text-primary">
@@ -50,23 +42,22 @@ const UserGatekeeper = ({ children }) => {
     ); 
   } 
   
-  // Si el usuario está autenticado, renderiza la aplicación principal.
-  // No hay necesidad de componentes inicializadores adicionales.
   return <>{children}</>;
 };
 
 function App() {
   return (
     <Router>
-      {/* Componente para mostrar notificaciones toast */}
       <Toaster position="top-center" reverseOrder={false} />
       
-      {/* Componente para manejar la sincronización inicial del usuario */}
       <AppInitializer />
       
-      {/* Guardián que protege las rutas y asegura que el usuario esté autenticado */}
       <UserGatekeeper>
-        <AppRoutes />
+        {/* --- CORRECCIÓN CRÍTICA APLICADA --- */}
+        {/* Se envuelve AppRoutes con ErrorBoundary para capturar cualquier error de renderizado */}
+        <ErrorBoundary>
+          <AppRoutes />
+        </ErrorBoundary>
       </UserGatekeeper>
     </Router>
   );
