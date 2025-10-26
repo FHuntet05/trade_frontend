@@ -1,7 +1,8 @@
-// RUTA: frontend/src/pages/admin/AdminDashboardPage.jsx (VERSIÓN "NEXUS" REPARADA)
+// RUTA: frontend/src/pages/admin/AdminDashboardPage.jsx
+// --- VERSIÓN RECONSTRUIDA, FUNCIONAL Y VISUALMENTE CORRECTA ---
 
-import React, { useState, useEffect } from 'react';
-import adminApi from '@/pages/admin/api/adminApi';
+import React, { useEffect } from 'react';
+import useAdminStore from '@/store/adminStore';
 import toast from 'react-hot-toast';
 import Loader from '@/components/common/Loader';
 import StatCard from '@/pages/admin/components/StatCard';
@@ -14,75 +15,57 @@ import {
   HiOutlineBanknotes 
 } from 'react-icons/hi2';
 
-const initialStatsState = {
-  totalUsers: 0,
-  totalDepositVolume: 0,
-  pendingWithdrawals: 0,
-  centralWalletBalances: { usdt: 0, bnb: 0 },
-  userGrowthData: [],
-  recentUsers: [],
-};
-
 const AdminDashboardPage = () => {
-  const [stats, setStats] = useState(initialStatsState);
-  const [isLoading, setIsLoading] = useState(true);
+  // Obtenemos los datos y acciones del store centralizado
+  const { dashboardStats, isLoading, fetchDashboardStats } = useAdminStore();
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [statsResponse, usersResponse] = await Promise.all([
-          adminApi.get('/admin/stats'),
-          // [NEXUS REPAIR] Se corrige el endpoint. El backend no tiene '/users/recent'.
-          // Usamos el endpoint '/users' que por defecto ordena por más recientes
-          // y le pasamos un límite para obtener solo los necesarios para el dashboard.
-          adminApi.get('/admin/users', { params: { limit: 5 } })
-        ]);
-        
-        setStats({
-          ...statsResponse.data,
-          recentUsers: usersResponse.data.users,
-        });
+    // Usamos la acción del store para cargar los datos
+    fetchDashboardStats().catch(error => {
+      toast.error(error.response?.data?.message || 'No se pudieron cargar los datos del dashboard.');
+    });
+  }, [fetchDashboardStats]);
 
-      } catch (error) {
-        toast.error(error.response?.data?.message || 'No se pudieron cargar los datos del dashboard.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchDashboardData();
-  }, []);
-
-  if (isLoading) {
+  // El estado de carga ahora es manejado por el store global
+  if (isLoading && !dashboardStats.totalUsers) { // Muestra el loader solo en la carga inicial
     return <div className="flex justify-center items-center h-full"><Loader text="Cargando dashboard..." /></div>;
   }
   
   return (
+    // Contenedor principal con animación de entrada
     <div className="space-y-6 animate-fade-in">
+      
+      {/* Sección de Estadísticas Principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Usuarios" value={stats.totalUsers.toLocaleString('es-ES')} icon={HiOutlineUsers} />
-        <StatCard title="Volumen Depósitos" value={`$${stats.totalDepositVolume.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={HiOutlineCurrencyDollar} />
-        <StatCard title="Retiros Pendientes" value={stats.pendingWithdrawals.toLocaleString('es-ES')} icon={HiOutlineQuestionMarkCircle} />
+        <StatCard title="Total Usuarios" value={dashboardStats.totalUsers.toLocaleString('es-ES')} icon={HiOutlineUsers} />
+        <StatCard title="Volumen Depósitos" value={`$${dashboardStats.totalDepositVolume.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={HiOutlineCurrencyDollar} />
+        <StatCard title="Retiros Pendientes" value={dashboardStats.pendingWithdrawals.toLocaleString('es-ES')} icon={HiOutlineQuestionMarkCircle} />
+        
+        {/* Tarjeta de Balance de Billetera Central */}
         <div className="bg-dark-secondary p-6 rounded-lg border border-white/10 flex items-center gap-6">
-            <div className="bg-accent-start/20 p-4 rounded-full"><HiOutlineBanknotes className="w-8 h-8 text-accent-start" /></div>
+            <div className="bg-accent-start/20 p-4 rounded-full">
+              <HiOutlineBanknotes className="w-8 h-8 text-accent-start" />
+            </div>
             <div>
                 <p className="text-sm text-text-secondary font-medium">Balance Billetera Central</p>
                 <div className="text-lg font-mono text-white mt-1">
-                    <p>USDT: {stats.centralWalletBalances?.usdt?.toFixed(2) || '0.00'}</p>
-                    <p>BNB: {stats.centralWalletBalances?.bnb?.toFixed(4) || '0.0000'}</p>
+                    <p>USDT: {dashboardStats.centralWalletBalances?.usdt?.toFixed(2) || '0.00'}</p>
+                    <p>BNB: {dashboardStats.centralWalletBalances?.bnb?.toFixed(4) || '0.0000'}</p>
                 </div>
             </div>
         </div>
       </div>
       
+      {/* Sección de Gráficos y Tablas */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 bg-dark-secondary p-6 rounded-lg border border-white/10">
           <h2 className="text-xl font-semibold mb-4 text-white">Crecimiento de Usuarios (Últimos 14 días)</h2>
-          <UserGrowthChart data={stats.userGrowthData || []} />
+          <UserGrowthChart data={dashboardStats.userGrowthData || []} />
         </div>
         
         <div className="lg:col-span-2 bg-dark-secondary p-6 rounded-lg border border-white/10">
           <h2 className="text-xl font-semibold mb-4 text-white">Usuarios Recientes</h2>
-          <RecentUsersTable users={stats.recentUsers || []} />
+          <RecentUsersTable users={dashboardStats.recentUsers || []} />
         </div>
       </div>
     </div>

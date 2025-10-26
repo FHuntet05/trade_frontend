@@ -1,12 +1,23 @@
-// RUTA: frontend/src/store/adminStore.js (VERSIÓN "NEXUS - DATA TYPE FIX")
+// RUTA: frontend/src/store/adminStore.js
+// --- VERSIÓN RECONSTRUIDA CON LÓGICA DE DATOS DEL DASHBOARD ---
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import adminApi from '@/pages/admin/api/adminApi'; // Importamos la instancia de Axios
 
 const initialState = {
   admin: null,
   token: null,
   isAuthenticated: false,
   isLoading: false,
+  // --- NUEVO ESTADO PARA EL DASHBOARD ---
+  dashboardStats: {
+    totalUsers: 0,
+    totalDepositVolume: 0,
+    pendingWithdrawals: 0,
+    centralWalletBalances: { usdt: 0, bnb: 0 },
+    userGrowthData: [],
+    recentUsers: [],
+  },
   _hasHydrated: false,
 };
 
@@ -37,45 +48,41 @@ const useAdminStore = create(
       },
       
       setHasHydrated: (state) => {
-        set({
-          _hasHydrated: state,
-        });
+        set({ _hasHydrated: state });
       },
 
-      // [NEXUS DATA TYPE FIX] - Nueva función de verificación centralizada y blindada.
+      // --- NUEVA ACCIÓN PARA CARGAR DATOS DEL DASHBOARD ---
+      fetchDashboardStats: async () => {
+        set({ isLoading: true });
+        try {
+          // Usamos el endpoint correcto definido en el memo inicial
+          const response = await adminApi.get('/admin/dashboard-stats'); 
+          set({
+            dashboardStats: response.data,
+            isLoading: false,
+          });
+          return response.data; // Devuelve los datos para uso opcional en el componente
+        } catch (error) {
+          console.error("Error al cargar las estadísticas del dashboard:", error);
+          set({ isLoading: false });
+          // Devolvemos el error para que el componente pueda mostrar un toast
+          throw error; 
+        }
+      },
+
       isSuperAdmin: () => {
-        const { admin } = get(); // Obtenemos el estado actual del store.
+        // ... (esta función se mantiene sin cambios)
+        const { admin } = get();
         const superAdminId = import.meta.env.VITE_SUPER_ADMIN_TELEGRAM_ID;
-
-        // Herramienta de diagnóstico:
-        if (admin?.telegramId) {
-            console.log('--- DIAGNÓSTICO DE PERMISOS ---');
-            console.log('Admin Telegram ID (del store):', admin.telegramId, `(Tipo: ${typeof admin.telegramId})`);
-            console.log('Super Admin ID (del .env):', superAdminId, `(Tipo: ${typeof superAdminId})`);
-            console.log('Comparación (String vs String):', String(admin.telegramId).trim() === String(superAdminId).trim());
-            console.log('---------------------------------');
-        }
-
-        if (!admin || !admin.telegramId || !superAdminId) {
-            return false;
-        }
-        
-        // La comparación blindada:
-        // 1. Convierte ambos valores a String para evitar errores de tipo.
-        // 2. Usa .trim() para eliminar cualquier espacio en blanco accidental.
+        if (!admin || !admin.telegramId || !superAdminId) return false;
         return String(admin.telegramId).trim() === String(superAdminId).trim();
       }
     }),
     {
-      name: 'neuro-link-admin-storage',
+      name: 'neuro-link-admin-storage', // Puedes cambiarle el nombre si quieres
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ 
-        token: state.token, 
-        admin: state.admin, 
-      }),
-      onRehydrateStorage: () => (state) => {
-        state.setHasHydrated(true);
-      },
+      partialize: (state) => ({ token: state.token, admin: state.admin }),
+      onRehydrateStorage: () => (state) => { state.setHasHydrated(true); },
     }
   )
 );
