@@ -1,41 +1,53 @@
-// RUTA: frontend/src/store/marketStore.js
+// RUTA: src/store/marketStore.js
+// --- INICIO DE LA IMPLEMENTACIÓN DEL STORE RESILIENTE ---
 
-import { create } from 'zustand';
+import create from 'zustand';
 import api from '@/api/axiosConfig';
 
-const useMarketStore = create((set) => ({
-  marketItems: [],
-  isLoading: true,
-  error: null,
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutos
 
-  fetchMarketItems: async () => {
-    set({ isLoading: true, error: null });
+const useMarketStore = create((set, get) => ({
+  marketData: [],
+  lastFetched: null,
+  isLoading: false,
+
+  // La acción que contiene toda la lógica de obtención y caché
+  fetchMarketData: async () => {
+    const { lastFetched, marketData } = get();
+    const now = new Date();
+
+    // 1. Si ya tenemos datos y no han pasado 5 minutos, no hacemos nada.
+    if (lastFetched && now - lastFetched < CACHE_DURATION_MS) {
+      console.log('[MarketStore] Usando datos de mercado cacheados.');
+      return;
+    }
+
+    // Solo mostramos el spinner de carga si no tenemos datos previos (primera carga)
+    if (marketData.length === 0) {
+      set({ isLoading: true });
+    }
+
     try {
-      // --- INICIO DE LA CORRECCIÓN CRÍTICA ---
-      // El endpoint correcto, según la arquitectura del backend (investmentController), 
-      // no es '/market/items', sino '/investments/items'.
-      const response = await api.get('/investments/items');
-      // --- FIN DE LA CORRECCIÓN CRÍTICA ---
+      console.log('[MarketStore] Obteniendo nuevos datos de mercado desde la API...');
+      const response = await api.get('/market/prices');
+      const dataArray = Object.values(response.data);
       
-      if (response.data && response.data.success) {
-        set({
-          marketItems: response.data.data,
-          isLoading: false,
-        });
-      } else {
-        throw new Error('Respuesta inválida del servidor');
-      }
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'Error al cargar los items del mercado.';
-      console.error('[MarketStore] Fetch Error:', errorMessage);
+      // 2. Éxito: Actualizamos los datos y el timestamp.
       set({
-        isLoading: false,
-        error: errorMessage,
+        marketData: dataArray,
+        lastFetched: new Date(),
       });
+
+    } catch (error) {
+      // 3. CRÍTICO: Si la API falla, no hacemos nada con el estado de los datos.
+      // La UI seguirá mostrando los datos cacheados. Solo lo registramos.
+      console.error("Error al actualizar los datos del mercado. Se mantendrán los datos anteriores.", error);
+    
+    } finally {
+      // Siempre nos aseguramos de que el estado de carga termine.
+      set({ isLoading: false });
     }
   },
-
-  // Futuras acciones como 'buyMarketItem', etc., se añadirán aquí.
 }));
 
 export default useMarketStore;
