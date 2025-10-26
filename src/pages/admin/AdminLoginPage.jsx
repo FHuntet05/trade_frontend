@@ -1,21 +1,19 @@
-// RUTA: frontend/src/pages/admin/AdminLoginPage.jsx (VERSIÓN "NEXUS - AUTH FIX")
+// RUTA: frontend/src/pages/admin/AdminLoginPage.jsx
+// --- VERSIÓN DE DEBUGGING FINAL Y DEFINITIVA ---
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import adminApi from '@/pages/admin/api/adminApi'; 
 import useAdminStore from '@/store/adminStore';
 import toast from 'react-hot-toast';
-import { HiOutlineUser, HiOutlineLockClosed } from 'react-icons/hi2'; // Se elimina HiOutlineKey por ahora
+import { HiOutlineUser, HiOutlineLockClosed } from 'react-icons/hi2';
 
 const AdminLoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   
-  // [NEXUS AUTH FIX] - Obtenemos las acciones y el estado del store refactorizado.
   const { loginSuccess, loginFail, setLoading, isLoading, isAuthenticated } = useAdminStore();
   const navigate = useNavigate();
 
-  // [NEXUS AUTH FIX] - Efecto para redirigir si el usuario ya está logueado.
-  // Esto previene ver la página de login si ya hay una sesión válida en localStorage.
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/admin/dashboard', { replace: true });
@@ -27,31 +25,31 @@ const AdminLoginPage = () => {
     e.preventDefault();
     if (!username || !password) return toast.error('Por favor, ingresa usuario y contraseña.');
     
-    setLoading(true); // Informamos al store que estamos iniciando una operación de carga.
+    setLoading(true);
     
+    // --- LÍNEA DE DEBUGGING CRÍTICA ---
+    // Este log nos mostrará exactamente qué se está enviando.
+    console.log('--- [FRONTEND DEBUG] ---');
+    console.log(`Enviando Username: "${username}" (Longitud: ${username.length})`);
+    console.log(`Enviando Password: "${password}" (Longitud: ${password.length})`);
+    console.log('--- FIN DEBUG ---');
+
     try {
-      // [NEXUS AUTH FIX] - La llamada a la API ahora se realiza directamente desde la página.
       const { data } = await adminApi.post('/auth/login/admin', { username, password });
       
-      // Si el login es exitoso, llamamos a la acción del store para guardar los datos.
       loginSuccess(data.token, data.admin);
-
       toast.success('¡Bienvenido, Administrador!');
       navigate('/admin/dashboard');
 
     } catch (error) {
       const message = error.response?.data?.message || 'Error al iniciar sesión.';
       toast.error(message);
-      loginFail(); // Informamos al store que el login falló.
+      loginFail();
     } finally {
-      // Nos aseguramos de que el estado de carga se desactive, aunque no es estrictamente necesario
-      // ya que loginSuccess y loginFail ya lo hacen.
       setLoading(false);
     }
   };
 
-  // Se simplifica la lógica para no manejar 2FA en esta corrección.
-  // La lógica de 2FA puede ser reintroducida una vez que la autenticación base sea estable.
   return (
     <div className="flex items-center justify-center min-h-screen bg-dark-primary text-white p-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-dark-secondary rounded-2xl shadow-lg border border-white/10">
