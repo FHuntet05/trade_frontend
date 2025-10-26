@@ -1,42 +1,46 @@
 // RUTA: src/store/marketStore.js
-// --- VERSIÓN MEJORADA CON MANEJO DE ESTADO DE ERROR ---
+// --- VERSIÓN CORREGIDA CON TRANSFORMACIÓN DE DATOS ---
 
 import create from 'zustand';
 import api from '@/api/axiosConfig';
 
-const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutos
+const CACHE_DURATION_MS = 5 * 60 * 1000;
 
 const useMarketStore = create((set, get) => ({
-  marketData: [],
+  marketData: [], // El estado siempre será un array
   lastFetched: null,
-  isLoading: true, // Inicia en true para la carga inicial
-  error: null,     // Nuevo estado para el mensaje de error
+  isLoading: true,
+  error: null,
 
   fetchMarketData: async () => {
     const { lastFetched } = get();
     const now = new Date();
 
     if (lastFetched && now - lastFetched < CACHE_DURATION_MS) {
-      set({ isLoading: false }); // Si usamos caché, la carga termina
+      set({ isLoading: false });
       return;
     }
 
-    set({ isLoading: true, error: null }); // Inicia una nueva petición
+    // El error no se resetea aquí para que persista si la API sigue fallando
+    set({ isLoading: true });
 
     try {
-      const response = await api.get('/market/prices'); // Usamos la ruta de precios que devuelve los paquetes
+      const response = await api.get('/market/prices');
+      
+      // 1. CORRECCIÓN CRÍTICA: Se transforma el objeto de la API en un array.
+      const dataArray = Object.values(response.data);
       
       set({
-        marketData: response.data, // Asumimos que la API devuelve un array directamente
+        marketData: dataArray, // Se guarda el array
         lastFetched: new Date(),
         isLoading: false,
+        error: null, // Se limpia el error en una petición exitosa
       });
 
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "El servicio no está disponible en este momento.";
+      const errorMessage = err.response?.data?.message || "El servicio no está disponible.";
       console.error("Error al actualizar los datos del mercado. Se mantendrán los datos anteriores.", err);
       
-      // CRÍTICO: Se establece el estado de error
       set({ 
         error: errorMessage,
         isLoading: false 
