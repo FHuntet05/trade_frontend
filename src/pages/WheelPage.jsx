@@ -115,6 +115,7 @@ const WheelPage = () => {
           radiusLineWidth={0}               // ✅ Sin flechas fantasmas
 
           pointerAngle={0}
+          pointerProps={{ style: { display: "none" } }}
           disableInitialAnimation={true}
           showWinnerBorder={false}
         />
