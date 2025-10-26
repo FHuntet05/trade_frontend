@@ -1,26 +1,25 @@
-// RUTA: frontend/src/pages/WheelPage.jsx
-// --- VERSIÓN FINAL CON AJUSTE DE LAYOUT PRECISO (TEXTO ARRIBA, ÍCONO ABAJO) ---
+// ✅ RUTA: frontend/src/pages/WheelPage.jsx
+import React, { useState } from "react";
+import { motion, useAnimation } from "framer-motion";
+import useUserStore from "@/store/userStore";
+import { IOSButton, IOSCard } from "../components/ui/IOSComponents";
+import { FiCopy, FiGift } from "react-icons/fi";
+import toast from "react-hot-toast";
+import confetti from "canvas-confetti";
+import api from "@/api/axiosConfig";
 
-import React, { useState } from 'react';
-import { motion, useAnimation } from 'framer-motion';
-import useUserStore from '@/store/userStore';
-import { IOSButton, IOSCard } from '../components/ui/IOSComponents';
-import { FiCopy, FiGift } from 'react-icons/fi';
-import toast from 'react-hot-toast';
-import confetti from 'canvas-confetti';
-import api from '@/api/axiosConfig';
-
-// Configuración visual. Los textos de los premios han sido ajustados para mayor claridad.
+// ✅ Recompensas limpias y claras
 const rewards = [
-    { text: '$1.00', icon: <img src="/assets/images/USDT.png" alt="USDT" className="w-8 h-8" /> },
-    { text: '+1 Giro', icon: <FiGift className="w-8 h-8 text-yellow-500"/> },
-    { text: '$0.10', icon: <img src="/assets/images/USDT.png" alt="USDT" className="w-7 h-7" /> },
-    { text: '$5.00', icon: <img src="/assets/images/USDT.png" alt="USDT" className="w-8 h-8" /> },
-    { text: '+2 Giros', icon: <FiGift className="w-8 h-8 text-yellow-500"/> },
-    { text: '$0.50', icon: <img src="/assets/images/USDT.png" alt="USDT" className="w-7 h-7" /> },
-    { text: 'NADA', icon: <span className="text-2xl">😢</span> },
-    { text: '$10.00', icon: <img src="/assets/images/USDT.png" alt="USDT" className="w-8 h-8" /> },
+  { text: "$1.00", icon: "/assets/images/USDT.png" },
+  { text: "+1 Giro", icon: "gift" },
+  { text: "$0.10", icon: "/assets/images/USDT.png" },
+  { text: "$5.00", icon: "/assets/images/USDT.png" },
+  { text: "+2 Giros", icon: "gift" },
+  { text: "$0.50", icon: "/assets/images/USDT.png" },
+  { text: "NADA", icon: "sad" },
+  { text: "$10.00", icon: "/assets/images/USDT.png" },
 ];
+
 const SEGMENT_COUNT = rewards.length;
 const SEGMENT_ANGLE = 360 / SEGMENT_COUNT;
 
@@ -30,108 +29,122 @@ const WheelPage = () => {
   const wheelControl = useAnimation();
   const availableSpins = user?.balance?.spins || 0;
 
-  // Lógica de la página (sin cambios)
-  const triggerConfetti = () => confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, zIndex: 1000 });
-  
+  const triggerConfetti = () =>
+    confetti({
+      particleCount: 150,
+      spread: 80,
+      origin: { y: 0.6 },
+    });
+
   const spinWheel = async () => {
     if (isSpinning || availableSpins <= 0) return;
+
     setIsSpinning(true);
+
     try {
-      const response = await api.post('/api/wheel/spin');
-      const { resultIndex, newBalances, prize } = response.data;
-      const finalAngle = (5 * 360) + (360 - (resultIndex * SEGMENT_ANGLE) - (SEGMENT_ANGLE / 2));
+      const res = await api.post("/api/wheel/spin");
+      const { resultIndex, newBalances, prize } = res.data;
+
+      const finalAngle =
+        (5 * 360) +
+        (360 - (resultIndex * SEGMENT_ANGLE) - SEGMENT_ANGLE / 2);
+
       await wheelControl.start({
         rotate: finalAngle,
-        transition: { duration: 6, ease: "easeOut" }
+        transition: { duration: 5.5, ease: "easeOut" },
       });
+
       triggerConfetti();
-      toast.success(`¡Ganaste ${prize.text}!`, { icon: '🎉' });
       updateUserBalances(newBalances);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Ocurrió un error al girar.");
-    } finally {
-      setIsSpinning(false);
+      toast.success(`¡Ganaste ${prize.text}!`);
+
+    } catch {
+      toast.error("Ocurrió un error al girar.");
     }
+
+    setIsSpinning(false);
   };
 
   const handleCopyReferralLink = () => {
-    const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'YOUR_BOT_USERNAME_HERE';
-    const referralLink = `https://t.me/${botUsername}?start=${user.referralCode}`;
-    navigator.clipboard.writeText(referralLink);
-    toast.success('Enlace de referido copiado');
+    const bot = import.meta.env.VITE_TELEGRAM_BOT_USERNAME;
+    const link = `https://t.me/${bot}?start=${user.referralCode}`;
+    navigator.clipboard.writeText(link);
+    toast.success("Enlace copiado ✅");
   };
 
   return (
-    <div className="min-h-screen bg-system-background ios-safe-top pb-20 px-4">
-      <div className="flex flex-col items-center pt-6">
-        <h1 className="text-2xl font-ios-display font-bold text-text-primary mb-2">Ruleta de Premios</h1>
-        <p className="font-ios text-text-secondary mb-4">Invita amigos para ganar más giros.</p>
+    <div className="min-h-screen bg-system-background pb-20 px-4 flex flex-col items-center pt-6">
+      <h1 className="text-2xl font-bold text-text-primary mb-2">Ruleta de Premios</h1>
+      <p className="text-text-secondary mb-4">Invita y gana más giros.</p>
 
-        <IOSCard className="w-full mb-6">
-          <div className="flex justify-between items-center">
-            <span className="font-ios text-text-secondary">Giros disponibles</span>
-            <span className="font-ios-display text-3xl font-bold text-ios-green">{availableSpins}</span>
-          </div>
-        </IOSCard>
+      <IOSCard className="w-full mb-6">
+        <div className="flex justify-between items-center">
+          <span className="text-text-secondary">Giros disponibles</span>
+          <span className="text-3xl font-bold text-ios-green">{availableSpins}</span>
+        </div>
+      </IOSCard>
+
+      {/* ✅ RUEDA */}
+      <div className="relative w-80 h-80 mb-6">
         
-        <div className="flex flex-col items-center justify-center w-full mb-6">
-          <div className="relative w-80 h-80">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 w-10 h-10 z-10" style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}>
-              <div className="w-full h-full bg-ios-green shadow-lg" />
-            </div>
-
-            <motion.ul
-              className="w-full h-full rounded-full relative overflow-hidden border-4 border-white shadow-xl"
-              animate={wheelControl}
-              initial={{ rotate: 0 }}
-            >
-              {rewards.map((reward, index) => (
-                <li
-                  key={index}
-                  className="absolute top-0 left-0 w-1/2 h-1/2 origin-bottom-right"
-                  style={{
-                    transform: `rotate(${index * SEGMENT_ANGLE}deg) skewY(-${90 - SEGMENT_ANGLE}deg)`,
-                    backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#F2F2F7',
-                  }}
-                >
-                  <div
-                    className="absolute w-full h-full flex items-center justify-center"
-                    style={{
-                      transform: `skewY(${90 - SEGMENT_ANGLE}deg) rotate(${SEGMENT_ANGLE / 2}deg)`,
-                    }}
-                  >
-                    {/* 
-                      **CONTENEDOR DE CONTENIDO - AJUSTE FINAL:**
-                      1. `flex-col-reverse`: Invierte el orden del DOM, mostrando el texto (segundo elemento) arriba.
-                      2. `items-center`: Centra horizontalmente.
-                      3. `-rotate-90`: Orienta todo el bloque hacia afuera.
-                    */}
-                    <div className='transform -rotate-90 flex flex-col-reverse items-center'>
-                      {reward.icon}
-                      {/* `mb-2` en el texto crea el espacio con el ícono que ahora está debajo. */}
-                      <p className="font-ios font-bold text-sm mb-2">{reward.text}</p>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </motion.ul>
-          </div>
+        {/* ✅ Flecha superior */}
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="w-6 h-6 bg-ios-green rotate-180 clip-triangle" />
         </div>
 
-        <IOSButton variant="primary" onClick={spinWheel} disabled={isSpinning || availableSpins <= 0} className="w-full mb-8">
-          {isSpinning ? 'Girando...' : (availableSpins > 0 ? 'Girar Ruleta' : 'Sin Giros')}
-        </IOSButton>
+        <motion.div
+          className="wheel-container"
+          animate={wheelControl}
+          initial={{ rotate: 0 }}
+        >
+          {rewards.map((reward, index) => (
+            <div
+              key={index}
+              className="segment"
+              style={{
+                transform: `rotate(${index * SEGMENT_ANGLE}deg)`,
+              }}
+            >
+              <div className="segment-content">
+                <p className="text-sm font-bold">{reward.text}</p>
 
-        <IOSCard className="w-full">
-            <h3 className="font-ios-display font-semibold text-lg mb-4 text-text-primary">Gana más giros</h3>
-            <p className="font-ios text-sm text-text-secondary mb-4">
-                Obtienes un giro por cada amigo que se una con tu enlace. ¡Comparte para ganar!
-            </p>
-            <motion.button whileTap={{ scale: 0.98 }} onClick={handleCopyReferralLink} className="w-full bg-ios-green/10 text-ios-green py-3 rounded-ios font-ios text-center flex items-center justify-center gap-2">
-                <FiCopy /> Copiar mi enlace de referido
-            </motion.button>
-        </IOSCard>
+                {reward.icon === "gift" ? (
+                  <FiGift className="text-2xl text-yellow-500 mt-1" />
+                ) : reward.icon === "sad" ? (
+                  <span className="text-2xl mt-1">😢</span>
+                ) : (
+                  <img src={reward.icon} className="w-7 h-7 mt-1" />
+                )}
+              </div>
+            </div>
+          ))}
+        </motion.div>
       </div>
+
+      {/* Botón Spin */}
+      <IOSButton
+        variant="primary"
+        onClick={spinWheel}
+        disabled={isSpinning || availableSpins <= 0}
+        className="w-full mb-8"
+      >
+        {isSpinning ? "Girando..." : availableSpins > 0 ? "Girar Ruleta" : "Sin Giros"}
+      </IOSButton>
+
+      {/* Referidos */}
+      <IOSCard className="w-full">
+        <h3 className="text-lg font-semibold mb-3">Gana más giros</h3>
+        <p className="text-sm text-text-secondary mb-4">
+          Ganas un giro por cada amigo que se una con tu enlace.
+        </p>
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={handleCopyReferralLink}
+          className="w-full bg-ios-green/10 text-ios-green py-3 rounded-ios flex items-center justify-center gap-2"
+        >
+          <FiCopy /> Copiar enlace
+        </motion.button>
+      </IOSCard>
     </div>
   );
 };
