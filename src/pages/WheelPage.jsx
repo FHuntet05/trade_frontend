@@ -1,33 +1,31 @@
 // RUTA: frontend/src/pages/WheelPage.jsx
-// --- VERSIÓN DEFINITIVA CON LIBRERÍA PROFESIONAL Y LAYOUT CORREGIDO ---
+// --- VERSIÓN FINAL CON RECONSTRUCCIÓN VISUAL COMPLETA ---
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Wheel } from "react-custom-roulette";
-
 import useUserStore from "@/store/userStore";
 import { IOSButton, IOSCard } from "../components/ui/IOSComponents";
-import { FiCopy, FiGift } from "react-icons/fi";
+import { FiCopy } from "react-icons/fi";
 import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
 import api from "@/api/axiosConfig";
 
-// Recompensas con tamaños de imagen estandarizados
-const rewards = [
-  { text: "$1.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
+// Estructura de datos unificada para la librería, con tamaños consistentes
+const rewardsData = [
+  { option: "$1.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
   { option: "🎁 +1 Giro" },
-  { text: "$0.10", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
-  { text: "$5.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
+  { option: "$0.10", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
+  { option: "$5.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
   { option: "🎁 +2 Giros" },
-  { text: "$0.50", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
+  { option: "$0.50", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
   { option: "😢 NADA" },
-  { text: "$10.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } }
+  { option: "$10.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } }
 ];
 
 const WheelPage = () => {
   const { user, updateUserBalances } = useUserStore();
   const availableSpins = user?.balance?.spins || 0;
-  
   const [mustSpin, setMustSpin] = useState(false);
   const [prizeNumber, setPrizeNumber] = useState(0);
 
@@ -35,44 +33,28 @@ const WheelPage = () => {
     if (availableSpins > 0 && !mustSpin) {
       try {
         const response = await api.post("/api/wheel/spin");
-        const { resultIndex } = response.data;
-        
-        setPrizeNumber(resultIndex);
+        setPrizeNumber(response.data.resultIndex);
         setMustSpin(true);
-      } catch (error) {
-        toast.error("Error al obtener el premio.");
-      }
+      } catch (error) { toast.error("Error al iniciar el giro."); }
     }
   };
 
   const handleStopSpinning = async () => {
     setMustSpin(false);
-    
-    // Volvemos a llamar para confirmar el premio y obtener los saldos actualizados
     try {
         const res = await api.post("/api/wheel/spin");
-        const { newBalances, prize } = res.data;
-        
-        updateUserBalances(newBalances);
-        toast.success(`¡Ganaste ${prize.text}! 🎉`);
-        confetti({ particleCount: 120, spread: 85, origin: { y: 0.6 } });
-    } catch (error) {
-        toast.error("Error al confirmar el premio.");
-    }
-  };
-
-  const copyLink = () => {
-    const bot = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'YOUR_BOT_USERNAME';
-    const link = `https://t.me/${bot}?start=${user.referralCode}`;
-    navigator.clipboard.writeText(link);
-    toast.success("Enlace de referido copiado ✅");
+        updateUserBalances(res.data.newBalances);
+        toast.success(`¡Ganaste ${res.data.prize.text}! 🎉`);
+        confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+    } catch (error) { toast.error("Error al confirmar el premio."); }
   };
   
-  // Transformamos los datos para la ruleta
-  const rouletteData = rewards.map(reward => ({
-    ...reward,
-    option: reward.text || reward.option,
-  }));
+  const copyLink = () => {
+    const bot = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'YOUR_BOT';
+    const link = `https://t.me/${bot}?start=${user.referralCode}`;
+    navigator.clipboard.writeText(link);
+    toast.success("Enlace de referido copiado");
+  };
 
   return (
     <div className="min-h-screen bg-system-background px-4 pt-6 flex flex-col items-center pb-24">
@@ -87,41 +69,36 @@ const WheelPage = () => {
       </IOSCard>
 
       <div className="relative w-80 h-80 md:w-96 md:h-96 mb-6 flex items-center justify-center">
-        {/* PUNTERO EXTERNO (el que determina el premio) */}
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2 w-10 h-10 z-20">
-            <div 
-                className="w-full h-full bg-ios-green" 
-                style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}
-            ></div>
+        {/* 1. ÚNICO PUNTERO SUPERIOR (TIPO GOTA ROJA) */}
+        <div 
+            className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-3 w-10 h-12 z-20" 
+            style={{ clipPath: 'path("M20 0C8.954 0 0 8.954 0 20C0 24.418 1.582 28.435 4.186 31.814L20 48L35.814 31.814C38.418 28.435 40 24.418 40 20C40 8.954 31.046 0 20 0Z")' }}
+        >
+            <div className="w-full h-full bg-red-500"></div>
         </div>
 
         <Wheel
             mustStartSpinning={mustSpin}
             prizeNumber={prizeNumber}
-            data={rouletteData}
+            data={rewardsData}
             onStopSpinning={handleStopSpinning}
             
-            // --- ESTILOS CLAVE PARA LOGRAR EL DISEÑO ---
-            perpendicularText={true} // <-- LA PROP MÁS IMPORTANTE PARA EL LAYOUT
-            textDistance={60}
-            fontSize={12}
+            // 2. ESTILOS VISUALES CLAVE
+            perpendicularText={true}
+            textDistance={65}
+            fontSize={14}
             fontFamily="Helvetica"
             
             backgroundColors={['#FFFFFF', '#F2F2F7']}
             textColors={['#333333']}
             outerBorderColor={"#E2E2E2"}
             outerBorderWidth={5}
-            innerRadius={20} // Crea un círculo en el centro
+            innerRadius={20} // 3. CENTRO CIRCULAR
             innerBorderColor={"#E2E2E2"}
             innerBorderWidth={5}
             radiusLineColor={"#E2E2E2"}
             radiusLineWidth={1}
           />
-        
-        {/* TRIÁNGULO DECORATIVO CENTRAL */}
-        <div className="absolute w-8 h-8 bg-ios-green z-10" 
-             style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}>
-        </div>
       </div>
 
       <IOSButton
