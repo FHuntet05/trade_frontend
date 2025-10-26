@@ -1,5 +1,5 @@
 // RUTA: src/store/marketStore.js
-// --- INICIO DE LA IMPLEMENTACIÓN DEL STORE RESILIENTE ---
+// --- VERSIÓN MEJORADA CON MANEJO DE ESTADO DE ERROR ---
 
 import create from 'zustand';
 import api from '@/api/axiosConfig';
@@ -9,43 +9,38 @@ const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutos
 const useMarketStore = create((set, get) => ({
   marketData: [],
   lastFetched: null,
-  isLoading: false,
+  isLoading: true, // Inicia en true para la carga inicial
+  error: null,     // Nuevo estado para el mensaje de error
 
-  // La acción que contiene toda la lógica de obtención y caché
   fetchMarketData: async () => {
-    const { lastFetched, marketData } = get();
+    const { lastFetched } = get();
     const now = new Date();
 
-    // 1. Si ya tenemos datos y no han pasado 5 minutos, no hacemos nada.
     if (lastFetched && now - lastFetched < CACHE_DURATION_MS) {
-      console.log('[MarketStore] Usando datos de mercado cacheados.');
+      set({ isLoading: false }); // Si usamos caché, la carga termina
       return;
     }
 
-    // Solo mostramos el spinner de carga si no tenemos datos previos (primera carga)
-    if (marketData.length === 0) {
-      set({ isLoading: true });
-    }
+    set({ isLoading: true, error: null }); // Inicia una nueva petición
 
     try {
-      console.log('[MarketStore] Obteniendo nuevos datos de mercado desde la API...');
-      const response = await api.get('/market/prices');
-      const dataArray = Object.values(response.data);
+      const response = await api.get('/market/prices'); // Usamos la ruta de precios que devuelve los paquetes
       
-      // 2. Éxito: Actualizamos los datos y el timestamp.
       set({
-        marketData: dataArray,
+        marketData: response.data, // Asumimos que la API devuelve un array directamente
         lastFetched: new Date(),
+        isLoading: false,
       });
 
-    } catch (error) {
-      // 3. CRÍTICO: Si la API falla, no hacemos nada con el estado de los datos.
-      // La UI seguirá mostrando los datos cacheados. Solo lo registramos.
-      console.error("Error al actualizar los datos del mercado. Se mantendrán los datos anteriores.", error);
-    
-    } finally {
-      // Siempre nos aseguramos de que el estado de carga termine.
-      set({ isLoading: false });
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || "El servicio no está disponible en este momento.";
+      console.error("Error al actualizar los datos del mercado. Se mantendrán los datos anteriores.", err);
+      
+      // CRÍTICO: Se establece el estado de error
+      set({ 
+        error: errorMessage,
+        isLoading: false 
+      });
     }
   },
 }));

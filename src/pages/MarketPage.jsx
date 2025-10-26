@@ -86,7 +86,8 @@ const MarketItemCard = ({ item, onPurchaseClick, onToggleDetails, isExpanded }) 
 
 const MarketPage = () => {
   const { t } = useTranslation();
-  const { marketItems, isLoading, error, fetchMarketItems } = useMarketStore();
+  // 1. CORRECCIÓN CRÍTICA: Se usa 'marketData' para coincidir con el store.
+  const { marketData, isLoading, error, fetchMarketData } = useMarketStore();
   const { user } = useUserStore();
   
   const [selectedItem, setSelectedItem] = useState(null);
@@ -94,24 +95,19 @@ const MarketPage = () => {
   const [expandedCardId, setExpandedCardId] = useState(null);
 
   useEffect(() => {
-    fetchMarketItems();
-  }, [fetchMarketItems]);
+    fetchMarketData(); // El nombre de la acción era fetchMarketData en el store
+  }, [fetchMarketData]);
 
   const handlePurchaseClick = (item) => {
     setSelectedItem(item);
     setIsModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setSelectedItem(null);
-  };
-  
-  const handleToggleDetails = (itemId) => {
-    setExpandedCardId(prevId => (prevId === itemId ? null : itemId));
-  };
+  const handleModalClose = () => setIsModalOpen(false);
+  const handleToggleDetails = (itemId) => setExpandedCardId(prevId => (prevId === itemId ? null : itemId));
 
-  if (isLoading) {
+  // --- RENDERIZADO MEJORADO ---
+  if (isLoading && marketData.length === 0) {
     return (
       <div className="min-h-screen bg-system-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ios-green"></div>
@@ -119,12 +115,13 @@ const MarketPage = () => {
     );
   }
 
-  if (error) {
+  // Si hay un error del store Y no tenemos datos cacheados para mostrar, mostramos el error.
+  if (error && marketData.length === 0) {
     return (
       <div className="min-h-screen bg-system-background flex flex-col items-center justify-center p-4 text-center">
-        <h2 className="text-lg font-bold text-red-500">Error</h2>
+        <h2 className="text-lg font-bold text-red-500">Error de Conexión</h2>
         <p className="text-text-secondary">{error}</p>
-        <button onClick={fetchMarketItems} className="mt-4 bg-ios-green text-white px-4 py-2 rounded-ios">
+        <button onClick={fetchMarketData} className="mt-4 bg-ios-green text-white px-4 py-2 rounded-ios">
           Reintentar
         </button>
       </div>
@@ -138,7 +135,8 @@ const MarketPage = () => {
           {t('market.title')}
         </h1>
         <div className="space-y-4">
-          {marketItems.map((item) => (
+          {/* 2. Se utiliza la variable correcta 'marketData' para el .map() */}
+          {marketData.map((item) => (
             <MarketItemCard
               key={item._id}
               item={item}
@@ -151,7 +149,7 @@ const MarketPage = () => {
       </div>
       
       <AnimatePresence>
-        {selectedItem && (
+        {isModalOpen && selectedItem && (
           <InvestmentModal
             isOpen={isModalOpen}
             onClose={handleModalClose}

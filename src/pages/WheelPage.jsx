@@ -1,5 +1,5 @@
 // RUTA: frontend/src/pages/WheelPage.jsx
-// --- VERSIÓN CON CORRECCIÓN DE CRASH POR IMPORTACIÓN FALTANTE ---
+// --- VERSIÓN DEFINITIVA CON LIBRERÍA PROFESIONAL Y LAYOUT CORREGIDO ---
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -7,23 +7,21 @@ import { Wheel } from "react-custom-roulette";
 
 import useUserStore from "@/store/userStore";
 import { IOSButton, IOSCard } from "../components/ui/IOSComponents";
-// --- INICIO DE LA CORRECCIÓN CRÍTICA ---
-import { FiCopy, FiGift } from "react-icons/fi"; // <<< LÍNEA AÑADIDA PARA CORREGIR EL CRASH
-// --- FIN DE LA CORRECCIÓN CRÍTICA ---
+import { FiCopy, FiGift } from "react-icons/fi";
 import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
 import api from "@/api/axiosConfig";
 
-// La definición de las recompensas no necesita cambios.
+// Recompensas con tamaños de imagen estandarizados
 const rewards = [
-  { text: "$1.00", type: 'image', value: "/assets/images/USDT.png" },
-  { text: "+1 Giro", type: 'emoji', value: "🎁" },
-  { text: "$0.10", type: 'image', value: "/assets/images/USDT.png" },
-  { text: "$5.00", type: 'image', value: "/assets/images/USDT.png" },
-  { text: "+2 Giros", type: 'emoji', value: "🎁" },
-  { text: "$0.50", type: 'image', value: "/assets/images/USDT.png" },
-  { text: "NADA", type: 'emoji', value: "😢" },
-  { text: "$10.00", type: 'image', value: "/assets/images/USDT.png" }
+  { text: "$1.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
+  { option: "🎁 +1 Giro" },
+  { text: "$0.10", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
+  { text: "$5.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
+  { option: "🎁 +2 Giros" },
+  { text: "$0.50", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
+  { option: "😢 NADA" },
+  { text: "$10.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } }
 ];
 
 const WheelPage = () => {
@@ -32,26 +30,13 @@ const WheelPage = () => {
   
   const [mustSpin, setMustSpin] = useState(false);
   const [prizeNumber, setPrizeNumber] = useState(0);
-  const [rouletteData, setRouletteData] = useState([]);
-
-  useEffect(() => {
-    const data = rewards.map(reward => {
-      if (reward.type === 'image') {
-        return { 
-          option: reward.text,
-          image: { uri: reward.value, sizeMultiplier: 0.6 }
-        };
-      }
-      return { option: `${reward.value} ${reward.text}` };
-    });
-    setRouletteData(data);
-  }, []);
 
   const handleSpinClick = async () => {
     if (availableSpins > 0 && !mustSpin) {
       try {
         const response = await api.post("/api/wheel/spin");
         const { resultIndex } = response.data;
+        
         setPrizeNumber(resultIndex);
         setMustSpin(true);
       } catch (error) {
@@ -63,6 +48,7 @@ const WheelPage = () => {
   const handleStopSpinning = async () => {
     setMustSpin(false);
     
+    // Volvemos a llamar para confirmar el premio y obtener los saldos actualizados
     try {
         const res = await api.post("/api/wheel/spin");
         const { newBalances, prize } = res.data;
@@ -81,9 +67,15 @@ const WheelPage = () => {
     navigator.clipboard.writeText(link);
     toast.success("Enlace de referido copiado ✅");
   };
+  
+  // Transformamos los datos para la ruleta
+  const rouletteData = rewards.map(reward => ({
+    ...reward,
+    option: reward.text || reward.option,
+  }));
 
   return (
-    <div className="min-h-screen bg-system-background px-4 pt-6 flex flex-col items-center pb-12">
+    <div className="min-h-screen bg-system-background px-4 pt-6 flex flex-col items-center pb-24">
       <h1 className="text-2xl font-ios-display font-bold text-text-primary mb-1">Ruleta de Premios</h1>
       <p className="text-text-secondary mb-4">Invita y gana más giros.</p>
 
@@ -94,31 +86,42 @@ const WheelPage = () => {
         </div>
       </IOSCard>
 
-      <div className="relative w-80 h-80 md:w-96 md:h-96 mb-6">
-        {rouletteData.length > 0 && (
-          <Wheel
+      <div className="relative w-80 h-80 md:w-96 md:h-96 mb-6 flex items-center justify-center">
+        {/* PUNTERO EXTERNO (el que determina el premio) */}
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2 w-10 h-10 z-20">
+            <div 
+                className="w-full h-full bg-ios-green" 
+                style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}
+            ></div>
+        </div>
+
+        <Wheel
             mustStartSpinning={mustSpin}
             prizeNumber={prizeNumber}
             data={rouletteData}
             onStopSpinning={handleStopSpinning}
+            
+            // --- ESTILOS CLAVE PARA LOGRAR EL DISEÑO ---
+            perpendicularText={true} // <-- LA PROP MÁS IMPORTANTE PARA EL LAYOUT
+            textDistance={60}
+            fontSize={12}
+            fontFamily="Helvetica"
+            
             backgroundColors={['#FFFFFF', '#F2F2F7']}
             textColors={['#333333']}
             outerBorderColor={"#E2E2E2"}
             outerBorderWidth={5}
+            innerRadius={20} // Crea un círculo en el centro
             innerBorderColor={"#E2E2E2"}
-            innerBorderWidth={10}
+            innerBorderWidth={5}
             radiusLineColor={"#E2E2E2"}
             radiusLineWidth={1}
-            fontSize={12}
-            textDistance={75}
           />
-        )}
-         <div 
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full z-10"
-            style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}
-         >
-             <div className="w-8 h-8 bg-ios-green"></div>
-         </div>
+        
+        {/* TRIÁNGULO DECORATIVO CENTRAL */}
+        <div className="absolute w-8 h-8 bg-ios-green z-10" 
+             style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}>
+        </div>
       </div>
 
       <IOSButton
@@ -140,7 +143,6 @@ const WheelPage = () => {
           className="w-full bg-ios-green/10 text-ios-green py-3 rounded-ios-card flex justify-center items-center gap-2"
           onClick={copyLink}
         >
-          {/* El error ocurría aquí porque FiCopy no estaba importado */}
           <FiCopy/> Copiar enlace de referido
         </motion.button>
       </IOSCard>
