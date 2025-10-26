@@ -1,5 +1,5 @@
 // RUTA: frontend/src/pages/WheelPage.jsx
-// --- VERSIÓN FINAL CON RECONSTRUCCIÓN VISUAL COMPLETA ---
+// --- VERSIÓN DEFINITIVA CON DEPURACIÓN VISUAL Y AJUSTE DE PRECISIÓN ---
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
@@ -11,16 +11,16 @@ import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
 import api from "@/api/axiosConfig";
 
-// Estructura de datos unificada para la librería, con tamaños consistentes
+// Datos con estructura unificada para la librería, con tamaños consistentes
 const rewardsData = [
-  { option: "$1.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
+  { option: "$1.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } },
   { option: "🎁 +1 Giro" },
-  { option: "$0.10", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
-  { option: "$5.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
+  { option: "$0.10", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } },
+  { option: "$5.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } },
   { option: "🎁 +2 Giros" },
-  { option: "$0.50", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } },
+  { option: "$0.50", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } },
   { option: "😢 NADA" },
-  { option: "$10.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.6 } }
+  { option: "$10.00", image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5 } }
 ];
 
 const WheelPage = () => {
@@ -44,7 +44,7 @@ const WheelPage = () => {
     try {
         const res = await api.post("/api/wheel/spin");
         updateUserBalances(res.data.newBalances);
-        toast.success(`¡Ganaste ${res.data.prize.text}! 🎉`);
+        toast.success(`¡Ganaste ${rewardsData[prizeNumber].option}! 🎉`);
         confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
     } catch (error) { toast.error("Error al confirmar el premio."); }
   };
@@ -68,8 +68,10 @@ const WheelPage = () => {
         </div>
       </IOSCard>
 
+      {/* CONTENEDOR DE LA RULETA Y SU PUNTERO ÚNICO */}
       <div className="relative w-80 h-80 md:w-96 md:h-96 mb-6 flex items-center justify-center">
-        {/* 1. ÚNICO PUNTERO SUPERIOR (TIPO GOTA ROJA) */}
+        
+        {/* 1. ÚNICO PUNTERO SUPERIOR (TIPO GOTA) - NINGÚN OTRO DEBE EXISTIR */}
         <div 
             className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-3 w-10 h-12 z-20" 
             style={{ clipPath: 'path("M20 0C8.954 0 0 8.954 0 20C0 24.418 1.582 28.435 4.186 31.814L20 48L35.814 31.814C38.418 28.435 40 24.418 40 20C40 8.954 31.046 0 20 0Z")' }}
@@ -83,19 +85,18 @@ const WheelPage = () => {
             data={rewardsData}
             onStopSpinning={handleStopSpinning}
             
-            // 2. ESTILOS VISUALES CLAVE
-            perpendicularText={true}
-            textDistance={65}
+            // --- AJUSTES FINALES DE PRECISIÓN ---
+            perpendicularText={true}   // 3. ASEGURA LA ORIENTACIÓN CORRECTA DEL TEXTO
+            textDistance={75}          // Ajusta la distancia del texto desde el centro
             fontSize={14}
-            fontFamily="Helvetica"
             
             backgroundColors={['#FFFFFF', '#F2F2F7']}
             textColors={['#333333']}
             outerBorderColor={"#E2E2E2"}
             outerBorderWidth={5}
-            innerRadius={20} // 3. CENTRO CIRCULAR
+            innerRadius={15}           // 2. CÍRCULO CENTRAL REDUCIDO
             innerBorderColor={"#E2E2E2"}
-            innerBorderWidth={5}
+            innerBorderWidth={3}
             radiusLineColor={"#E2E2E2"}
             radiusLineWidth={1}
           />
