@@ -1,17 +1,14 @@
-// RUTA: frontend/src/pages/MarketPage.jsx
-// --- VERSIÓN FINAL, CORREGIDA Y RESILIENTE ---
+// RUTA: frontend/src/pages/MarketPage.jsx (VERSIÓN FINAL Y CONSISTENTE)
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import useInvestmentStore from '@/store/investmentStore'; // 1. Importa el store dedicado
+import useInvestmentStore from '@/store/investmentStore';
 import useUserStore from '@/store/userStore';
 import InvestmentModal from '@/components/market/InvestmentModal';
 import { CryptoIcon } from '@/components/icons/CryptoIcons';
 import { FiChevronDown } from 'react-icons/fi';
 
-// Componente hijo hecho más robusto para prevenir crashes
 const MarketItemCard = ({ item, onPurchaseClick, onToggleDetails, isExpanded }) => {
-  // Guardia de seguridad: previene el crash si el dato no existe.
   const dailyProfit = item.dailyProfitPercentage !== undefined ? item.dailyProfitPercentage.toFixed(2) : 'N/A';
 
   return (
@@ -38,7 +35,6 @@ const MarketItemCard = ({ item, onPurchaseClick, onToggleDetails, isExpanded }) 
             <p className="font-ios text-sm text-text-secondary">Ganancia Diaria</p>
           </div>
         </div>
-        {/* ... (resto del JSX del card sin cambios) */}
       </div>
       <div className="grid grid-cols-2 border-t border-system-secondary">
         <button
@@ -62,7 +58,6 @@ const MarketItemCard = ({ item, onPurchaseClick, onToggleDetails, isExpanded }) 
 };
 
 const MarketPage = () => {
-  // 2. Consume el estado y la acción del store correcto
   const { investmentPackages, isLoading, error, fetchInvestmentPackages } = useInvestmentStore();
   const { user } = useUserStore();
   
@@ -71,8 +66,11 @@ const MarketPage = () => {
   const [expandedCardId, setExpandedCardId] = useState(null);
 
   useEffect(() => {
-    fetchInvestmentPackages();
-  }, [fetchInvestmentPackages]);
+    // Solo llama a fetch si no hay paquetes cargados para evitar recargas innecesarias
+    if (investmentPackages.length === 0) {
+      fetchInvestmentPackages();
+    }
+  }, [investmentPackages.length, fetchInvestmentPackages]);
 
   const handlePurchaseClick = (item) => {
     setSelectedItem(item);
@@ -83,7 +81,6 @@ const MarketPage = () => {
   const handleToggleDetails = (itemId) => setExpandedCardId(prevId => (prevId === itemId ? null : itemId));
 
   const renderContent = () => {
-    // Muestra el spinner solo en la carga inicial
     if (isLoading && investmentPackages.length === 0) {
       return (
         <div className="text-center py-20">
@@ -92,17 +89,15 @@ const MarketPage = () => {
       );
     }
 
-    // Muestra el error solo si la carga inicial falla y no hay datos cacheados
     if (error && investmentPackages.length === 0) {
       return (
         <div className="text-center py-20 text-text-secondary">
-          <p>No se pudieron cargar los paquetes de inversión.</p>
+          <p>{error}</p>
           <button onClick={fetchInvestmentPackages} className="mt-4 text-ios-green font-semibold">Reintentar</button>
         </div>
       );
     }
     
-    // Si tenemos datos, SIEMPRE los mostramos, cumpliendo la directiva de no mostrar errores innecesarios.
     return (
       <div className="space-y-4">
         {investmentPackages.map((item) => (

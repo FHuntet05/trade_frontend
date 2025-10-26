@@ -1,32 +1,36 @@
-// RUTA: src/store/investmentStore.js (NUEVO ARCHIVO)
-// --- STORE DEDICADO PARA LOS PAQUETES DE INVERSIÓN DE MARKETPAGE ---
+// RUTA: src/store/investmentStore.js (VERSIÓN CON RUTA CORREGIDA)
 
 import create from 'zustand';
 import api from '@/api/axiosConfig';
 
 const useInvestmentStore = create((set, get) => ({
-  investmentPackages: [], // Usamos un nombre claro y específico
+  investmentPackages: [],
   isLoading: true,
   error: null,
 
-  // Asumimos que el endpoint correcto para los paquetes es '/investments'
   fetchInvestmentPackages: async () => {
-    set({ isLoading: true });
+    // Si ya no estamos cargando, y ya tenemos datos, no hacemos nada para evitar peticiones innecesarias.
+    const { isLoading, investmentPackages } = get();
+    if (!isLoading && investmentPackages.length > 0) {
+      // Opcional: se podría añadir una lógica de caché por tiempo aquí si se desea.
+    }
+
+    set({ isLoading: true, error: null });
 
     try {
-      // NOTA: Si el endpoint es diferente, ajústalo aquí.
-      const response = await api.get('/investments'); 
+      // --- CORRECCIÓN CRÍTICA: Se añade el segmento '/items' a la ruta para que coincida con el backend. ---
+      const response = await api.get('/investments/items'); 
       
       set({
-        investmentPackages: response.data.data || response.data, // Flexible para manejar diferentes estructuras de respuesta
+        investmentPackages: response.data.data || response.data,
         isLoading: false,
-        error: null,
       });
 
     } catch (err) {
       const errorMessage = err.response?.data?.message || "No se pudieron cargar los paquetes de inversión.";
-      console.error("Error al obtener paquetes de inversión. Se mostrarán datos anteriores si existen.", err);
+      console.error("Error al obtener paquetes de inversión:", err);
       
+      // Mantenemos los datos antiguos si existen, pero actualizamos el estado de error y carga.
       set({ 
         error: errorMessage,
         isLoading: false 

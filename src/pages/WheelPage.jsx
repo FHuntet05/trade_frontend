@@ -97,7 +97,7 @@ const WheelPage = () => {
           data={rewardsData}
           onStopSpinning={handleStopSpinning}
 
-          perpendicularText={true}
+          perpendicularText={false}
           textDistance={75}
           fontSize={14}
 
