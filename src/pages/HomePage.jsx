@@ -1,13 +1,12 @@
 // RUTA: src/pages/HomePage.jsx
-// --- VERSIÓN FINAL RESILIENTE USANDO EL MARKETSTORE ---
+// --- VERSIÓN FINAL Y COMPLETA CON CONSUMO DE DATOS RESILIENTE ---
 
-import React, { useEffect } from 'react'; // Se elimina useState
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '@/store/userStore';
-import useMarketStore from '@/store/marketStore'; // 1. Se importa el nuevo store.
-
+import useMarketStore from '@/store/marketStore';
 import { IOSHeader } from '@/components/ui/ios/Header';
 import { CryptoList } from '@/components/ui/ios/CryptoList';
 import { FiGift, FiMessageSquare } from 'react-icons/fi';
@@ -19,15 +18,13 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useUserStore();
   
-  // 2. Se obtienen el estado y la acción directamente del store.
   const { marketData, isLoading, fetchMarketData } = useMarketStore();
 
-  // 3. El useEffect ahora solo necesita llamar a la acción del store.
   useEffect(() => {
+    // La acción `fetchMarketData` se encarga de la lógica de caché y de evitar peticiones innecesarias.
     fetchMarketData();
   }, [fetchMarketData]);
 
-  // La lógica del countdown y de navegación se mantiene intacta.
   const targetEndDate = user?.activeInvestments?.[0]?.endDate;
   const { timeLeft, isFinished } = useCountdown(targetEndDate);
   const handleDeposit = () => navigate('/deposit');
@@ -37,6 +34,26 @@ const HomePage = () => {
   const userBalance = user?.balance?.usdt || 0;
   const withdrawableBalance = user?.withdrawableBalance || 0;
 
+  const renderMarketData = () => {
+    // Si está cargando por primera vez (sin datos cacheados), muestra un spinner.
+    if (isLoading && marketData.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ios-green mx-auto"></div>
+        </div>
+      );
+    }
+    
+    // Si tenemos datos (aunque sean antiguos), SIEMPRE los mostramos.
+    // Esto cumple la directiva de nunca mostrar un mensaje de "no se pudieron cargar".
+    // El caso de error solo se mostraría si la carga inicial falla y no hay nada que mostrar.
+    if (!isLoading && marketData.length === 0) {
+        return <p className="px-4 text-text-secondary text-center">No hay datos de mercado disponibles en este momento.</p>;
+    }
+
+    return <CryptoList data={marketData} />;
+  };
+
   return (
     <div className="min-h-screen bg-system-background">
       <IOSHeader 
@@ -45,7 +62,6 @@ const HomePage = () => {
       />
 
       <div className="p-4 space-y-4">
-        {/* La UI no necesita cambios */}
         <div className="grid grid-cols-2 gap-4">
           <motion.button whileTap={{ scale: 0.95 }} onClick={handleClaimBonus} className="bg-internal-card p-3 rounded-ios-card shadow-ios-card flex items-center space-x-3">
             <FiGift className="w-6 h-6 text-ios-green" />
@@ -76,16 +92,11 @@ const HomePage = () => {
 
       <div className="mt-4 pb-24">
         <div className="px-4 mb-3">
-          <h2 className="font-ios-display text-xl font-bold text-text-primary">Mercado en Vivo</h2>
+          <h2 className="font-ios-display text-xl font-bold text-text-primary">
+            Mercado en Vivo
+          </h2>
         </div>
-        {/* 4. CryptoList ahora muestra el mensaje de error solo si la carga inicial falla y no hay datos en caché. */}
-        {isLoading && marketData.length === 0 ? (
-          <p className="px-4 text-text-secondary">Cargando datos del mercado...</p>
-        ) : !isLoading && marketData.length === 0 ? (
-          <p className="px-4 text-text-secondary">No se pudieron cargar los datos del mercado.</p>
-        ) : (
-          <CryptoList cryptos={marketData} />
-        )}
+        {renderMarketData()}
       </div>
     </div>
   );
