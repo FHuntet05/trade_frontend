@@ -1,5 +1,5 @@
 // RUTA: frontend/src/pages/WheelPage.jsx
-// --- VERSIÓN FINAL AJUSTADA AL ESTÁNDAR VISUAL PROFESIONAL ---
+// --- VERSIÓN FINAL CON AJUSTE DE LAYOUT PRECISO (TEXTO ARRIBA, ÍCONO ABAJO) ---
 
 import React, { useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 import api from '@/api/axiosConfig';
 
-// Configuración visual. Los tamaños de los iconos se han mantenido, son adecuados.
+// Configuración visual. Los textos de los premios han sido ajustados para mayor claridad.
 const rewards = [
     { text: '$1.00', icon: <img src="/assets/images/USDT.png" alt="USDT" className="w-8 h-8" /> },
     { text: '+1 Giro', icon: <FiGift className="w-8 h-8 text-yellow-500"/> },
@@ -30,7 +30,7 @@ const WheelPage = () => {
   const wheelControl = useAnimation();
   const availableSpins = user?.balance?.spins || 0;
 
-  // La lógica de giro y de la página no necesita cambios.
+  // Lógica de la página (sin cambios)
   const triggerConfetti = () => confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, zIndex: 1000 });
   
   const spinWheel = async () => {
@@ -80,7 +80,6 @@ const WheelPage = () => {
               <div className="w-full h-full bg-ios-green shadow-lg" />
             </div>
 
-            {/* --- INICIO DE LA ESTRUCTURA VISUAL REFINADA --- */}
             <motion.ul
               className="w-full h-full rounded-full relative overflow-hidden border-4 border-white shadow-xl"
               animate={wheelControl}
@@ -89,10 +88,10 @@ const WheelPage = () => {
               {rewards.map((reward, index) => (
                 <li
                   key={index}
-                  className="absolute top-0 left-0 w-1/2 h-12 origin-bottom-right"
+                  className="absolute top-0 left-0 w-1/2 h-1/2 origin-bottom-right"
                   style={{
                     transform: `rotate(${index * SEGMENT_ANGLE}deg) skewY(-${90 - SEGMENT_ANGLE}deg)`,
-                    backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#F2F2F7', // Sin colores vibrantes
+                    backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#F2F2F7',
                   }}
                 >
                   <div
@@ -102,21 +101,20 @@ const WheelPage = () => {
                     }}
                   >
                     {/* 
-                      **CONTENEDOR DE CONTENIDO CORREGIDO:**
-                      1. `flex-col` asegura el orden vertical: ícono arriba, texto abajo.
-                      2. `items-center` centra horizontalmente.
-                      3. `-rotate-90` orienta el bloque entero hacia afuera.
+                      **CONTENEDOR DE CONTENIDO - AJUSTE FINAL:**
+                      1. `flex-col-reverse`: Invierte el orden del DOM, mostrando el texto (segundo elemento) arriba.
+                      2. `items-center`: Centra horizontalmente.
+                      3. `-rotate-90`: Orienta todo el bloque hacia afuera.
                     */}
-                    <div className='transform -rotate-90 flex flex-col items-center'>
+                    <div className='transform -rotate-90 flex flex-col-reverse items-center'>
                       {reward.icon}
-                      {/* `mt-2` añade el espacio vertical entre el ícono y el texto. */}
-                      <p className="font-ios font-bold text-sm mt-2">{reward.text}</p>
+                      {/* `mb-2` en el texto crea el espacio con el ícono que ahora está debajo. */}
+                      <p className="font-ios font-bold text-sm mb-2">{reward.text}</p>
                     </div>
                   </div>
                 </li>
               ))}
             </motion.ul>
-            {/* --- FIN DE LA ESTRUCTURA VISUAL REFINADA --- */}
           </div>
         </div>
 
