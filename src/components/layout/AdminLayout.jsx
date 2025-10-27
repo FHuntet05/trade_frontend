@@ -1,4 +1,4 @@
-// RUTA: frontend/src/components/layout/AdminLayout.jsx (VERSIÓN LIMPIA)
+// RUTA: frontend/src/components/layout/AdminLayout.jsx (VERSIÓN CORREGIDA)
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '@/pages/admin/components/Sidebar';
@@ -28,7 +28,14 @@ const AdminLayout = () => {
     const closeDrawer = () => setIsDrawerOpen(false);
 
     return (
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Se asegura que este div ocupe toda la pantalla y establezca el contexto visual oscuro.
+        // 1. `min-h-screen`: Garantiza que el layout ocupe al menos el alto completo de la ventana.
+        // 2. `bg-dark-primary`: Establece el color de fondo oscuro fundamental para todo el panel.
+        // 3. `text-white`: Define el color de texto por defecto para todos los componentes hijos.
+        // 4. `flex`: Mantiene la estructura de layout basada en flexbox.
         <div className="flex min-h-screen bg-dark-primary text-white font-sans">
+        // --- FIN DE LA CORRECCCIÓN ---
             <MobileDrawer isOpen={isDrawerOpen} setIsOpen={setIsDrawerOpen} />
             <div className="hidden md:flex md:flex-shrink-0">
                 <Sidebar onLinkClick={() => {}} />
