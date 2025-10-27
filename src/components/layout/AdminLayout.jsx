@@ -35,7 +35,7 @@ const AdminLayout = () => {
         // 3. `text-white`: Define el color de texto por defecto para todos los componentes hijos.
         // 4. `flex`: Mantiene la estructura de layout basada en flexbox.
         <div className="flex min-h-screen bg-dark-primary text-white font-sans">
-        // --- FIN DE LA CORRECCCIÓN ---
+        
             <MobileDrawer isOpen={isDrawerOpen} setIsOpen={setIsDrawerOpen} />
             <div className="hidden md:flex md:flex-shrink-0">
                 <Sidebar onLinkClick={() => {}} />
