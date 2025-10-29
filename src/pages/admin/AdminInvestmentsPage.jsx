@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminInvestmentsPage.jsx (VERSIÓN CON AJUSTES FINOS DE UI)
+// RUTA: frontend/src/pages/admin/AdminInvestmentsPage.jsx (VERSIÓN CON CORRECCIÓN FINAL DE SUBMIT)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
@@ -6,16 +6,23 @@ import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '@/pages/admin/api/adminApi';
 import Loader from '@/components/common/Loader';
-// --- INICIO CORRECCIÓN DE ICONO ---
-// Se reemplaza HiOutlineEyeOff por HiOutlineEyeSlash, que es el nombre correcto en la librería.
 import { HiChartBar, HiPlus, HiPencil, HiTrash, HiXMark, HiOutlineFire, HiOutlineSparkles, HiOutlineEyeSlash, HiOutlineEye } from 'react-icons/hi2';
-// --- FIN CORRECCIÓN DE ICONO ---
 
-// --- SUB-COMPONENTE: Tarjeta de Previsualización (con el icono corregido) ---
+// --- SUB-COMPONENTE: Tarjeta de Previsualización (Sin cambios) ---
 const InvestmentCard = ({ item, onEdit, onDelete, onToggleStatus }) => (
+    // ... (este componente se mantiene igual)
     <div className="bg-dark-secondary rounded-lg border border-white/10 flex flex-col justify-between">
         <div className="p-4 relative">
-            {/* ... (código de insignias sin cambios) ... */}
+            {item.saleDiscountPercentage > 0 && (
+                <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">
+                    OFERTA -{item.saleDiscountPercentage}%
+                </div>
+            )}
+             {item.purchaseCount > 10 && (
+                <div className="absolute top-0 left-0 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded-br-lg rounded-tl-lg flex items-center gap-1">
+                    <HiOutlineFire /> MÁS POPULAR
+                </div>
+            )}
             <img src={item.imageUrl} alt={item.name} className="w-16 h-16 mx-auto mb-3 rounded-full object-cover bg-dark-primary p-1" />
             <h3 className="text-center font-bold text-lg">{item.name}</h3>
             <p className="text-center text-sm text-text-secondary">{item.linkedCryptoSymbol}</p>
@@ -29,7 +36,6 @@ const InvestmentCard = ({ item, onEdit, onDelete, onToggleStatus }) => (
         <div className="bg-dark-tertiary/50 p-2 flex justify-around items-center border-t border-white/10">
             <button onClick={() => onEdit(item)} className="p-2 text-indigo-400 hover:text-white" title="Editar"><HiPencil className="w-5 h-5" /></button>
             <button onClick={() => onToggleStatus(item)} className="p-2 text-yellow-400 hover:text-white" title={item.isActive ? 'Desactivar' : 'Activar'}>
-                {/* --- CORRECCIÓN DE ICONO APLICADA --- */}
                 {item.isActive ? <HiOutlineEye className="w-5 h-5" /> : <HiOutlineEyeSlash className="w-5 h-5" />}
             </button>
             <button onClick={() => onDelete(item._id)} className="p-2 text-red-400 hover:text-white" title="Eliminar"><HiTrash className="w-5 h-5" /></button>
@@ -37,8 +43,7 @@ const InvestmentCard = ({ item, onEdit, onDelete, onToggleStatus }) => (
     </div>
 );
 
-
-// --- SUB-COMPONENTE: Modal de Formulario (CON CORRECCIONES DE COLOR) ---
+// --- SUB-COMPONENTE: Modal de Formulario (CON LA CORRECCIÓN DE SUBMIT) ---
 const InvestmentFormModal = ({ item, onSave, onClose, cryptoList }) => {
     const { register, handleSubmit, reset } = useForm();
     const isEditing = !!item;
@@ -66,9 +71,11 @@ const InvestmentFormModal = ({ item, onSave, onClose, cryptoList }) => {
                     <h2 className="text-lg font-bold">{isEditing ? 'Editar Item' : 'Crear Nuevo Item'}</h2>
                     <button onClick={onClose}><HiXMark className="w-6 h-6" /></button>
                 </header>
+                {/* --- INICIO DE LA CORRECCIÓN DE SUBMIT --- */}
+                {/* La función handleSubmit de react-hook-form debe recibir la referencia a la función que procesará los datos. */}
                 <form onSubmit={handleSubmit(handleDataSubmit)}>
+                {/* --- FIN DE LA CORRECCIÓN DE SUBMIT --- */}
                     <main className="p-6 grid grid-cols-2 gap-x-4 gap-y-3 max-h-[70vh] overflow-y-auto">
-                        {/* --- INICIO DE CORRECCIONES VISUALES FINALES --- */}
                         <div className="col-span-2">
                             <label className="text-sm font-medium text-white">Nombre del Plan</label>
                             <input {...register('name', { required: true })} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
@@ -103,7 +110,6 @@ const InvestmentFormModal = ({ item, onSave, onClose, cryptoList }) => {
                             <label className="text-sm font-medium text-white">% Oferta (0 si no hay)</label>
                             <input type="number" {...register('saleDiscountPercentage')} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
                         </div>
-                        {/* --- FIN DE CORRECCIONES VISUALES FINALES --- */}
                     </main>
                     <footer className="p-4 border-t border-dark-tertiary text-right">
                         <button type="submit" className="px-5 py-2 bg-green-600 font-bold rounded-lg hover:bg-green-700 transition-colors">
