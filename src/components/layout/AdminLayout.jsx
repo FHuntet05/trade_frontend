@@ -1,63 +1,67 @@
-import React, { useEffect } from 'react'; // Importar useEffect
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+// RUTA: frontend/src/components/layout/AdminLayout.jsx (VERSIÓN CON RUTA DE IMPORTACIÓN CORREGIDA)
+import React, { useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import Sidebar from '@/pages/admin/components/Sidebar';
+import AdminHeaderMobile from '@/pages/admin/components/AdminHeaderMobile';
+import MobileDrawer from '@/pages/admin/components/MobileDrawer';
 
-import useAdminStore from '../store/adminStore';
-import Loader from '../components/common/Loader';
+// --- INICIO DE LA CORRECCIÓN DE RUTA ---
+// Se cambia la ruta relativa incorrecta "../store/adminStore" por la ruta con alias "@".
+// '@' apunta a la carpeta 'src', por lo que la ruta correcta es '@/store/adminStore'.
+import useAdminStore from '@/store/adminStore';
+// --- FIN DE LA CORRECCIÓN DE RUTA ---
 
-// Componentes y Páginas
-import AdminLayout from '../components/layout/AdminLayout';
-import AdminLoginPage from '../pages/admin/AdminLoginPage';
-import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
-// ...etc
+const getPageTitle = (pathname) => {
+    const segments = pathname.split('/').filter(Boolean);
+    const routeName = segments[segments.length - 1];
+    if (!routeName || routeName === 'admin' || routeName === 'dashboard') return 'Dashboard';
+    return routeName.charAt(0).toUpperCase() + routeName.slice(1).replace(/-/g, ' ');
+};
 
-function AdminApp() {
-  const { isAuthenticated, _hasHydrated } = useAdminStore();
+const AdminLayout = () => {
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const { admin, logout } = useAdminStore();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-  // --- INICIO DE LA CORRECCIÓN CLAVE ---
-  // Este efecto gestionará la clase del body para aplicar el tema oscuro.
-  useEffect(() => {
-    // Añade la clase .admin-body cuando el componente se monta
-    document.body.classList.add('admin-body');
-
-    // Función de limpieza: se ejecuta cuando el componente se desmonta
-    return () => {
-      document.body.classList.remove('admin-body');
+    const handleLogout = () => {
+        logout();
+        navigate('/admin/login');
     };
-  }, []); // El array vacío asegura que esto se ejecute solo una vez (al montar/desmontar)
-  // --- FIN DE LA CORRECCIÓN CLAVE ---
 
+    const currentPageTitle = getPageTitle(location.pathname);
 
-  if (!_hasHydrated) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-dark-primary">
-        <Loader text="Cargando aplicación..." />
-      </div>
+        // Se mantienen las clases del tema oscuro
+        <div className="flex min-h-screen bg-dark-primary text-text-primary font-sans">
+            <MobileDrawer isOpen={isDrawerOpen} setIsOpen={setIsDrawerOpen} />
+            <div className="hidden md:flex md:flex-shrink-0">
+                <Sidebar onLinkClick={() => {}} />
+            </div>
+            <div className="flex-grow flex flex-col w-full md:w-0">
+                <header className="hidden md:flex bg-dark-secondary p-4 justify-end items-center border-b border-dark-tertiary">
+                    <div className="flex items-center gap-4">
+                        <span className="text-text-secondary">
+                            Bienvenido, <strong className="text-text-primary">{admin?.username || 'Admin'}</strong>
+                        </span>
+                        <button
+                            onClick={handleLogout}
+                            className="px-4 py-2 text-sm font-bold text-red-400 bg-red-500/20 rounded-lg hover:bg-red-500/40 transition-colors"
+                        >
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </header>
+                <AdminHeaderMobile 
+                    title={currentPageTitle}
+                    onMenuClick={() => setIsDrawerOpen(true)} 
+                />
+                <main className="flex-grow p-4 md:p-6 overflow-y-auto">
+                    <Outlet />
+                </main>
+            </div>
+        </div>
     );
-  }
+};
 
-  return (
-    // Ya no es necesario el div con la clase "dark" aquí, porque el efecto lo maneja globalmente.
-    <Router>
-      <Toaster position="top-center" reverseOrder={false} />
-      <Routes>
-        {isAuthenticated ? (
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="dashboard" element={<AdminDashboardPage />} />
-            {/* ... (el resto de las rutas sin cambios) ... */}
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
-          </Route>
-        ) : (
-          <Route path="/admin/login" element={<AdminLoginPage />} />
-        )}
-        
-        <Route 
-          path="*" 
-          element={<Navigate to={isAuthenticated ? "/admin/dashboard" : "/admin/login"} replace />} 
-        />
-      </Routes>
-    </Router>
-  );
-}
-
-export default AdminApp;
+export default AdminLayout;
