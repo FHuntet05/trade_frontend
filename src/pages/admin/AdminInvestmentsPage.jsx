@@ -1,327 +1,167 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
-import useAdminStore from '../../store/adminStore';
-import AdminCard from '../../components/admin/AdminCard';
-import { Tab } from '@headlessui/react';
-import CryptoModal from '../../components/admin/CryptoModal';
-import ProfitTierModal from '../../components/admin/ProfitTierModal';
-import { 
-  PencilIcon, 
-  TrashIcon, 
-  PlusIcon,
-  ChartBarIcon,
-  CurrencyDollarIcon
-} from '@heroicons/react/24/outline';
+// RUTA: frontend/src/pages/admin/AdminInvestmentsPage.jsx (VERSIÓN CONSTRUCTOR VISUAL)
 
-function AdminInvestmentsPage() {
-  const [cryptoList, setCryptoList] = useState([]);
-  const [profitTiers, setProfitTiers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState(0);
-  const [isCryptoModalOpen, setIsCryptoModalOpen] = useState(false);
-  const [isProfitTierModalOpen, setIsProfitTierModalOpen] = useState(false);
-  const [selectedCrypto, setSelectedCrypto] = useState(null);
-  const [selectedTier, setSelectedTier] = useState(null);
-  const { api } = useAdminStore();
+import React, { useState, useEffect, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
+import { AnimatePresence, motion } from 'framer-motion';
+import toast from 'react-hot-toast';
+import api from '@/pages/admin/api/adminApi';
+import Loader from '@/components/common/Loader';
+import { HiChartBar, HiPlus, HiPencil, HiTrash, HiXMark, HiOutlineFire, HiOutlineSparkles, HiOutlineEyeOff, HiOutlineEye } from 'react-icons/hi2';
 
-  const fetchData = async () => {
-    try {
-      const [cryptoRes, tiersRes] = await Promise.all([
-        api.get('/admin/crypto-settings'),
-        api.get('/admin/profit-tiers')
-      ]);
-
-      setCryptoList(cryptoRes.data.data || []);
-      setProfitTiers(tiersRes.data.data || []);
-    } catch (error) {
-      toast.error('Error al cargar los datos');
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleCryptoUpdate = async (symbol, data) => {
-    try {
-      await api.put(`/admin/crypto-settings/${symbol}`, data);
-      toast.success('Criptomoneda actualizada con éxito');
-      fetchData();
-    } catch (error) {
-      toast.error('Error al actualizar la criptomoneda');
-      console.error(error);
-    }
-  };
-
-  const handleCryptoSubmit = async (data) => {
-    try {
-      if (selectedCrypto) {
-        await api.put(`/admin/crypto-settings/${selectedCrypto.symbol}`, data);
-        toast.success('Criptomoneda actualizada con éxito');
-      } else {
-        await api.post('/admin/crypto-settings', data);
-        toast.success('Criptomoneda creada con éxito');
-      }
-      fetchData();
-    } catch (error) {
-      toast.error('Error al guardar la criptomoneda');
-      console.error(error);
-    }
-  };
-
-  const handleEditCrypto = (crypto) => {
-    setSelectedCrypto(crypto);
-    setIsCryptoModalOpen(true);
-  };
-
-  const handleNewCrypto = () => {
-    setSelectedCrypto(null);
-    setIsCryptoModalOpen(true);
-  };
-
-  const handleTierSubmit = async (data) => {
-    try {
-      const currentTiers = [...profitTiers];
-      if (selectedTier) {
-        // Actualizar tier existente
-        const index = currentTiers.findIndex(t => 
-          t.minBalance === selectedTier.minBalance && 
-          t.maxBalance === selectedTier.maxBalance
-        );
-        currentTiers[index] = data;
-      } else {
-        // Agregar nuevo tier
-        currentTiers.push(data);
-      }
-      
-      // Ordenar y validar tiers
-      const sortedTiers = currentTiers
-        .sort((a, b) => a.minBalance - b.minBalance);
-
-      // Verificar superposición
-      for (let i = 0; i < sortedTiers.length - 1; i++) {
-        if (sortedTiers[i].maxBalance >= sortedTiers[i + 1].minBalance) {
-          throw new Error('Los rangos de saldo no pueden superponerse');
-        }
-      }
-
-      await api.put('/admin/profit-tiers', { profitTiers: sortedTiers });
-      toast.success(selectedTier ? 'Nivel actualizado con éxito' : 'Nivel creado con éxito');
-      fetchData();
-    } catch (error) {
-      toast.error(error.message || 'Error al guardar el nivel de ganancia');
-      console.error(error);
-    }
-  };
-
-  const handleEditTier = (tier) => {
-    setSelectedTier(tier);
-    setIsProfitTierModalOpen(true);
-  };
-
-  const handleNewTier = () => {
-    setSelectedTier(null);
-    setIsProfitTierModalOpen(true);
-  };
-
-  const handleTierUpdate = async (tiers) => {
-    try {
-      await api.put('/admin/profit-tiers', { profitTiers: tiers });
-      toast.success('Niveles de ganancia actualizados con éxito');
-      fetchData();
-    } catch (error) {
-      toast.error('Error al actualizar los niveles de ganancia');
-      console.error(error);
-    }
-  };
-
-  const tabPanels = [
-    {
-      name: 'Criptomonedas',
-      content: (
-        <div className="grid gap-6">
-          {cryptoList.map((crypto) => (
-            <AdminCard key={crypto.symbol} className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <img 
-                    src={crypto.icon} 
-                    alt={crypto.name} 
-                    className="w-12 h-12 rounded-full"
-                  />
-                  <div>
-                    <h3 className="text-lg font-semibold">{crypto.name}</h3>
-                    <p className="text-sm text-gray-500">{crypto.symbol}</p>
-                  </div>
+// --- SUB-COMPONENTE: Tarjeta de Previsualización y Gestión ---
+const InvestmentCard = ({ item, onEdit, onDelete, onToggleStatus }) => (
+    <div className="bg-dark-secondary rounded-lg border border-white/10 flex flex-col justify-between">
+        {/* --- Sección de Previsualización Visual --- */}
+        <div className="p-4 relative">
+            {item.saleDiscountPercentage > 0 && (
+                <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">
+                    OFERTA -{item.saleDiscountPercentage}%
                 </div>
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => handleCryptoUpdate(crypto.symbol, {
-                      ...crypto,
-                      isActive: !crypto.isActive
-                    })}
-                    className={`px-4 py-2 rounded-lg ${
-                      crypto.isActive 
-                        ? 'bg-green-500 hover:bg-green-600' 
-                        : 'bg-red-500 hover:bg-red-600'
-                    } text-white transition-colors`}
-                  >
-                    {crypto.isActive ? 'Activo' : 'Inactivo'}
-                  </button>
-                  <button
-                    onClick={() => {/* Abrir modal de edición */}}
-                    className="p-2 text-gray-500 hover:text-blue-500"
-                  >
-                    <PencilIcon className="w-5 h-5" />
-                  </button>
+            )}
+             {item.purchaseCount > 10 && ( // Ejemplo: popular si tiene más de 10 compras
+                <div className="absolute top-0 left-0 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded-br-lg rounded-tl-lg flex items-center gap-1">
+                    <HiOutlineFire /> MÁS POPULAR
                 </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <p className="text-sm text-gray-500">Inversión Mínima</p>
-                  <p className="text-lg font-semibold">{crypto.minInvestment} USDT</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <p className="text-sm text-gray-500">Inversión Máxima</p>
-                  <p className="text-lg font-semibold">{crypto.maxInvestment} USDT</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <p className="text-sm text-gray-500">Ganancia Mínima</p>
-                  <p className="text-lg font-semibold">{crypto.profitRange.min}%</p>
-                </div>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <p className="text-sm text-gray-500">Ganancia Máxima</p>
-                  <p className="text-lg font-semibold">{crypto.profitRange.max}%</p>
-                </div>
-              </div>
-            </AdminCard>
-          ))}
-          <button
-            onClick={handleNewCrypto}
-            className="flex items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 transition-colors"
-          >
-            <PlusIcon className="w-6 h-6 mr-2" />
-            Agregar Nueva Criptomoneda
-          </button>
+            )}
+
+            <img src={item.imageUrl} alt={item.name} className="w-16 h-16 mx-auto mb-3 rounded-full object-cover bg-dark-primary p-1" />
+            <h3 className="text-center font-bold text-lg">{item.name}</h3>
+            <p className="text-center text-sm text-text-secondary">{item.linkedCryptoSymbol}</p>
+            
+            <div className="mt-4 space-y-2 text-sm">
+                <div className="flex justify-between"><span>Duración:</span> <span className="font-mono">{item.durationDays} días</span></div>
+                <div className="flex justify-between"><span>ROI Total:</span> <span className="font-mono font-bold text-green-400">{item.totalRoiPercentage}%</span></div>
+                <div className="flex justify-between"><span>Ganancia Diaria:</span> <span className="font-mono">{item.dailyProfitAmount} USDT</span></div>
+                <div className="flex justify-between"><span>Precio:</span> <span className="font-mono">{item.price} USDT</span></div>
+            </div>
         </div>
-      )
-    },
-    {
-      name: 'Niveles de Ganancia',
-      content: (
-        <div className="grid gap-6">
-          {profitTiers.map((tier, index) => (
-            <AdminCard key={index} className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    Nivel {index + 1}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {tier.minBalance} USDT - {tier.maxBalance} USDT
-                  </p>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <p className="text-xl font-bold text-green-500">
-                    {tier.profitPercentage}%
-                  </p>
-                  <button
-                    onClick={() => {/* Abrir modal de edición */}}
-                    className="p-2 text-gray-500 hover:text-blue-500"
-                  >
-                    <PencilIcon className="w-5 h-5" />
-                  </button>
-                  {index > 0 && (
-                    <button
-                      onClick={() => {
-                        const newTiers = [...profitTiers];
-                        newTiers.splice(index, 1);
-                        handleTierUpdate(newTiers);
-                      }}
-                      className="p-2 text-gray-500 hover:text-red-500"
-                    >
-                      <TrashIcon className="w-5 h-5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </AdminCard>
-          ))}
-          <button
-            onClick={handleNewTier}
-            className="flex items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 transition-colors"
-          >
-            <PlusIcon className="w-6 h-6 mr-2" />
-            Agregar Nuevo Nivel
-          </button>
+        {/* --- Sección de Acciones del Admin --- */}
+        <div className="bg-dark-tertiary/50 p-2 flex justify-around items-center border-t border-white/10">
+            <button onClick={() => onEdit(item)} className="p-2 text-indigo-400 hover:text-white" title="Editar"><HiPencil className="w-5 h-5" /></button>
+            <button onClick={() => onToggleStatus(item)} className="p-2 text-yellow-400 hover:text-white" title={item.isActive ? 'Desactivar' : 'Activar'}>
+                {item.isActive ? <HiOutlineEye className="w-5 h-5" /> : <HiOutlineEyeOff className="w-5 h-5" />}
+            </button>
+            <button onClick={() => onDelete(item._id)} className="p-2 text-red-400 hover:text-white" title="Eliminar"><HiTrash className="w-5 h-5" /></button>
         </div>
-      )
-    }
-  ];
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Gestión de Inversiones</h1>
-        <p className="text-gray-500">
-          Administra las criptomonedas disponibles y los niveles de ganancia
-        </p>
-      </div>
-
-      {/* Modales */}
-      <CryptoModal 
-        isOpen={isCryptoModalOpen}
-        onClose={() => setIsCryptoModalOpen(false)}
-        onSubmit={handleCryptoSubmit}
-        crypto={selectedCrypto}
-      />
-      
-      <ProfitTierModal
-        isOpen={isProfitTierModalOpen}
-        onClose={() => setIsProfitTierModalOpen(false)}
-        onSubmit={handleTierSubmit}
-        tier={selectedTier}
-      />
-
-      <Tab.Group onChange={setSelectedTab}>
-        <Tab.List className="flex space-x-4 mb-6">
-          {tabPanels.map((panel, idx) => (
-            <Tab
-              key={idx}
-              className={({ selected }) =>
-                `px-4 py-2 rounded-lg transition-colors ${
-                  selected
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`
-              }
-            >
-              {panel.name}
-            </Tab>
-          ))}
-        </Tab.List>
-
-        <Tab.Panels>
-          {tabPanels.map((panel, idx) => (
-            <Tab.Panel key={idx}>
-              {panel.content}
-            </Tab.Panel>
-          ))}
-        </Tab.Panels>
-      </Tab.Group>
     </div>
-  );
-}
+);
+
+// --- SUB-COMPONENTE: Modal de Formulario ---
+const InvestmentFormModal = ({ item, onSave, onClose, cryptoList }) => {
+    const { register, handleSubmit, reset } = useForm();
+    const isEditing = !!item;
+
+    useEffect(() => {
+        reset(isEditing ? item : { isActive: true, saleDiscountPercentage: 0, linkedCryptoSymbol: 'BTC' });
+    }, [item, isEditing, reset]);
+
+    return (
+        <motion.div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="relative bg-dark-secondary rounded-lg border w-full max-w-2xl text-white" initial={{ y: -50 }} animate={{ y: 0 }} exit={{ y: -50 }}>
+                <header className="flex justify-between items-center p-4 border-b">
+                    <h2 className="text-lg font-bold">{isEditing ? 'Editar Item' : 'Crear Nuevo Item'}</h2>
+                    <button onClick={onClose}><HiXMark className="w-6 h-6" /></button>
+                </header>
+                <form onSubmit={handleSubmit((data) => onSave(data, item?._id))}>
+                    <main className="p-6 grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
+                        <div className="col-span-2"><label>Nombre del Plan</label><input {...register('name', { required: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
+                        <div className="col-span-2"><label>URL de la Imagen</label><input {...register('imageUrl', { required: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
+                        <div><label>Vincular a Cripto</label><select {...register('linkedCryptoSymbol')} className="w-full mt-1 p-2 bg-dark-primary rounded">{cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.name}</option>)}</select></div>
+                        <div><label>Precio (USDT)</label><input type="number" step="0.01" {...register('price', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
+                        <div><label>Duración (Días)</label><input type="number" {...register('durationDays', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
+                        <div><label>Ganancia Diaria (USDT)</label><input type="number" step="0.01" {...register('dailyProfitAmount', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
+                        <div><label>ROI Total (%)</label><input type="number" {...register('totalRoiPercentage', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
+                        <div><label>% Oferta (0 si no hay)</label><input type="number" {...register('saleDiscountPercentage', { valueAsNumber: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
+                    </main>
+                    <footer className="p-4 border-t text-right"><button type="submit" className="px-5 py-2 bg-green-600 font-bold rounded-lg">{isEditing ? 'Guardar' : 'Crear'}</button></footer>
+                </form>
+            </motion.div>
+        </motion.div>
+    );
+};
+
+// --- COMPONENTE PRINCIPAL ---
+const AdminInvestmentsPage = () => {
+    const [items, setItems] = useState([]);
+    const [cryptoList, setCryptoList] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState(null);
+
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [itemsRes, cryptosRes] = await Promise.all([
+                api.get('/admin/market-items'),
+                api.get('/investments/available-cryptos') // Usamos la nueva ruta
+            ]);
+            setItems(itemsRes.data.data || []);
+            setCryptoList(cryptosRes.data.data || []);
+        } catch (error) {
+            toast.error('No se pudieron cargar los datos del mercado.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => { fetchData(); }, [fetchData]);
+
+    const handleOpenModal = (item = null) => {
+        setEditingItem(item);
+        setIsModalOpen(true);
+    };
+
+    const handleSaveItem = async (formData, itemId) => {
+        const isEditing = !!itemId;
+        const request = isEditing ? api.put(`/admin/market-items/${itemId}`, formData) : api.post('/admin/market-items', formData);
+        toast.promise(request, {
+            loading: 'Guardando...',
+            success: () => { setIsModalOpen(false); fetchData(); return `Item ${isEditing ? 'actualizado' : 'creado'}.`; },
+            error: (err) => err.response?.data?.message || 'Error al guardar.',
+        });
+    };
+
+    const handleDeleteItem = async (itemId) => {
+        if (window.confirm('¿Seguro?')) {
+            toast.promise(api.delete(`/admin/market-items/${itemId}`), {
+                loading: 'Eliminando...',
+                success: () => { fetchData(); return 'Item eliminado.'; },
+                error: (err) => err.response?.data?.message || 'Error al eliminar.',
+            });
+        }
+    };
+    
+    const handleToggleStatus = async (item) => {
+        const newStatus = !item.isActive;
+        toast.promise(api.put(`/admin/market-items/${item._id}`, { ...item, isActive: newStatus }), {
+            loading: 'Actualizando estado...',
+            success: () => { fetchData(); return 'Estado actualizado.'; },
+            error: 'Error al actualizar estado.',
+        });
+    };
+
+    if (isLoading) return <div className="flex justify-center p-10"><Loader /></div>;
+
+    return (
+        <>
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-2xl font-semibold flex items-center gap-3"><HiOutlineSparkles /> Constructor Visual del Mercado</h1>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <motion.div onClick={() => handleOpenModal()} className="cursor-pointer bg-dark-secondary rounded-lg border-2 border-dashed border-dark-tertiary hover:border-accent flex flex-col items-center justify-center min-h-[300px]">
+                        <HiPlus className="w-12 h-12 text-dark-tertiary" />
+                        <span className="mt-2 text-text-secondary">Crear Nuevo Item</span>
+                    </motion.div>
+                    {items.map((item) => <InvestmentCard key={item._id} item={item} onEdit={handleOpenModal} onDelete={handleDeleteItem} onToggleStatus={handleToggleStatus} />)}
+                </div>
+            </div>
+
+            <AnimatePresence>
+                {isModalOpen && <InvestmentFormModal item={editingItem} onSave={handleSaveItem} onClose={() => setIsModalOpen(false)} cryptoList={cryptoList} />}
+            </AnimatePresence>
+        </>
+    );
+};
 
 export default AdminInvestmentsPage;
