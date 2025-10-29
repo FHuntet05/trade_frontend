@@ -43,7 +43,7 @@ const InvestmentCard = ({ item, onEdit, onDelete, onToggleStatus }) => (
     </div>
 );
 
-// --- SUB-COMPONENTE: Modal de Formulario (CON LA CORRECCIÓN DE SUBMIT) ---
+// --- SUB-COMPONENTE: Modal de Formulario (CON LA CORRECCIÓN valueAsNumber) ---
 const InvestmentFormModal = ({ item, onSave, onClose, cryptoList }) => {
     const { register, handleSubmit, reset } = useForm();
     const isEditing = !!item;
@@ -52,17 +52,7 @@ const InvestmentFormModal = ({ item, onSave, onClose, cryptoList }) => {
         reset(isEditing ? item : { isActive: true, saleDiscountPercentage: 0, linkedCryptoSymbol: 'BTC' });
     }, [item, isEditing, reset]);
 
-    const handleDataSubmit = (data) => {
-        const cleanedData = {
-            ...data,
-            price: parseFloat(data.price) || 0,
-            durationDays: parseInt(data.durationDays, 10) || 0,
-            dailyProfitAmount: parseFloat(data.dailyProfitAmount) || 0,
-            totalRoiPercentage: parseInt(data.totalRoiPercentage, 10) || 0,
-            saleDiscountPercentage: parseInt(data.saleDiscountPercentage, 10) || 0,
-        };
-        onSave(cleanedData, item?._id);
-    };
+    // Ya no necesitamos la función 'handleDataSubmit' porque react-hook-form hará el trabajo.
 
     return (
         <motion.div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -71,10 +61,10 @@ const InvestmentFormModal = ({ item, onSave, onClose, cryptoList }) => {
                     <h2 className="text-lg font-bold">{isEditing ? 'Editar Item' : 'Crear Nuevo Item'}</h2>
                     <button onClick={onClose}><HiXMark className="w-6 h-6" /></button>
                 </header>
-                {/* --- INICIO DE LA CORRECCIÓN DE SUBMIT --- */}
-                {/* La función handleSubmit de react-hook-form debe recibir la referencia a la función que procesará los datos. */}
-                <form onSubmit={handleSubmit(handleDataSubmit)}>
-                {/* --- FIN DE LA CORRECCIÓN DE SUBMIT --- */}
+                {/* --- CORRECCIÓN CLAVE ---
+                La función onSave se pasa directamente a handleSubmit.
+                Los datos ya vendrán con los tipos correctos gracias a valueAsNumber. */}
+                <form onSubmit={handleSubmit((data) => onSave(data, item?._id))}>
                     <main className="p-6 grid grid-cols-2 gap-x-4 gap-y-3 max-h-[70vh] overflow-y-auto">
                         <div className="col-span-2">
                             <label className="text-sm font-medium text-white">Nombre del Plan</label>
@@ -90,26 +80,28 @@ const InvestmentFormModal = ({ item, onSave, onClose, cryptoList }) => {
                                 {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.name}</option>)}
                             </select>
                         </div>
+                        {/* --- INICIO DE LA APLICACIÓN DE valueAsNumber --- */}
                         <div>
                             <label className="text-sm font-medium text-white">Precio (USDT)</label>
-                            <input type="number" step="0.01" {...register('price', { required: true })} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
+                            <input type="number" step="0.01" {...register('price', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
                         </div>
                         <div>
                             <label className="text-sm font-medium text-white">Duración (Días)</label>
-                            <input type="number" {...register('durationDays', { required: true })} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
+                            <input type="number" {...register('durationDays', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
                         </div>
                         <div>
                             <label className="text-sm font-medium text-white">Ganancia Diaria (USDT)</label>
-                            <input type="number" step="0.01" {...register('dailyProfitAmount', { required: true })} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
+                            <input type="number" step="0.01" {...register('dailyProfitAmount', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
                         </div>
                         <div>
                             <label className="text-sm font-medium text-white">ROI Total (%)</label>
-                            <input type="number" {...register('totalRoiPercentage', { required: true })} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
+                            <input type="number" {...register('totalRoiPercentage', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
                         </div>
                         <div>
                             <label className="text-sm font-medium text-white">% Oferta (0 si no hay)</label>
-                            <input type="number" {...register('saleDiscountPercentage')} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
+                            <input type="number" {...register('saleDiscountPercentage', { valueAsNumber: true })} className="w-full mt-1 p-2 bg-white text-black border border-dark-tertiary rounded" />
                         </div>
+                        {/* --- FIN DE LA APLICACIÓN DE valueAsNumber --- */}
                     </main>
                     <footer className="p-4 border-t border-dark-tertiary text-right">
                         <button type="submit" className="px-5 py-2 bg-green-600 font-bold rounded-lg hover:bg-green-700 transition-colors">
