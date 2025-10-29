@@ -1,5 +1,5 @@
 // RUTA: frontend/src/admin/AdminApp.jsx (VERSIÓN "NEXUS - ROUTER FIX")
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
@@ -26,6 +26,14 @@ import AdminInvestmentsPage from '../pages/admin/AdminInvestmentsPage';
 
 function AdminApp() {
   const { isAuthenticated, _hasHydrated } = useAdminStore();
+
+  // Este efecto AHORA SÍ funcionará porque es la única app que controla el body.
+  useEffect(() => {
+    document.body.classList.add('admin-body');
+    return () => {
+      document.body.classList.remove('admin-body');
+    };
+  }, []);
 
   if (!_hasHydrated) {
     return (

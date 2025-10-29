@@ -34,4 +34,6 @@
   animation-iteration-count: infinite;
   transform-origin: center;
 }
-
+.admin-body {
+    @apply bg-dark-primary text-text-primary;
+  }
