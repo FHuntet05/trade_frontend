@@ -1,10 +1,11 @@
-/* RUTA: frontend/src/index.css */
+/* RUTA: frontend/src/index.css (VERSIÓN CON CORRECCIÓN DE POSTCSS) */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  /* Estilos para el frontend de USUARIO (tema claro iOS) */
   body {
     @apply bg-system-background text-text-primary min-h-screen font-ios;
     
@@ -16,6 +17,17 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* --- INICIO DE LA CORRECCIÓN CRÍTICA DE BUILD --- */
+  /* El error "The `bg-dark-primary` class does not exist" ocurre porque @apply no puede usar
+     clases de utilidad que aún no han sido generadas por Tailwind.
+     La solución correcta es usar la función theme() de Tailwind para acceder
+     directamente a los valores definidos en tailwind.config.js. */
+  .admin-body {
+    background-color: theme('colors.gray.900');
+    color: theme('colors.text.primary');
+  }
+  /* --- FIN DE LA CORRECCIÓN CRÍTICA DE BUILD --- */
 }
 
 @layer utilities {
@@ -34,6 +46,3 @@
   animation-iteration-count: infinite;
   transform-origin: center;
 }
-.admin-body {
-    @apply bg-dark-primary text-text-primary;
-  }
