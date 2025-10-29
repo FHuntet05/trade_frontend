@@ -33,7 +33,7 @@ const AdminLayout = () => {
 
     return (
         // Se mantienen las clases del tema oscuro
-        <div className="flex min-h-screen bg-dark-primary text-text-primary font-sans">
+        <div className="flex min-h-screen bg-dark-primary text-white font-sans">
             <MobileDrawer isOpen={isDrawerOpen} setIsOpen={setIsDrawerOpen} />
             <div className="hidden md:flex md:flex-shrink-0">
                 <Sidebar onLinkClick={() => {}} />
@@ -41,8 +41,8 @@ const AdminLayout = () => {
             <div className="flex-grow flex flex-col w-full md:w-0">
                 <header className="hidden md:flex bg-dark-secondary p-4 justify-end items-center border-b border-dark-tertiary">
                     <div className="flex items-center gap-4">
-                        <span className="text-text-secondary">
-                            Bienvenido, <strong className="text-text-primary">{admin?.username || 'Admin'}</strong>
+                        <span className="text-gray-300">
+                            Bienvenido, <strong className="text-white">{admin?.username || 'Admin'}</strong>
                         </span>
                         <button
                             onClick={handleLogout}
