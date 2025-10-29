@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminInvestmentsPage.jsx (VERSIÓN CONSTRUCTOR VISUAL)
+// RUTA: frontend/src/pages/admin/AdminInvestmentsPage.jsx (VERSIÓN CON CORRECCIONES VISUALES Y FUNCIONALES)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
@@ -6,36 +6,32 @@ import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '@/pages/admin/api/adminApi';
 import Loader from '@/components/common/Loader';
-import { HiChartBar, HiPlus, HiPencil, HiTrash, HiXMark, HiOutlineFire, HiOutlineSparkles, HiOutlineEyeSlash, HiOutlineEye } from 'react-icons/hi2';
+import { HiChartBar, HiPlus, HiPencil, HiTrash, HiXMark, HiOutlineFire, HiOutlineSparkles, HiOutlineEyeOff, HiOutlineEye } from 'react-icons/hi2';
 
-// --- SUB-COMPONENTE: Tarjeta de Previsualización y Gestión ---
+// --- SUB-COMPONENTE: Tarjeta de Previsualización (Sin cambios) ---
 const InvestmentCard = ({ item, onEdit, onDelete, onToggleStatus }) => (
     <div className="bg-dark-secondary rounded-lg border border-white/10 flex flex-col justify-between">
-        {/* --- Sección de Previsualización Visual --- */}
         <div className="p-4 relative">
             {item.saleDiscountPercentage > 0 && (
                 <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">
                     OFERTA -{item.saleDiscountPercentage}%
                 </div>
             )}
-             {item.purchaseCount > 10 && ( // Ejemplo: popular si tiene más de 10 compras
+             {item.purchaseCount > 10 && (
                 <div className="absolute top-0 left-0 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded-br-lg rounded-tl-lg flex items-center gap-1">
                     <HiOutlineFire /> MÁS POPULAR
                 </div>
             )}
-
             <img src={item.imageUrl} alt={item.name} className="w-16 h-16 mx-auto mb-3 rounded-full object-cover bg-dark-primary p-1" />
             <h3 className="text-center font-bold text-lg">{item.name}</h3>
             <p className="text-center text-sm text-text-secondary">{item.linkedCryptoSymbol}</p>
-            
             <div className="mt-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span>Duración:</span> <span className="font-mono">{item.durationDays} días</span></div>
-                <div className="flex justify-between"><span>ROI Total:</span> <span className="font-mono font-bold text-green-400">{item.totalRoiPercentage}%</span></div>
-                <div className="flex justify-between"><span>Ganancia Diaria:</span> <span className="font-mono">{item.dailyProfitAmount} USDT</span></div>
-                <div className="flex justify-between"><span>Precio:</span> <span className="font-mono">{item.price} USDT</span></div>
+                <div className="flex justify-between"><span className="text-text-secondary">Duración:</span> <span className="font-mono">{item.durationDays} días</span></div>
+                <div className="flex justify-between"><span className="text-text-secondary">ROI Total:</span> <span className="font-mono font-bold text-green-400">{item.totalRoiPercentage}%</span></div>
+                <div className="flex justify-between"><span className="text-text-secondary">Ganancia Diaria:</span> <span className="font-mono">{item.dailyProfitAmount} USDT</span></div>
+                <div className="flex justify-between"><span className="text-text-secondary">Precio:</span> <span className="font-mono">{item.price} USDT</span></div>
             </div>
         </div>
-        {/* --- Sección de Acciones del Admin --- */}
         <div className="bg-dark-tertiary/50 p-2 flex justify-around items-center border-t border-white/10">
             <button onClick={() => onEdit(item)} className="p-2 text-indigo-400 hover:text-white" title="Editar"><HiPencil className="w-5 h-5" /></button>
             <button onClick={() => onToggleStatus(item)} className="p-2 text-yellow-400 hover:text-white" title={item.isActive ? 'Desactivar' : 'Activar'}>
@@ -46,7 +42,7 @@ const InvestmentCard = ({ item, onEdit, onDelete, onToggleStatus }) => (
     </div>
 );
 
-// --- SUB-COMPONENTE: Modal de Formulario ---
+// --- SUB-COMPONENTE: Modal de Formulario (CON CORRECCIONES) ---
 const InvestmentFormModal = ({ item, onSave, onClose, cryptoList }) => {
     const { register, handleSubmit, reset } = useForm();
     const isEditing = !!item;
@@ -55,33 +51,81 @@ const InvestmentFormModal = ({ item, onSave, onClose, cryptoList }) => {
         reset(isEditing ? item : { isActive: true, saleDiscountPercentage: 0, linkedCryptoSymbol: 'BTC' });
     }, [item, isEditing, reset]);
 
+    // --- CORRECCIÓN FUNCIONAL ---
+    // Esta función "limpia" los datos del formulario antes de enviarlos.
+    // Se asegura de que todos los campos numéricos sean realmente números.
+    const handleDataSubmit = (data) => {
+        const cleanedData = {
+            ...data,
+            price: parseFloat(data.price) || 0,
+            durationDays: parseInt(data.durationDays, 10) || 0,
+            dailyProfitAmount: parseFloat(data.dailyProfitAmount) || 0,
+            totalRoiPercentage: parseInt(data.totalRoiPercentage, 10) || 0,
+            saleDiscountPercentage: parseInt(data.saleDiscountPercentage, 10) || 0,
+        };
+        onSave(cleanedData, item?._id);
+    };
+
     return (
         <motion.div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="relative bg-dark-secondary rounded-lg border w-full max-w-2xl text-white" initial={{ y: -50 }} animate={{ y: 0 }} exit={{ y: -50 }}>
-                <header className="flex justify-between items-center p-4 border-b">
+            <motion.div className="relative bg-dark-secondary rounded-lg border border-dark-tertiary w-full max-w-2xl text-white" initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}>
+                <header className="flex justify-between items-center p-4 border-b border-dark-tertiary">
                     <h2 className="text-lg font-bold">{isEditing ? 'Editar Item' : 'Crear Nuevo Item'}</h2>
                     <button onClick={onClose}><HiXMark className="w-6 h-6" /></button>
                 </header>
-                <form onSubmit={handleSubmit((data) => onSave(data, item?._id))}>
+                <form onSubmit={handleSubmit(handleDataSubmit)}>
                     <main className="p-6 grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
-                        <div className="col-span-2"><label>Nombre del Plan</label><input {...register('name', { required: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
-                        <div className="col-span-2"><label>URL de la Imagen</label><input {...register('imageUrl', { required: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
-                        <div><label>Vincular a Cripto</label><select {...register('linkedCryptoSymbol')} className="w-full mt-1 p-2 bg-dark-primary rounded">{cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.name}</option>)}</select></div>
-                        <div><label>Precio (USDT)</label><input type="number" step="0.01" {...register('price', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
-                        <div><label>Duración (Días)</label><input type="number" {...register('durationDays', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
-                        <div><label>Ganancia Diaria (USDT)</label><input type="number" step="0.01" {...register('dailyProfitAmount', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
-                        <div><label>ROI Total (%)</label><input type="number" {...register('totalRoiPercentage', { required: true, valueAsNumber: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
-                        <div><label>% Oferta (0 si no hay)</label><input type="number" {...register('saleDiscountPercentage', { valueAsNumber: true })} className="w-full mt-1 p-2 bg-dark-primary rounded" /></div>
+                        {/* --- INICIO DE CORRECCIONES VISUALES --- */}
+                        <div className="col-span-2">
+                            <label className="text-sm text-text-secondary">Nombre del Plan</label>
+                            <input {...register('name', { required: true })} className="w-full mt-1 p-2 bg-dark-primary text-white border border-dark-tertiary rounded" />
+                        </div>
+                        <div className="col-span-2">
+                            <label className="text-sm text-text-secondary">URL de la Imagen</label>
+                            <input {...register('imageUrl', { required: true })} className="w-full mt-1 p-2 bg-dark-primary text-white border border-dark-tertiary rounded" />
+                        </div>
+                        <div>
+                            <label className="text-sm text-text-secondary">Vincular a Cripto</label>
+                            <select {...register('linkedCryptoSymbol')} className="w-full mt-1 p-2 bg-dark-primary text-white border border-dark-tertiary rounded">
+                                {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm text-text-secondary">Precio (USDT)</label>
+                            <input type="number" step="0.01" {...register('price', { required: true })} className="w-full mt-1 p-2 bg-dark-primary text-white border border-dark-tertiary rounded" />
+                        </div>
+                        <div>
+                            <label className="text-sm text-text-secondary">Duración (Días)</label>
+                            <input type="number" {...register('durationDays', { required: true })} className="w-full mt-1 p-2 bg-dark-primary text-white border border-dark-tertiary rounded" />
+                        </div>
+                        <div>
+                            <label className="text-sm text-text-secondary">Ganancia Diaria (USDT)</label>
+                            <input type="number" step="0.01" {...register('dailyProfitAmount', { required: true })} className="w-full mt-1 p-2 bg-dark-primary text-white border border-dark-tertiary rounded" />
+                        </div>
+                        <div>
+                            <label className="text-sm text-text-secondary">ROI Total (%)</label>
+                            <input type="number" {...register('totalRoiPercentage', { required: true })} className="w-full mt-1 p-2 bg-dark-primary text-white border border-dark-tertiary rounded" />
+                        </div>
+                        <div>
+                            <label className="text-sm text-text-secondary">% Oferta (0 si no hay)</label>
+                            <input type="number" {...register('saleDiscountPercentage')} className="w-full mt-1 p-2 bg-dark-primary text-white border border-dark-tertiary rounded" />
+                        </div>
+                        {/* --- FIN DE CORRECCIONES VISUALES --- */}
                     </main>
-                    <footer className="p-4 border-t text-right"><button type="submit" className="px-5 py-2 bg-green-600 font-bold rounded-lg">{isEditing ? 'Guardar' : 'Crear'}</button></footer>
+                    <footer className="p-4 border-t border-dark-tertiary text-right">
+                        <button type="submit" className="px-5 py-2 bg-green-600 font-bold rounded-lg hover:bg-green-700 transition-colors">
+                            {isEditing ? 'Guardar Cambios' : 'Crear Item'}
+                        </button>
+                    </footer>
                 </form>
             </motion.div>
         </motion.div>
     );
 };
 
-// --- COMPONENTE PRINCIPAL ---
+// --- COMPONENTE PRINCIPAL (Sin cambios en su lógica) ---
 const AdminInvestmentsPage = () => {
+    // ... (toda la lógica de este componente se mantiene igual)
     const [items, setItems] = useState([]);
     const [cryptoList, setCryptoList] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -91,13 +135,10 @@ const AdminInvestmentsPage = () => {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            // --- INICIO DE LA CORRECCIÓN ---
-            // Se apunta a las rutas correctas que acabamos de definir en adminRoutes.js
             const [itemsRes, cryptosRes] = await Promise.all([
                 api.get('/admin/market-items'),
-                api.get('/admin/available-cryptos') 
+                api.get('/admin/available-cryptos')
             ]);
-            // --- FIN DE LA CORRECCIÓN ---
             setItems(itemsRes.data.data || []);
             setCryptoList(cryptosRes.data.data || []);
         } catch (error) {
@@ -106,7 +147,7 @@ const AdminInvestmentsPage = () => {
             setIsLoading(false);
         }
     }, []);
-    
+
     useEffect(() => { fetchData(); }, [fetchData]);
 
     const handleOpenModal = (item = null) => {
@@ -159,7 +200,6 @@ const AdminInvestmentsPage = () => {
                     {items.map((item) => <InvestmentCard key={item._id} item={item} onEdit={handleOpenModal} onDelete={handleDeleteItem} onToggleStatus={handleToggleStatus} />)}
                 </div>
             </div>
-
             <AnimatePresence>
                 {isModalOpen && <InvestmentFormModal item={editingItem} onSave={handleSaveItem} onClose={() => setIsModalOpen(false)} cryptoList={cryptoList} />}
             </AnimatePresence>
