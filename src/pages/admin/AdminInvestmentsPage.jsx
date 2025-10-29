@@ -91,10 +91,13 @@ const AdminInvestmentsPage = () => {
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
+            // --- INICIO DE LA CORRECCIÓN ---
+            // Se apunta a las rutas correctas que acabamos de definir en adminRoutes.js
             const [itemsRes, cryptosRes] = await Promise.all([
                 api.get('/admin/market-items'),
-                api.get('/investments/available-cryptos') // Usamos la nueva ruta
+                api.get('/admin/available-cryptos') 
             ]);
+            // --- FIN DE LA CORRECCIÓN ---
             setItems(itemsRes.data.data || []);
             setCryptoList(cryptosRes.data.data || []);
         } catch (error) {
@@ -103,7 +106,7 @@ const AdminInvestmentsPage = () => {
             setIsLoading(false);
         }
     }, []);
-
+    
     useEffect(() => { fetchData(); }, [fetchData]);
 
     const handleOpenModal = (item = null) => {
