@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '@/pages/admin/api/adminApi';
 import Loader from '@/components/common/Loader';
-import { HiChartBar, HiPlus, HiPencil, HiTrash, HiXMark, HiOutlineFire, HiOutlineSparkles, HiOutlineEyeOff, HiOutlineEye } from 'react-icons/hi2';
+import { HiChartBar, HiPlus, HiPencil, HiTrash, HiXMark, HiOutlineFire, HiOutlineSparkles, HiOutlineEyeSlash, HiOutlineEye } from 'react-icons/hi2';
 
 // --- SUB-COMPONENTE: Tarjeta de Previsualización (Sin cambios) ---
 const InvestmentCard = ({ item, onEdit, onDelete, onToggleStatus }) => (
