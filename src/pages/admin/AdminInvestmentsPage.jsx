@@ -115,9 +115,8 @@ const InvestmentFormModal = ({ item, onSave, onClose, cryptoList }) => {
 };
 
 
-// --- COMPONENTE PRINCIPAL (Sin cambios en su lógica) ---
+// --- COMPONENTE PRINCIPAL (CON LOG DE DEPURACIÓN) ---
 const AdminInvestmentsPage = () => {
-    // ... (toda la lógica de este componente se mantiene igual)
     const [items, setItems] = useState([]);
     const [cryptoList, setCryptoList] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -133,11 +132,8 @@ const AdminInvestmentsPage = () => {
             ]);
             setItems(itemsRes.data.data || []);
             setCryptoList(cryptosRes.data.data || []);
-        } catch (error) {
-            toast.error('No se pudieron cargar los datos del mercado.');
-        } finally {
-            setIsLoading(false);
-        }
+        } catch (error) { toast.error('No se pudieron cargar los datos del mercado.'); } 
+        finally { setIsLoading(false); }
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
@@ -149,11 +145,24 @@ const AdminInvestmentsPage = () => {
 
     const handleSaveItem = async (formData, itemId) => {
         const isEditing = !!itemId;
-        const request = isEditing ? api.put(`/admin/market-items/${itemId}`, formData) : api.post('/admin/market-items', formData);
+
+        // --- INICIO DEL CAMBIO DE DEPURACIÓN ---
+        // Imprimimos el objeto exacto que se va a enviar a la API.
+        console.log("🔵 PAYLOAD ENVIADO A LA API:", formData);
+        // --- FIN DEL CAMBIO DE DEPURACIÓN ---
+
+        const request = isEditing 
+            ? api.put(`/admin/market-items/${itemId}`, formData) 
+            : api.post('/admin/market-items', formData);
+
         toast.promise(request, {
             loading: 'Guardando...',
             success: () => { setIsModalOpen(false); fetchData(); return `Item ${isEditing ? 'actualizado' : 'creado'}.`; },
-            error: (err) => err.response?.data?.message || 'Error al guardar.',
+            error: (err) => {
+                // --- MEJORA DEL LOG DE ERROR ---
+                console.error("🔴 ERROR RECIBIDO DE LA API:", err.response?.data);
+                return err.response?.data?.message || 'Error al guardar. Revisa la consola.';
+            },
         });
     };
 
