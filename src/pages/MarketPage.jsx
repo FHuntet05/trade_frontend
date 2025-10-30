@@ -20,32 +20,40 @@ const MarketItemCard = ({ item, onPurchaseClick }) => {
     const priceChange = cryptoData?.data?.percent_change_24h || 0;
 
     return (
-        <motion.div
-            className="bg-internal-card rounded-ios-xl shadow-ios-card overflow-hidden border border-transparent hover:border-ios-green transition-all duration-300"
-            whileHover={{ y: -5 }}
-        >
-            <div className="p-4">
-                {/* --- Cabecera de la Tarjeta --- */}
-                <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <img src={item.imageUrl} alt={item.name} className="w-12 h-12 rounded-full object-cover bg-gray-100 p-1" />
-                        <div>
-                            <h3 className="font-ios-display font-bold text-lg text-text-primary">{item.name}</h3>
-                            <p className="font-ios text-sm text-text-secondary">{item.linkedCryptoSymbol}</p>
-                        </div>
+    <motion.div
+        className="bg-internal-card rounded-ios-xl shadow-ios-card overflow-hidden border border-transparent hover:border-ios-green transition-all duration-300"
+        whileHover={{ y: -5 }}
+    >
+        <div className="p-4">
+            {/* Cabecera de la Tarjeta */}
+            <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                    {/* --- INICIO DE LA CORRECCIÓN CLAVE --- */}
+                    {/* Se reemplaza CryptoIcon por una etiqueta <img> que usa la imageUrl del item. */}
+                    <img 
+                        src={item.imageUrl} 
+                        alt={item.name} 
+                        className="w-12 h-12 rounded-full object-cover bg-gray-100 p-1" 
+                    />
+                    {/* --- FIN DE LA CORRECCIÓN CLAVE --- */}
+                    <div>
+                        <h3 className="font-ios-display font-bold text-lg text-text-primary">{item.name}</h3>
+                        <p className="font-ios text-sm text-text-secondary">{item.linkedCryptoSymbol}</p>
                     </div>
-                    {item.saleDiscountPercentage > 0 && (
-                        <div className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                            OFERTA -{item.saleDiscountPercentage}%
-                        </div>
-                    )}
                 </div>
+                {item.saleDiscountPercentage > 0 && (
+                    <div className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        OFERTA -{item.saleDiscountPercentage}%
+                    </div>
+                )}
+            </div>
 
-                {/* --- Sección de Precios y Cambios (como en tu imagen) --- */}
+            {/* Sección de Precios (solo se muestra si los datos de SWR están disponibles) */}
+            {cryptoData && (
                 <div className="flex items-end justify-between mb-4">
                     <div>
                         <p className="font-ios-display font-bold text-2xl text-text-primary">
-                            {cryptoData ? `$${parseFloat(cryptoData.data.price).toFixed(2)}` : 'Cargando...'}
+                            {`$${parseFloat(cryptoData.data.price).toFixed(2)}`}
                         </p>
                         <div className={`flex items-center gap-1 text-sm font-semibold ${priceChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             <FiTrendingUp />
@@ -57,27 +65,28 @@ const MarketItemCard = ({ item, onPurchaseClick }) => {
                         <p className="font-ios-display font-bold text-xl text-text-primary">{item.price} USDT</p>
                     </div>
                 </div>
-                
-                {/* --- Sección de Detalles del Plan --- */}
-                <div className="space-y-2 text-sm border-t border-system-secondary pt-3">
-                    <div className="flex justify-between text-text-secondary"><span>Duración:</span> <span className="font-semibold text-text-primary">{item.durationDays} días</span></div>
-                    <div className="flex justify-between text-text-secondary"><span>Ganancia Diaria:</span> <span className="font-semibold text-text-primary">{item.dailyProfitAmount} USDT</span></div>
-                    <div className="flex justify-between text-text-secondary"><span>ROI Total:</span> <span className="font-bold text-ios-green">{item.totalRoiPercentage}%</span></div>
-                </div>
+            )}
+            
+            {/* Sección de Detalles del Plan */}
+            <div className={`space-y-2 text-sm ${cryptoData ? 'border-t border-system-secondary pt-3' : ''}`}>
+                <div className="flex justify-between text-text-secondary"><span>Duración:</span> <span className="font-semibold text-text-primary">{item.durationDays} días</span></div>
+                <div className="flex justify-between text-text-secondary"><span>Ganancia Diaria:</span> <span className="font-semibold text-text-primary">{item.dailyProfitAmount} USDT</span></div>
+                <div className="flex justify-between text-text-secondary"><span>ROI Total:</span> <span className="font-bold text-ios-green">{item.totalRoiPercentage}%</span></div>
             </div>
+        </div>
 
-            {/* --- Botón de Acción --- */}
-            <div className="p-3 bg-gray-50/50">
-                <button
-                    onClick={() => onPurchaseClick(item)}
-                    className="w-full py-3 text-sm font-ios font-semibold bg-ios-green text-white rounded-ios-lg hover:bg-ios-green/90 transition-colors flex items-center justify-center gap-2"
-                >
-                    <FiCheckCircle />
-                    <span>INVERTIR AHORA</span>
-                </button>
-            </div>
-        </motion.div>
-    );
+        {/* Botón de Acción */}
+        <div className="p-3 bg-gray-50/50">
+            <button
+                onClick={() => onPurchaseClick(item)}
+                className="w-full py-3 text-sm font-ios font-semibold bg-ios-green text-white rounded-ios-lg hover:bg-ios-green/90 transition-colors flex items-center justify-center gap-2"
+            >
+                <FiCheckCircle />
+                <span>INVERTIR AHORA</span>
+            </button>
+        </div>
+    </motion.div>
+);
 };
 
 
