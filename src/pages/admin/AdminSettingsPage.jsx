@@ -1,6 +1,9 @@
-// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (VERSIÓN SINCRONIZADA)
+// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (VERSIÓN CON useState IMPORTADO)
 
-import React, { useEffect, useCallback } from 'react';
+// --- INICIO DE LA CORRECCIÓN ---
+// Se añade 'useState' a la importación de React para solucionar el ReferenceError.
+import React, { useState, useEffect, useCallback } from 'react';
+// --- FIN DE LA CORRECCIÓN ---
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import adminApi from '@/pages/admin/api/adminApi';
@@ -48,7 +51,6 @@ const AdminSettingsPage = () => {
         setIsLoading(true);
         try {
             const { data } = await adminApi.get('/admin/settings');
-            // La respuesta de la API viene anidada en un objeto 'data'
             reset(data.data); 
         } catch (error) {
             toast.error(error.response?.data?.message || 'No se pudo cargar la configuración.');
@@ -88,14 +90,12 @@ const AdminSettingsPage = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* --- Columna Izquierda --- */}
                     <div className="space-y-6">
                         <SettingsCard title="Controles Principales" description="Activa o desactiva funcionalidades críticas.">
                             <SettingsToggle name="maintenanceMode" label="Modo Mantenimiento" register={register} />
                             <SettingsInput name="maintenanceMessage" label="Mensaje de Mantenimiento" type="text" register={register} />
                             <SettingsToggle name="withdrawalsEnabled" label="Habilitar Retiros para Usuarios" register={register} />
                         </SettingsCard>
-
                         <SettingsCard title="Parámetros Financieros" description="Configura las reglas para retiros y swaps.">
                             <SettingsInput name="minimumWithdrawal" label="Monto Mínimo de Retiro (USDT)" type="number" step="0.01" register={register} />
                             <SettingsInput name="withdrawalFeePercent" label="Comisión por Retiro (%)" type="number" step="0.1" register={register} />
@@ -103,8 +103,6 @@ const AdminSettingsPage = () => {
                             <SettingsInput name="swapFeePercent" label="Comisión por Swap (%)" type="number" step="0.1" register={register} />
                         </SettingsCard>
                     </div>
-
-                    {/* --- Columna Derecha --- */}
                     <div className="space-y-6">
                         <SettingsCard title="Comisiones y Bonos" description="Define las ganancias por referidos y bonificaciones.">
                             <SettingsInput name="dailyBonusAmount" label="Monto del Bono Diario (USDT)" type="number" step="0.01" register={register} />
@@ -112,7 +110,6 @@ const AdminSettingsPage = () => {
                             <SettingsInput name="depositCommissionLevel2" label="Comisión Nivel 2 (%)" type="number" step="0.1" register={register} />
                             <SettingsInput name="depositCommissionLevel3" label="Comisión Nivel 3 (%)" type="number" step="0.1" register={register} />
                         </SettingsCard>
-
                         <SettingsCard title="Alertas y Notificaciones" description="Configura los parámetros para las alertas del sistema.">
                             <SettingsInput name="adminTelegramId" label="ID de Telegram del Admin para Alertas" type="text" register={register} />
                             <SettingsInput name="bnbAlertThreshold" label="Umbral de Alerta de BNB" type="number" step="0.01" register={register} />
