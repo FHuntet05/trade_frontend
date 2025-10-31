@@ -1,7 +1,7 @@
 // RUTA: src/pages/HomePage.jsx
-// --- VERSIÓN FINAL Y COMPLETA CON CONSUMO DE DATOS RESILIENTE ---
+// --- VERSIÓN ACTUALIZADA CON LÓGICA DE BONO DIARIO Y CONTADOR ---
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -12,30 +12,53 @@ import { CryptoList } from '@/components/ui/ios/CryptoList';
 import { FiGift, FiMessageSquare } from 'react-icons/fi';
 import { formatters } from '@/utils/formatters';
 import useCountdown from '@/hooks/useCountdown';
+import toast from 'react-hot-toast'; // --- INICIO DE LA MODIFICACIÓN --- Se importa toast
 
 const HomePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useUserStore();
-  
+  // --- INICIO DE LA MODIFICACIÓN --- Se extrae la nueva acción y los datos del usuario
+  const { user, claimDailyBonus } = useUserStore();
   const { marketData, isLoading, fetchMarketData } = useMarketStore();
+  // --- FIN DE LA MODIFICACIÓN ---
 
   useEffect(() => {
-    // La acción `fetchMarketData` se encarga de la lógica de caché y de evitar peticiones innecesarias.
     fetchMarketData();
   }, [fetchMarketData]);
 
   const targetEndDate = user?.activeInvestments?.[0]?.endDate;
   const { timeLeft, isFinished } = useCountdown(targetEndDate);
   const handleDeposit = () => navigate('/deposit');
-  const handleClaimBonus = () => navigate('/bonus');
   const handleSupport = () => navigate('/support');
+
+  // --- INICIO DE LA LÓGICA DEL BONO DIARIO ---
+  const lastClaimDate = user?.lastBonusClaimedAt;
+
+  const nextClaimDate = useMemo(() => {
+    if (!lastClaimDate) return null;
+    const date = new Date(lastClaimDate);
+    date.setHours(date.getHours() + 24);
+    return date.toISOString();
+  }, [lastClaimDate]);
+
+  const { timeLeft: bonusTimeLeft, isFinished: isBonusClaimable } = useCountdown(nextClaimDate);
+
+  const handleClaimBonus = () => {
+    toast.promise(
+      claimDailyBonus(),
+      {
+        loading: 'Reclamando bono...',
+        success: (data) => `¡Has reclamado ${data.message}!`,
+        error: (err) => err.message, // Muestra el mensaje de error de la API
+      }
+    );
+  };
+  // --- FIN DE LA LÓGICA DEL BONO DIARIO ---
   
   const userBalance = user?.balance?.usdt || 0;
   const withdrawableBalance = user?.withdrawableBalance || 0;
 
   const renderMarketData = () => {
-    // Si está cargando por primera vez (sin datos cacheados), muestra un spinner.
     if (isLoading && marketData.length === 0) {
       return (
         <div className="text-center py-8">
@@ -44,11 +67,8 @@ const HomePage = () => {
       );
     }
     
-    // Si tenemos datos (aunque sean antiguos), SIEMPRE los mostramos.
-    // Esto cumple la directiva de nunca mostrar un mensaje de "no se pudieron cargar".
-    // El caso de error solo se mostraría si la carga inicial falla y no hay nada que mostrar.
     if (!isLoading && marketData.length === 0) {
-        return <p className="px-4 text-text-secondary text-center">No hay datos de mercado disponibles en este momento.</p>;
+        return <p className="px-4 text-text-secondary text-center">No hay datos de mercado disponibles.</p>;
     }
 
     return <CryptoList data={marketData} />;
@@ -63,10 +83,19 @@ const HomePage = () => {
 
       <div className="p-4 space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <motion.button whileTap={{ scale: 0.95 }} onClick={handleClaimBonus} className="bg-internal-card p-3 rounded-ios-card shadow-ios-card flex items-center space-x-3">
-            <FiGift className="w-6 h-6 text-ios-green" />
-            <span className="text-sm font-ios font-medium text-text-primary">{t('home.claimBonus')}</span>
+          {/* --- INICIO DE LA MODIFICACIÓN DEL BOTÓN DE BONO --- */}
+          <motion.button 
+            whileTap={{ scale: 0.95 }} 
+            onClick={handleClaimBonus}
+            disabled={!isBonusClaimable} 
+            className="bg-internal-card p-3 rounded-ios-card shadow-ios-card flex items-center justify-center space-x-3 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <FiGift className={`w-6 h-6 ${isBonusClaimable ? 'text-ios-green' : 'text-text-tertiary'}`} />
+            <span className="text-sm font-ios font-medium text-text-primary">
+              {isBonusClaimable ? t('home.claimBonus') : bonusTimeLeft}
+            </span>
           </motion.button>
+          {/* --- FIN DE LA MODIFICACIÓN DEL BOTÓN DE BONO --- */}
           <motion.button whileTap={{ scale: 0.95 }} onClick={handleSupport} className="bg-internal-card p-3 rounded-ios-card shadow-ios-card flex items-center space-x-3">
             <FiMessageSquare className="w-6 h-6 text-ios-green" />
             <span className="text-sm font-ios font-medium text-text-primary">{t('home.support')}</span>
