@@ -1,4 +1,5 @@
-// RUTA: frontend/src/pages/admin/AdminWithdrawalsPage.jsx (VERSIÓN "NEXUS - UI & DATA SYNC")
+// RUTA: frontend/src/pages/admin/AdminWithdrawalsPage.jsx (VERSIÓN CON ENDPOINT CORREGIDO)
+
 import React, { useState, useEffect, useCallback } from 'react';
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
@@ -6,11 +7,8 @@ import Loader from '@/components/common/Loader';
 import Pagination from '@/components/common/Pagination';
 import { HiOutlineClipboardDocument, HiOutlineClipboardDocumentCheck, HiOutlineReceiptRefund } from 'react-icons/hi2';
 
-// Sub-componente dedicado para mostrar el desglose de montos, alineado con la imagen de referencia.
 const AmountCell = ({ withdrawal }) => {
   const { grossAmount, feeAmount, netAmount } = withdrawal;
-
-  // Lógica de blindaje: asegura que siempre operamos sobre un número.
   const formattedNetAmount = (netAmount || 0).toFixed(2);
   const formattedGrossAmount = (grossAmount || 0).toFixed(2);
   const formattedFeeAmount = (feeAmount || 0).toFixed(2);
@@ -26,7 +24,6 @@ const AmountCell = ({ withdrawal }) => {
   );
 };
 
-// Componente para la tabla, mejorando la estructura y legibilidad.
 const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
   const [copiedAddress, setCopiedAddress] = useState('');
 
@@ -95,11 +92,14 @@ const AdminWithdrawalsPage = () => {
   const fetchWithdrawals = useCallback(async (pageToFetch = 1) => {
     setIsLoading(true);
     try {
-      const { data: responseData } = await adminApi.get('/admin/withdrawals', { params: { page: pageToFetch } });
+      // --- INICIO DE LA CORRECCIÓN ---
+      // Se corrige la URL para que apunte al endpoint correcto definido en adminRoutes.js
+      const { data: responseData } = await adminApi.get('/admin/withdrawals/pending', { params: { page: pageToFetch } });
+      // --- FIN DE LA CORRECCIÓN ---
       setData(responseData);
     } catch (err) {
       toast.error(err.response?.data?.message || "Error al cargar las solicitudes.");
-      setData({ withdrawals: [], page: 1, pages: 1 }); // Resetea a un estado seguro en caso de error
+      setData({ withdrawals: [], page: 1, pages: 1 });
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +110,7 @@ const AdminWithdrawalsPage = () => {
   }, [fetchWithdrawals]);
 
   const handleProcessWithdrawal = async (txId, status) => {
-    if (processingId) return; // Previene doble click
+    if (processingId) return;
     setProcessingId(txId);
     let notes = '';
     
@@ -127,7 +127,8 @@ const AdminWithdrawalsPage = () => {
       }
     }
     
-    const promise = adminApi.put(`/admin/withdrawals/${txId}/process`, { status, adminNotes: notes });
+    // La URL para procesar sí es diferente y probablemente ya estaba bien, pero la verificamos
+    const promise = adminApi.post(`/admin/withdrawals/${txId}/process`, { status, adminNotes: notes });
 
     toast.promise(promise, {
         loading: 'Procesando solicitud...',
