@@ -1,9 +1,10 @@
-// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (IMPORTACIONES VALIDADAS)
+// RUTA: frontend/src/pages/admin/GasDispenserPage.jsx (VERSIÓN CON ENDPOINTS CORREGIDOS)
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import adminApi from '@/pages/admin/api/adminApi';
 import Loader from '@/components/common/Loader';
-import Pagination from '@/components/common/Pagination'; // Esta importación ahora funcionará
+import Pagination from '@/components/common/Pagination';
 import { HiOutlineFunnel, HiOutlineArrowPath, HiOutlinePaperAirplane } from 'react-icons/hi2';
 
 const TableSkeleton = ({ rows = 5 }) => (
@@ -37,7 +38,9 @@ const GasDispenserPage = () => {
         setIsLoading(true);
         setEditableAmounts({}); 
         try {
-            const response = await adminApi.get(`/admin/gas-dispenser/analysis`, { params: { page, limit: 15 }});
+            // --- INICIO DE LA CORRECCIÓN DE URL ---
+            const response = await adminApi.get(`/admin/treasury/analyze-gas`, { params: { page, limit: 15 }});
+            // --- FIN DE LA CORRECCIÓN DE URL ---
             setData(response.data);
         } catch (error) {
             toast.error(error.response?.data?.message || 'Error al analizar las wallets.');
@@ -66,7 +69,9 @@ const GasDispenserPage = () => {
         else setProcessingWallets(processingAddresses);
 
         try {
-            const response = await adminApi.post('/admin/gas-dispenser/dispatch', { chain: 'BSC', targets });
+            // --- INICIO DE LA CORRECCIÓN DE URL ---
+            const response = await adminApi.post('/admin/treasury/dispatch-gas', { chain: 'BSC', targets });
+            // --- FIN DE LA CORRECCIÓN DE URL ---
             const { success, failed } = response.data.summary;
             toast.success(`Dispensación completada. Éxitos: ${success}, Fallos: ${failed}.`, { id: toastId, duration: 5000 });
             
@@ -126,8 +131,8 @@ const GasDispenserPage = () => {
             <div className="bg-dark-secondary p-6 rounded-lg border border-white/10 space-y-4">
                 <h2 className="text-xl font-semibold">Dispensación Manual</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                    <div><label className="block text-sm font-medium text-text-secondary mb-1">Dirección de Destino</label><input type="text" placeholder="Pegue la dirección BSC aquí" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} className="w-full bg-dark-primary p-2 rounded-md border border-white/20"/></div>
-                    <div><label className="block text-sm font-medium text-text-secondary mb-1">Monto a Enviar (BNB)</label><input type="number" placeholder="Ej: 0.005" value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} className="w-full bg-dark-primary p-2 rounded-md border border-white/20"/></div>
+                    <div><label className="block text-sm font-medium text-text-secondary mb-1">Dirección de Destino</label><input type="text" placeholder="Pegue la dirección BSC aquí" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} className="w-full bg-white text-black p-2 rounded-md border border-dark-tertiary"/></div>
+                    <div><label className="block text-sm font-medium text-text-secondary mb-1">Monto a Enviar (BNB)</label><input type="number" placeholder="Ej: 0.005" value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} className="w-full bg-white text-black p-2 rounded-md border border-dark-tertiary"/></div>
                     <div><button onClick={handleManualDispatch} disabled={isManualDispatching} className="w-full flex items-center justify-center gap-2 px-4 py-2 font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-600">{isManualDispatching ? <HiOutlineArrowPath className="w-5 h-5 animate-spin"/> : <HiOutlinePaperAirplane className="w-5 h-5" />}<span>Dispensar</span></button></div>
                 </div>
             </div>
@@ -161,8 +166,8 @@ const GasDispenserPage = () => {
                                         <td className="p-3 text-right font-mono text-green-400">{wallet.usdtBalance.toFixed(4)}</td>
                                         <td className="p-3 text-right font-mono text-red-400">{wallet.gasBalance.toFixed(8)}</td>
                                         <td className="p-3 text-right font-mono text-yellow-400">{wallet.requiredGas.toFixed(8)}</td>
-                                        <td className="p-3"><input type="text" className="w-32 bg-dark-primary text-right p-1 rounded border border-white/20" value={getAmountToDispense(wallet)} onChange={(e) => handleAmountChange(wallet.address, e.target.value)}/></td>
-                                        <td className="p-3 text-center">{isProcessing ? <HiOutlineArrowPath className="w-5 h-5 text-gray-400 animate-spin mx-auto" /> : <button onClick={() => handleSingleDispatch(wallet)} className="px-3 py-1 text-xs font-bold bg-accent-start text-white rounded-md hover:bg-accent-end">Dispensar</button>}</td>
+                                        <td className="p-3"><input type="text" className="w-32 bg-white text-black text-right p-1 rounded border border-dark-tertiary" value={getAmountToDispense(wallet)} onChange={(e) => handleAmountChange(wallet.address, e.target.value)}/></td>
+                                        <td className="p-3 text-center">{isProcessing ? <HiOutlineArrowPath className="w-5 h-5 text-gray-400 animate-spin mx-auto" /> : <button onClick={() => handleSingleDispatch(wallet)} className="px-3 py-1 text-xs font-bold bg-accent text-white rounded-md hover:bg-accent-end">Dispensar</button>}</td>
                                     </tr>
                                 )})}
                             </tbody>
