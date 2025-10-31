@@ -1,9 +1,6 @@
-// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (VERSIÓN CON useState IMPORTADO)
+// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (VERSIÓN CORREGIDA Y SIMPLIFICADA)
 
-// --- INICIO DE LA CORRECCIÓN ---
-// Se añade 'useState' a la importación de React para solucionar el ReferenceError.
 import React, { useState, useEffect, useCallback } from 'react';
-// --- FIN DE LA CORRECCIÓN ---
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import adminApi from '@/pages/admin/api/adminApi';
@@ -28,7 +25,8 @@ const SettingsInput = ({ name, label, type, register, step }) => (
             id={name}
             step={step}
             {...register(name, { valueAsNumber: type === 'number' })} 
-            className="w-full bg-dark-primary p-2 rounded-md border border-dark-tertiary"
+            // --- ESTILO CORREGIDO GLOBALMENTE ---
+            className="w-full bg-white text-black p-2 rounded-md border border-dark-tertiary"
         />
     </div>
 );
@@ -96,13 +94,13 @@ const AdminSettingsPage = () => {
                             <SettingsInput name="maintenanceMessage" label="Mensaje de Mantenimiento" type="text" register={register} />
                             <SettingsToggle name="withdrawalsEnabled" label="Habilitar Retiros para Usuarios" register={register} />
                         </SettingsCard>
-                        <SettingsCard title="Parámetros Financieros" description="Configura las reglas para retiros y swaps.">
+
+                        <SettingsCard title="Parámetros Financieros" description="Configura las reglas para los retiros de los usuarios.">
                             <SettingsInput name="minimumWithdrawal" label="Monto Mínimo de Retiro (USDT)" type="number" step="0.01" register={register} />
                             <SettingsInput name="withdrawalFeePercent" label="Comisión por Retiro (%)" type="number" step="0.1" register={register} />
-                            <SettingsInput name="minimumSwap" label="Monto Mínimo de Swap (NTX)" type="number" step="1" register={register} />
-                            <SettingsInput name="swapFeePercent" label="Comisión por Swap (%)" type="number" step="0.1" register={register} />
                         </SettingsCard>
                     </div>
+
                     <div className="space-y-6">
                         <SettingsCard title="Comisiones y Bonos" description="Define las ganancias por referidos y bonificaciones.">
                             <SettingsInput name="dailyBonusAmount" label="Monto del Bono Diario (USDT)" type="number" step="0.01" register={register} />
@@ -110,10 +108,8 @@ const AdminSettingsPage = () => {
                             <SettingsInput name="depositCommissionLevel2" label="Comisión Nivel 2 (%)" type="number" step="0.1" register={register} />
                             <SettingsInput name="depositCommissionLevel3" label="Comisión Nivel 3 (%)" type="number" step="0.1" register={register} />
                         </SettingsCard>
-                        <SettingsCard title="Alertas y Notificaciones" description="Configura los parámetros para las alertas del sistema.">
-                            <SettingsInput name="adminTelegramId" label="ID de Telegram del Admin para Alertas" type="text" register={register} />
-                            <SettingsInput name="bnbAlertThreshold" label="Umbral de Alerta de BNB" type="number" step="0.01" register={register} />
-                        </SettingsCard>
+                        
+                        {/* --- LÓGICA DE SWAP ELIMINADA --- */}
                     </div>
                 </div>
             </form>

@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminUserDetailPage.jsx (VERSIÓN VISIÓN 360°)
+// RUTA: frontend/src/pages/admin/AdminUserDetailPage.jsx (VERSIÓN FINAL CON MODALES INTEGRADOS)
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -8,16 +8,15 @@ import toast from 'react-hot-toast';
 import useAdminStore from '@/store/adminStore';
 import Loader from '@/components/common/Loader';
 import { 
-    HiArrowLeft, HiOutlinePencil, HiOutlinePlusCircle, HiOutlineKey, HiOutlineCurrencyDollar,
+    HiArrowLeft, HiOutlinePencil, HiOutlineKey, HiOutlineCurrencyDollar,
     HiOutlineShoppingCart, HiOutlineGift, HiOutlineUsers, HiOutlineReceiptRefund 
 } from 'react-icons/hi2';
 import EditUserModal from './components/EditUserModal';
-import AdjustBalanceModal from './components/AdjustBalanceModal';
 import ResetPasswordModal from './components/ResetPasswordModal';
 
 const PLACEHOLDER_AVATAR = 'https://i.postimg.cc/mD21B6r7/user-avatar-placeholder.png';
 
-const UserSummaryCard = ({ user, onEdit, onAdjustBalance, onResetPassword }) => {
+const UserSummaryCard = ({ user, onEdit, onResetPassword }) => {
     const totalStock = user.activeInvestments.reduce((sum, inv) => sum + inv.amount, 0);
 
     return (
@@ -35,9 +34,8 @@ const UserSummaryCard = ({ user, onEdit, onAdjustBalance, onResetPassword }) => 
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={onAdjustBalance} className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/40" title="Ajustar Saldo"><HiOutlinePlusCircle className="w-5 h-5 text-green-300" /></button>
                     {user.role === 'admin' && <button onClick={onResetPassword} className="p-2 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/40" title="Resetear Contraseña"><HiOutlineKey className="w-5 h-5 text-yellow-300" /></button>}
-                    <button onClick={onEdit} className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/40" title="Editar Usuario"><HiOutlinePencil className="w-5 h-5 text-blue-300" /></button>
+                    <button onClick={onEdit} className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/40" title="Editar Usuario y Saldos"><HiOutlinePencil className="w-5 h-5 text-blue-300" /></button>
                 </div>
             </div>
             <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-white/10 pt-4">
@@ -147,7 +145,6 @@ const AdminUserDetailPage = () => {
     const [userData, setUserData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
     const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
     const [selectedTab, setSelectedTab] = useState(0);
 
@@ -169,20 +166,37 @@ const AdminUserDetailPage = () => {
     }, [fetchAllDetails]);
 
     const handleSaveUser = async (userId, formData) => {
-        const promise = adminApi.put(`/admin/users/${userId}`, formData);
-        toast.promise(promise, {
-            loading: 'Actualizando usuario...',
-            success: () => {
-                setIsEditModalOpen(false);
-                fetchAllDetails();
-                return 'Usuario actualizado correctamente.';
-            },
-            error: (err) => err.response?.data?.message || 'Error al actualizar el usuario.',
+        setIsEditModalOpen(false);
+        const { usdtAdjustment, spinsAdjustment, adjustmentReason, ...profileData } = formData;
+
+        // 1. Actualizar el perfil del usuario
+        await toast.promise(adminApi.put(`/admin/users/${userId}`, profileData), {
+            loading: 'Actualizando perfil...',
+            success: 'Perfil actualizado correctamente.',
+            error: (err) => err.response?.data?.message || 'Error al actualizar el perfil.',
         });
-    };
-    
-    const handleAdjustBalance = async (userId, formData) => { 
-        toast.error('La función de ajuste de balance aún no está implementada.');
+
+        // 2. Si hay ajustes de saldo, hacer la segunda llamada a la API
+        const hasAdjustment = usdtAdjustment !== 0 || spinsAdjustment !== 0;
+        if (hasAdjustment) {
+            if (!adjustmentReason) {
+                toast.error("Se requiere una razón para realizar un ajuste de saldo.");
+                fetchAllDetails(); // Recargar para deshacer cambios visuales no guardados
+                return;
+            }
+            
+            await toast.promise(adminApi.post(`/admin/users/${userId}/adjust-balance`, {
+                usdt: usdtAdjustment,
+                spins: spinsAdjustment,
+                reason: adjustmentReason
+            }), {
+                loading: 'Aplicando ajuste de saldo...',
+                success: 'Ajuste de saldo aplicado con éxito.',
+                error: (err) => err.response?.data?.message || 'Error al ajustar el saldo.',
+            });
+        }
+        
+        fetchAllDetails(); // Recargar todos los datos al final
     };
     
     const handleResetPassword = async (adminId) => {
@@ -226,8 +240,7 @@ const AdminUserDetailPage = () => {
             
             <UserSummaryCard 
                 user={user}
-                onEdit={() => setIsEditModalOpen(true)} 
-                onAdjustBalance={() => setIsAdjustModalOpen(true)}
+                onEdit={() => setIsEditModalOpen(true)}
                 onResetPassword={() => setIsResetPasswordModalOpen(true)}
             />
 
@@ -255,7 +268,6 @@ const AdminUserDetailPage = () => {
             </Tab.Group>
             
             {isEditModalOpen && <EditUserModal user={user} onSave={handleSaveUser} onClose={() => setIsEditModalOpen(false)} isSuperAdmin={isSuperAdmin} />}
-            {isAdjustModalOpen && <AdjustBalanceModal user={user} onSave={handleAdjustBalance} onClose={() => setIsAdjustModalOpen(false)} />}
             {isResetPasswordModalOpen && <ResetPasswordModal user={user} onClose={() => setIsResetPasswordModalOpen(false)} onConfirm={handleResetPassword} />}
         </div>
     );

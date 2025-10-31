@@ -1,9 +1,8 @@
-// RUTA: frontend/src/pages/admin/components/ResetPasswordModal.jsx (VERSIÓN "NEXUS VALIDATED")
+// RUTA: frontend/src/pages/admin/components/ResetPasswordModal.jsx (ESTILOS CORREGIDOS)
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiExclamationTriangle, HiXMark } from 'react-icons/hi2';
 
-// --- Variantes de Animación (Validadas) ---
 const backdropVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
@@ -15,16 +14,13 @@ const modalVariants = {
   exit: { scale: 0.9, opacity: 0, transition: { duration: 0.2 } },
 };
 
-
 const ResetPasswordModal = ({ user, onClose, onConfirm }) => {
-  // [NEXUS VALIDATION] El componente es puramente presentacional y de confirmación.
-  // Su lógica de recibir props y llamar a onConfirm(user._id) es correcta.
   if (!user) return null;
 
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
         variants={backdropVariants}
         initial="hidden"
         animate="visible"
@@ -32,7 +28,7 @@ const ResetPasswordModal = ({ user, onClose, onConfirm }) => {
         onClick={onClose}
       >
         <motion.div
-          className="bg-dark-secondary rounded-lg border border-white/10 shadow-xl w-full max-w-md"
+          className="bg-dark-secondary rounded-lg border border-dark-tertiary shadow-xl w-full max-w-md"
           variants={modalVariants}
           onClick={(e) => e.stopPropagation()}
         >
@@ -51,24 +47,24 @@ const ResetPasswordModal = ({ user, onClose, onConfirm }) => {
                     <strong className="text-white">{user.username}</strong>?
                   </p>
                   <p className="mt-2 text-xs text-text-secondary/70">
-                    Se generará una nueva contraseña temporal y el administrador deberá cambiarla en su próximo inicio de sesión. Esta acción es irreversible.
+                    Se generará una nueva contraseña temporal. Esta acción es irreversible.
                   </p>
                 </div>
               </div>
             </div>
           </div>
-          <div className="bg-dark-tertiary px-6 py-4 flex flex-row-reverse gap-3">
+          <div className="bg-dark-tertiary px-6 py-4 flex flex-row-reverse gap-3 rounded-b-lg">
             <button
               type="button"
               onClick={() => onConfirm(user._id)}
-              className="px-4 py-2 rounded-lg bg-yellow-500 text-black font-bold hover:bg-yellow-600"
+              className="px-4 py-2 rounded-lg bg-yellow-500 text-black font-bold hover:bg-yellow-600 transition-colors"
             >
               Confirmar y Resetear
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700"
+              className="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 transition-colors"
             >
               Cancelar
             </button>
