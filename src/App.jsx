@@ -1,13 +1,15 @@
 // RUTA: frontend/src/App.jsx
-// --- VERSIÓN FINAL Y COMPLETA CON INTEGRACIÓN DE ERROR BOUNDARY ---
+// --- VERSIÓN ACTUALIZADA CON LA NUEVA PANTALLA DE CARGA ---
 
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 import AppRoutes from './routes';
-import AuthLoadingPage from './pages/AuthLoadingPage';
-import ErrorBoundary from './components/ErrorBoundary'; // --- Se importa el nuevo componente ---
+// --- INICIO DE LA MODIFICACIÓN --- Se importa el nuevo componente
+import AnimatedLoadingScreen from './components/AnimatedLoadingScreen'; 
+// --- FIN DE LA MODIFICACIÓN ---
+import ErrorBoundary from './components/ErrorBoundary';
 
 const AppInitializer = () => { 
   const { isAuthenticated, syncUserWithBackend } = useUserStore(); 
@@ -27,9 +29,11 @@ const AppInitializer = () => {
 const UserGatekeeper = ({ children }) => { 
   const { isAuthenticated, isLoadingAuth, user, error } = useUserStore(); 
   
+  // --- INICIO DE LA MODIFICACIÓN --- Se reemplaza el componente de carga
   if (isLoadingAuth || (isAuthenticated && !user)) { 
-    return <AuthLoadingPage />;
+    return <AnimatedLoadingScreen />;
   } 
+  // --- FIN DE LA MODIFICACIÓN ---
   
   if (!isAuthenticated) { 
     return ( 
@@ -53,8 +57,6 @@ function App() {
       <AppInitializer />
       
       <UserGatekeeper>
-        {/* --- CORRECCIÓN CRÍTICA APLICADA --- */}
-        {/* Se envuelve AppRoutes con ErrorBoundary para capturar cualquier error de renderizado */}
         <ErrorBoundary>
           <AppRoutes />
         </ErrorBoundary>
