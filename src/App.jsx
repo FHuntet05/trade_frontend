@@ -1,14 +1,11 @@
 // RUTA: frontend/src/App.jsx
-// --- VERSIÓN ACTUALIZADA CON LA NUEVA PANTALLA DE CARGA ---
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useUserStore from './store/userStore';
 import AppRoutes from './routes';
-// --- INICIO DE LA MODIFICACIÓN --- Se importa el nuevo componente
 import AnimatedLoadingScreen from './components/AnimatedLoadingScreen'; 
-// --- FIN DE LA MODIFICACIÓN ---
 import ErrorBoundary from './components/ErrorBoundary';
 
 const AppInitializer = () => { 
@@ -27,13 +24,29 @@ const AppInitializer = () => {
 };
 
 const UserGatekeeper = ({ children }) => { 
-  const { isAuthenticated, isLoadingAuth, user, error } = useUserStore(); 
-  
-  // --- INICIO DE LA MODIFICACIÓN --- Se reemplaza el componente de carga
-  if (isLoadingAuth || (isAuthenticated && !user)) { 
-    return <AnimatedLoadingScreen />;
-  } 
-  // --- FIN DE LA MODIFICACIÓN ---
+  const { isAuthenticated, isLoadingAuth, user, error } = useUserStore();
+  const [isLoaderVisible, setIsLoaderVisible] = useState(true);
+
+  const isActuallyLoading = isLoadingAuth || (isAuthenticated && !user);
+
+  useEffect(() => {
+    // Si la carga real ha terminado...
+    if (!isActuallyLoading) {
+      // ...esperamos un breve momento para que la animación de "100%"
+      // y el desvanecimiento del loader puedan completarse antes de desmontarlo.
+      const timer = setTimeout(() => {
+        setIsLoaderVisible(false);
+      }, 1000); // 1 segundo (400ms para llegar a 100% + 500ms de fade-out + buffer)
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isActuallyLoading]);
+
+
+  if (isLoaderVisible) {
+    // Pasamos `isDoneLoading` para que el componente sepa cuándo iniciar su animación de salida.
+    return <AnimatedLoadingScreen isDoneLoading={!isActuallyLoading} />;
+  }
   
   if (!isAuthenticated) { 
     return ( 
