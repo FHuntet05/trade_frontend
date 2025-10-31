@@ -1,13 +1,12 @@
-// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (VERSIÓN "NEXUS - REFINED & SIMPLIFIED")
+// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (VERSIÓN SINCRONIZADA)
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import adminApi from '@/pages/admin/api/adminApi';
 import { HiOutlineCog6Tooth } from 'react-icons/hi2';
 import Loader from '@/components/common/Loader';
 
-// --- SUB-COMPONENTES (Sin cambios en su funcionalidad interna) ---
 const SettingsCard = ({ title, description, children }) => (
     <div className="bg-dark-secondary rounded-lg border border-white/10">
         <div className="p-6 border-b border-white/10">
@@ -18,7 +17,7 @@ const SettingsCard = ({ title, description, children }) => (
     </div>
 );
 
-const SettingsInput = ({ name, label, type, register, step, ...props }) => (
+const SettingsInput = ({ name, label, type, register, step }) => (
     <div>
         <label htmlFor={name} className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
         <input 
@@ -26,32 +25,31 @@ const SettingsInput = ({ name, label, type, register, step, ...props }) => (
             id={name}
             step={step}
             {...register(name, { valueAsNumber: type === 'number' })} 
-            className="w-full bg-dark-primary p-2 rounded-md border border-white/20"
-            {...props}
+            className="w-full bg-dark-primary p-2 rounded-md border border-dark-tertiary"
         />
     </div>
 );
 
 const SettingsToggle = ({ name, label, register }) => (
     <div className="flex items-center justify-between">
-        <label htmlFor={name} className="text-sm font-medium text-text-secondary">{label}</label>
+        <label htmlFor={name} className="text-sm font-medium text-white">{label}</label>
         <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" id={name} {...register(name)} className="sr-only peer" />
-            <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-accent peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+            <div className="w-11 h-6 bg-dark-tertiary rounded-full peer peer-focus:ring-2 peer-focus:ring-accent peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
         </label>
     </div>
 );
 
-
-// --- COMPONENTE PRINCIPAL DE LA PÁGINA (Refactorizado) ---
 const AdminSettingsPage = () => {
     const { register, handleSubmit, reset, formState: { isSubmitting, isDirty } } = useForm();
     const [isLoading, setIsLoading] = useState(true);
 
     const loadSettings = useCallback(async () => {
+        setIsLoading(true);
         try {
             const { data } = await adminApi.get('/admin/settings');
-            reset(data);
+            // La respuesta de la API viene anidada en un objeto 'data'
+            reset(data.data); 
         } catch (error) {
             toast.error(error.response?.data?.message || 'No se pudo cargar la configuración.');
         } finally {
@@ -62,11 +60,10 @@ const AdminSettingsPage = () => {
     useEffect(() => { loadSettings(); }, [loadSettings]);
 
     const onSubmit = async (data) => {
-        const promise = adminApi.put('/admin/settings', data);
-        toast.promise(promise, {
+        toast.promise(adminApi.put('/admin/settings', data), {
             loading: 'Guardando configuración...',
             success: (res) => {
-                reset(res.data);
+                reset(res.data.data);
                 return '¡Configuración guardada!';
             },
             error: (err) => err.response?.data?.message || 'Error al guardar.',
@@ -78,7 +75,6 @@ const AdminSettingsPage = () => {
     }
 
     return (
-        // [NEXUS REFINEMENT] - Se elimina el formulario de notificaciones de esta página.
         <div className="space-y-6">
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -92,26 +88,34 @@ const AdminSettingsPage = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* --- Columna Izquierda --- */}
                     <div className="space-y-6">
                         <SettingsCard title="Controles Principales" description="Activa o desactiva funcionalidades críticas.">
                             <SettingsToggle name="maintenanceMode" label="Modo Mantenimiento" register={register} />
+                            <SettingsInput name="maintenanceMessage" label="Mensaje de Mantenimiento" type="text" register={register} />
                             <SettingsToggle name="withdrawalsEnabled" label="Habilitar Retiros para Usuarios" register={register} />
                         </SettingsCard>
-                        <SettingsCard title="Ajustes de Retiros" description="Configura las reglas para las solicitudes de retiro.">
+
+                        <SettingsCard title="Parámetros Financieros" description="Configura las reglas para retiros y swaps.">
                             <SettingsInput name="minimumWithdrawal" label="Monto Mínimo de Retiro (USDT)" type="number" step="0.01" register={register} />
                             <SettingsInput name="withdrawalFeePercent" label="Comisión por Retiro (%)" type="number" step="0.1" register={register} />
+                            <SettingsInput name="minimumSwap" label="Monto Mínimo de Swap (NTX)" type="number" step="1" register={register} />
+                            <SettingsInput name="swapFeePercent" label="Comisión por Swap (%)" type="number" step="0.1" register={register} />
                         </SettingsCard>
                     </div>
+
+                    {/* --- Columna Derecha --- */}
                     <div className="space-y-6">
-                        <SettingsCard title="Comisiones por Depósito (Primer Depósito)" description="Define el % de comisión por el primer depósito de un referido.">
+                        <SettingsCard title="Comisiones y Bonos" description="Define las ganancias por referidos y bonificaciones.">
+                            <SettingsInput name="dailyBonusAmount" label="Monto del Bono Diario (USDT)" type="number" step="0.01" register={register} />
                             <SettingsInput name="depositCommissionLevel1" label="Comisión Nivel 1 (%)" type="number" step="0.1" register={register} />
                             <SettingsInput name="depositCommissionLevel2" label="Comisión Nivel 2 (%)" type="number" step="0.1" register={register} />
                             <SettingsInput name="depositCommissionLevel3" label="Comisión Nivel 3 (%)" type="number" step="0.1" register={register} />
                         </SettingsCard>
-                        {/* [NEXUS REFINEMENT] - La tarjeta de comisiones por compra ha sido eliminada. */}
-                         <SettingsCard title="Ajustes de Swap" description="Configura las reglas para los swaps de NTX a USDT.">
-                            <SettingsInput name="minimumSwap" label="Monto Mínimo de Swap (NTX)" type="number" step="1" register={register} />
-                            <SettingsInput name="swapFeePercent" label="Comisión por Swap (%)" type="number" step="0.1" register={register} />
+
+                        <SettingsCard title="Alertas y Notificaciones" description="Configura los parámetros para las alertas del sistema.">
+                            <SettingsInput name="adminTelegramId" label="ID de Telegram del Admin para Alertas" type="text" register={register} />
+                            <SettingsInput name="bnbAlertThreshold" label="Umbral de Alerta de BNB" type="number" step="0.01" register={register} />
                         </SettingsCard>
                     </div>
                 </div>
