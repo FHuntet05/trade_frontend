@@ -53,6 +53,7 @@ const PendingDepositPage = () => {
         }
       } catch (err) {
         if (err.response?.status === 404) {
+          setTicket(null);
           setError('No se pudo cargar la información del ticket. Puede que haya expirado o no sea válido.');
           clearInterval(intervalId);
         } else {

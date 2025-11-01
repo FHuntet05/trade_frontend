@@ -21,28 +21,6 @@ const ICON_SOURCES = {
   BEP20: '/assets/images/bep20-usdt.png',
 };
 
-const methodBadges = {
-  automatic: {
-    label: 'Automático',
-    className: 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30'
-  },
-  manual: {
-    label: 'Manual',
-    className: 'bg-amber-500/20 text-amber-200 border border-amber-400/40'
-  },
-  static: {
-    label: 'Wallet fija',
-    className: 'bg-blue-500/20 text-blue-200 border border-blue-400/40'
-  }
-};
-
-const getMethodBadge = (option) => {
-  if (!option) return methodBadges.manual;
-  if (option.type === 'automatic') return methodBadges.automatic;
-  if (option.isStaticWallet) return methodBadges.static;
-  return methodBadges.manual;
-};
-
 const getIconSource = (option) => {
   if (!option) return ICON_SOURCES.BEP20;
   const key = option.icon || option.currency;
@@ -180,7 +158,6 @@ const DepositCreatePage = () => {
 
   const renderOptionButton = (option) => {
     const isActive = option.key === selectedKey;
-    const badge = getMethodBadge(option);
     const iconSrc = getIconSource(option);
 
     return (
@@ -189,30 +166,21 @@ const DepositCreatePage = () => {
         type="button"
         whileTap={{ scale: 0.97 }}
         onClick={() => setSelectedKey(option.key)}
-        className={`relative h-full min-h-[130px] w-full rounded-2xl border px-4 py-4 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ios-green ${
+        className={`group flex min-w-[90px] cursor-pointer flex-col items-center gap-2 rounded-2xl border px-3 py-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ios-green/60 ${
           isActive
-            ? 'border-ios-green/70 bg-white/10 shadow-lg shadow-emerald-500/25 text-white'
-            : 'border-white/10 bg-system-secondary/40 text-text-primary hover:border-white/25 hover:bg-system-secondary/60'
+            ? 'border-ios-green/70 bg-emerald-50 text-emerald-700 shadow-md shadow-emerald-200'
+            : 'border-transparent bg-white/0 text-gray-600 hover:border-ios-green/40 hover:bg-emerald-50/50 hover:text-emerald-700'
         }`}
       >
-        <div className="flex w-full flex-col items-center justify-center gap-3">
-          <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-white ${isActive ? 'ring-2 ring-ios-green/70' : 'ring-1 ring-black/5'}`}>
-            <img src={iconSrc} alt={option.name} className="h-8 w-8 object-contain" loading="lazy" />
-          </div>
-          <div className="flex flex-col items-center gap-1 text-center">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className={`font-ios font-semibold text-sm ${isActive ? 'text-white' : 'text-text-primary'}`}>{option.name}</span>
-              <span className={`px-2 py-1 text-[10px] font-semibold uppercase tracking-wide rounded-full ${badge.className}`}>
-                {badge.label}
-              </span>
-            </div>
-            <p className={`font-ios text-[11px] leading-tight ${isActive ? 'text-white/80' : 'text-text-secondary'}`}>
-              {formatChainDescription(option)}
-            </p>
-            <p className={`font-ios text-[10px] leading-tight ${isActive ? 'text-white/60' : 'text-text-tertiary'}`}>{formatLimitsText(option)}</p>
-          </div>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-full border bg-white ${
+          isActive ? 'border-ios-green/80 shadow-inner shadow-emerald-100' : 'border-emerald-100 shadow-sm'
+        }`}>
+          <img src={iconSrc} alt={option.name} className="h-8 w-8 object-contain" loading="lazy" />
         </div>
-        {isActive && <span className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-ios-green/60" />}
+        <span className={`font-ios text-xs font-semibold ${isActive ? 'text-emerald-700' : 'text-gray-600'}`}>
+          {option.name}
+        </span>
+        <span className="font-ios text-[10px] text-gray-400">{option.chain || option.currency}</span>
       </motion.button>
     );
   };
@@ -256,8 +224,10 @@ const DepositCreatePage = () => {
               <label className="font-ios text-sm text-text-secondary block">
                 Selecciona un método
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {depositOptions.map(renderOptionButton)}
+              <div className="rounded-[28px] border border-ios-green/60 bg-white/95 px-4 py-3">
+                <div className="flex flex-wrap items-stretch justify-center gap-3 sm:gap-4">
+                  {depositOptions.map(renderOptionButton)}
+                </div>
               </div>
             </div>
 
