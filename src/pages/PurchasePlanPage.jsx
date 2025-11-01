@@ -125,9 +125,17 @@ const PurchasePlanPage = () => {
         toast.success(response.data.message || '¡Compra realizada con éxito!');
         navigate('/home');
       } else if (response.data.purchaseType === 'deposit_required') {
-        toast('Saldo insuficiente. Redirigiendo a depósito...', { icon: '⚠️' });
-        const { ticketId } = response.data.data;
-        navigate(`/deposit/pending/${ticketId}`);
+  const { pendingPurchaseId, requiredAmount } = response.data.data || {};
+
+        toast('Saldo insuficiente. Debes realizar un depósito.', { icon: '⚠️' });
+
+        navigate('/deposit/create', {
+          state: {
+            requiredAmount: requiredAmount || numericAmount,
+            reason: `Depósito requerido para ${plan.name}`,
+            pendingPurchaseId: pendingPurchaseId || null,
+          }
+        });
       }
     } catch (err) {
       toast.dismiss();

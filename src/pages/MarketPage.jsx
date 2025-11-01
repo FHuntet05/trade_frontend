@@ -9,6 +9,7 @@ import { FiTrendingUp, FiCheckCircle, FiFileText } from 'react-icons/fi';
 import useSWR from 'swr';
 import api from '@/api/axiosConfig'; // Asegúrate de que esta importación sea correcta
 import TicketHistoryDrawer from '@/components/finance/TicketHistoryDrawer';
+import { formatters } from '@/utils/formatters';
 
 // Helper para obtener datos con axios (para SWR)
 const fetcher = (url) => api.get(url).then(res => res.data);
@@ -57,9 +58,33 @@ const MarketItemCard = ({ item, onPurchaseClick }) => {
                             <span>{priceChange.toFixed(2)}% (24h)</span>
                         </div>
                     </div>
-                    <div className="text-right">
-                        <p className="text-sm text-text-secondary">Precio del Plan</p>
-                        <p className="font-ios-display font-bold text-xl text-text-primary">{item.price} USDT</p>
+                    <div className="text-right space-y-1">
+                        {item.saleDiscountPercentage > 0 ? (
+                            <>
+                                <div className="flex items-center gap-1 justify-end text-xs text-red-400 font-medium uppercase">
+                                    <span>Precio del Plan</span>
+                                    <span>−{item.saleDiscountPercentage}%</span>
+                                </div>
+                                <div className="flex items-center gap-2 justify-end">
+                                    <span className="text-sm text-text-tertiary line-through">
+                                        {formatters?.formatCurrency
+                                            ? formatters.formatCurrency(item.price)
+                                            : `${Number(item.price).toFixed(2)} USDT`}
+                                    </span>
+                                    <span className="text-lg font-ios-display font-bold text-ios-green flex items-center gap-1">
+                                        <span className="text-text-secondary">→</span>
+                                        {formatters?.formatCurrency
+                                            ? formatters.formatCurrency(item.price * (1 - item.saleDiscountPercentage / 100))
+                                            : `${(item.price * (1 - item.saleDiscountPercentage / 100)).toFixed(2)} USDT`}
+                                    </span>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-sm text-text-secondary">Precio del Plan</p>
+                                <p className="font-ios-display font-bold text-xl text-text-primary">{item.price} USDT</p>
+                            </>
+                        )}
                     </div>
                 </div>
                 

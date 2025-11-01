@@ -23,9 +23,14 @@ const InvestmentModal = ({ isOpen, onClose, item, userBalance }) => {
 
   // Calcular métricas del item
   const dailyProfit = item.dailyProfitAmount || 0;
-  const totalReturn = item.price + (dailyProfit * item.durationDays);
-  const hasSufficientBalance = userBalance >= item.price;
-  const missingAmount = item.price - userBalance;
+  const saleDiscount = item.saleDiscountPercentage || 0;
+  const discountedPriceRaw = saleDiscount > 0
+    ? Number(item.price) * (1 - saleDiscount / 100)
+    : Number(item.price);
+  const discountedPrice = Number(discountedPriceRaw.toFixed(2));
+  const totalReturn = discountedPrice + (dailyProfit * item.durationDays);
+  const hasSufficientBalance = userBalance >= discountedPrice;
+  const missingAmount = discountedPrice - userBalance;
   
   const handlePurchase = async () => {
     // VERIFICACIÓN DE SALDO: Caso crítico
@@ -129,9 +134,21 @@ const InvestmentModal = ({ isOpen, onClose, item, userBalance }) => {
                 <div className="bg-system-secondary rounded-ios-card p-4 space-y-3">
                   <div className="flex justify-between">
                     <span className="font-ios text-sm text-text-secondary">Precio</span>
-                    <span className="font-ios font-bold text-text-primary">
-                      {formatters.formatCurrency(item.price)}
-                    </span>
+                    {saleDiscount > 0 ? (
+                      <span className="font-ios font-bold text-text-primary flex items-center gap-2">
+                        <span className="text-sm text-text-tertiary line-through">
+                          {formatters.formatCurrency(item.price)}
+                        </span>
+                        <span className="text-sm text-text-secondary">→</span>
+                        <span className="text-text-primary">
+                          {formatters.formatCurrency(discountedPrice)}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="font-ios font-bold text-text-primary">
+                        {formatters.formatCurrency(discountedPrice)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex justify-between">
                     <span className="font-ios text-sm text-text-secondary">Ganancia Diaria</span>

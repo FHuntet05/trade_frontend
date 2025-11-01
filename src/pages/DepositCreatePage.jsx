@@ -124,6 +124,7 @@ const DepositCreatePage = () => {
 
   const suggestedAmount = location.state?.requiredAmount || '';
   const reason = location.state?.reason || '';
+  const pendingPurchaseId = location.state?.pendingPurchaseId || null;
 
   const [amount, setAmount] = useState(suggestedAmount ? String(suggestedAmount) : '');
   const [depositOptions, setDepositOptions] = useState([]);
@@ -193,6 +194,7 @@ const DepositCreatePage = () => {
       const response = await api.post('/deposits/create-ticket', {
         amount: Number(amount),
         methodKey: selectedOption.key,
+        ...(pendingPurchaseId ? { pendingPurchaseId } : {}),
       });
 
       if (response.data.success) {
