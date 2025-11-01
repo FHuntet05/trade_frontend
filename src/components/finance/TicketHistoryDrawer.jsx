@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FiX, FiClock, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
+import { FiX, FiClock, FiCheckCircle, FiAlertTriangle, FiInfo, FiArrowRightCircle, FiZap } from 'react-icons/fi';
 import api from '@/api/axiosConfig';
 import Loader from '@/components/common/Loader';
 import useUserStore from '@/store/userStore';
@@ -95,6 +95,34 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
     return groups;
   }, [tickets]);
 
+  const ticketStats = useMemo(() => {
+    const base = {
+      totalCount: tickets.length,
+      totalAmount: 0,
+      pendingCount: 0,
+      pendingAmount: 0,
+      completedCount: 0,
+      completedAmount: 0,
+    };
+
+    return tickets.reduce((acc, ticket) => {
+      const value = Number(ticket.amount) || 0;
+      acc.totalAmount += value;
+
+      if (ticket.status === 'pending' || ticket.status === 'awaiting_manual_review' || ticket.status === 'processing') {
+        acc.pendingCount += 1;
+        acc.pendingAmount += value;
+      }
+
+      if (ticket.status === 'completed') {
+        acc.completedCount += 1;
+        acc.completedAmount += value;
+      }
+
+      return acc;
+    }, base);
+  }, [tickets]);
+
   const statusDisplayOrder = useMemo(() => {
     const baseOrder = [...STATUS_ORDER];
     Object.keys(groupedTickets).forEach((status) => {
@@ -181,6 +209,33 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
             </div>
 
             {activeTab === 'tickets' && (
+              <section className="px-5 pt-4 pb-2 border-b border-white/5 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-ios bg-system-secondary/70 border border-white/10 p-3">
+                    <p className="text-xs text-text-tertiary uppercase tracking-wide">Pendientes</p>
+                    <p className="text-lg font-semibold text-text-primary">{ticketStats.pendingCount}</p>
+                    <p className="text-xs text-yellow-200 flex items-center gap-1">
+                      <FiClock className="w-3 h-3" />
+                      {ticketStats.pendingAmount.toFixed(2)} USDT en espera
+                    </p>
+                  </div>
+                  <div className="rounded-ios bg-ios-green/10 border border-ios-green/20 p-3">
+                    <p className="text-xs text-ios-green uppercase tracking-wide">Acreditado</p>
+                    <p className="text-lg font-semibold text-text-primary">{ticketStats.completedCount}</p>
+                    <p className="text-xs text-ios-green flex items-center gap-1">
+                      <FiCheckCircle className="w-3 h-3" />
+                      {ticketStats.completedAmount.toFixed(2)} USDT recibidos
+                    </p>
+                  </div>
+                </div>
+                <div className="px-3 py-2 rounded-ios bg-system-secondary/60 text-xs text-text-secondary flex justify-between">
+                  <span>Total de tickets</span>
+                  <span>{ticketStats.totalCount} • {ticketStats.totalAmount.toFixed(2)} USDT</span>
+                </div>
+              </section>
+            )}
+
+            {activeTab === 'tickets' && (
               <section className="px-5 py-4 space-y-5">
                 {isLoadingTickets ? (
                   <div className="py-10"><Loader text="Cargando tickets..." /></div>
@@ -202,26 +257,51 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                         </div>
                         <div className="space-y-2">
                           {groupedTickets[status].map((ticket) => (
-                            <div key={ticket.ticketId} className="p-4 rounded-ios bg-system-secondary border border-white/5 space-y-1">
-                              <div className="flex justify-between text-sm text-text-primary">
-                                <span>{ticket.currency} {Number(ticket.amount).toFixed(2)}</span>
-                                <span>{new Date(ticket.createdAt).toLocaleString()}</span>
+                            <motion.div
+                              key={ticket.ticketId}
+                              layout
+                              className="p-4 rounded-ios bg-system-secondary border border-white/5 space-y-2 hover:border-white/10 transition-colors"
+                            >
+                              <div className="flex items-start justify-between gap-3 text-sm">
+                                <div className="text-text-primary font-medium">{ticket.currency} {Number(ticket.amount).toFixed(2)}</div>
+                                <div className="text-xs text-text-tertiary text-right leading-tight">
+                                  {new Date(ticket.createdAt).toLocaleString()}
+                                </div>
                               </div>
-                              {ticket.methodName && (
-                                <p className="text-xs text-text-secondary">Método: {ticket.methodName}</p>
-                              )}
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+                                {ticket.methodName && (
+                                  <span className="px-2 py-1 rounded-full bg-white/5 text-text-secondary border border-white/10">
+                                    {ticket.methodName}
+                                  </span>
+                                )}
+                                <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10">
+                                  {ticket.methodType === 'manual' ? 'Manual' : 'Automático'}
+                                </span>
+                                {ticket.chain && (
+                                  <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10">{ticket.chain}</span>
+                                )}
+                              </div>
                               {ticket.depositAddress && (
-                                <p className="text-xs text-text-tertiary break-all">Destino: {ticket.depositAddress}</p>
+                                <div className="text-xs text-text-tertiary bg-black/20 border border-white/5 rounded-md p-2 break-all">
+                                  Destino: {ticket.depositAddress}
+                                </div>
                               )}
                               {ticket.instructions && ticket.methodType === 'manual' && (
-                                <p className="text-xs text-yellow-300 bg-yellow-500/10 border border-yellow-500/20 rounded-md p-2 mt-2">
+                                <div className="text-xs text-yellow-200 bg-yellow-500/10 border border-yellow-500/20 rounded-md p-2">
                                   {ticket.instructions}
-                                </p>
+                                </div>
                               )}
                               {ticket.expiresAt && (
                                 <p className="text-xs text-text-tertiary">Expira: {new Date(ticket.expiresAt).toLocaleString()}</p>
                               )}
-                            </div>
+                              <button
+                                onClick={() => window.open(`/deposit/pending/${ticket.ticketId}`, '_self')}
+                                className="w-full mt-1 flex items-center justify-center gap-2 text-xs font-semibold text-ios-green hover:text-white transition-colors"
+                              >
+                                Ver detalle
+                                <FiArrowRightCircle className="w-4 h-4" />
+                              </button>
+                            </motion.div>
                           ))}
                         </div>
                       </div>
@@ -237,6 +317,23 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                   <div className="py-10"><Loader text="Cargando movimientos..." /></div>
                 ) : (
                   <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-ios bg-system-secondary/70 border border-white/10 p-3">
+                        <p className="text-xs text-text-tertiary uppercase tracking-wide">Ganancia diaria total</p>
+                        <p className="text-lg font-semibold text-text-primary">
+                          {investmentSummaries.marketPurchases.reduce((acc, item) => acc + (item.daily || 0), 0).toFixed(2)} USDT
+                        </p>
+                        <p className="text-xs text-text-secondary">Mercado + planes activos</p>
+                      </div>
+                      <div className="rounded-ios bg-ios-green/10 border border-ios-green/20 p-3">
+                        <p className="text-xs text-ios-green uppercase tracking-wide">Capital invertido</p>
+                        <p className="text-lg font-semibold text-text-primary">
+                          {(investmentSummaries.marketPurchases.reduce((acc, item) => acc + (item.invested || 0), 0) + investmentSummaries.quantitativePurchases.reduce((acc, item) => acc + (item.invested || 0), 0)).toFixed(2)} USDT
+                        </p>
+                        <p className="text-xs text-text-secondary">Suma de compras registradas</p>
+                      </div>
+                    </div>
+
                     <div className="space-y-3">
                       <h3 className="text-sm font-semibold text-text-primary">Compras de mercado</h3>
                       {investmentSummaries.marketPurchases.length === 0 ? (
@@ -252,7 +349,7 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                             </div>
                             <p className="text-xs text-text-secondary">Inversión: {item.invested.toFixed(2)} USDT</p>
                             <p className="text-xs text-text-secondary">Ganancia diaria estimada: {item.daily.toFixed(2)} USDT</p>
-                            <p className="text-xs text-text-secondary">Retorno en {item.duration} días: {(item.invested + item.expectedReturn).toFixed(2)} USDT</p>
+                              <p className="text-xs text-text-secondary">Retorno en {item.duration} días: {(item.invested + item.expectedReturn).toFixed(2)} USDT</p>
                           </div>
                         ))
                       )}
@@ -288,6 +385,9 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                             <p className="text-text-primary font-medium">Saldo asignado: {Number(inv.amount || 0).toFixed(2)} USDT</p>
                             {inv.symbol && <p>Activo vinculado: {inv.symbol}</p>}
                             {inv.endDate && <p>Finaliza: {new Date(inv.endDate).toLocaleDateString()}</p>}
+                            {inv.dailyProfit && (
+                              <p className="text-ios-green flex items-center gap-1"><FiZap className="w-3 h-3" /> Rendimiento diario: {Number(inv.dailyProfit).toFixed(2)} USDT</p>
+                            )}
                           </div>
                         ))}
                       </div>

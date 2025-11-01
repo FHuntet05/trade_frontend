@@ -1,7 +1,7 @@
 // RUTA: src/pages/HomePage.jsx
 // --- VERSIÓN ACTUALIZADA CON LÓGICA DE BONO DIARIO Y CONTADOR ---
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -55,25 +55,89 @@ const HomePage = () => {
   const userBalance = user?.balance?.usdt || 0;
   const withdrawableBalance = user?.withdrawableBalance || 0;
 
+  const [projectionSnapshot, setProjectionSnapshot] = useState(() => ({
+    balance: userBalance,
+    timestamp: Date.now(),
+  }));
+
+  const projectionEndIso = useMemo(() => {
+    if (!projectionSnapshot) {
+      return null;
+    }
+    const date = new Date(projectionSnapshot.timestamp + 24 * 60 * 60 * 1000);
+    return date.toISOString();
+  }, [projectionSnapshot]);
+
+  const { timeLeft: projectionTimeLeft, isFinished: isProjectionCycleFinished } = useCountdown(projectionEndIso);
+
+  useEffect(() => {
+    if (!projectionSnapshot) {
+      setProjectionSnapshot({ balance: userBalance, timestamp: Date.now() });
+      return;
+    }
+
+    const balanceChanged = Math.abs((userBalance || 0) - (projectionSnapshot.balance || 0)) > 0.01;
+    if (balanceChanged) {
+      setProjectionSnapshot({ balance: userBalance, timestamp: Date.now() });
+    }
+  }, [userBalance, projectionSnapshot]);
+
+  useEffect(() => {
+    if (!isProjectionCycleFinished || !projectionSnapshot) {
+      return;
+    }
+
+    const hasElapsedCycle = Date.now() >= projectionSnapshot.timestamp + 24 * 60 * 60 * 1000;
+    if (hasElapsedCycle) {
+      setProjectionSnapshot({ balance: userBalance, timestamp: Date.now() });
+    }
+  }, [isProjectionCycleFinished, projectionSnapshot, userBalance]);
+
+  const snapshotBalance = projectionSnapshot?.balance ?? userBalance;
+
   const profitProjection = useMemo(() => {
-    if (!settings?.profitTiers || userBalance <= 0) {
-      return { expected: 0, percentage: 0 };
+    if (!settings?.profitTiers || snapshotBalance <= 0) {
+      return { expected: 0, percentage: 0, tier: null };
     }
 
     const tiers = [...settings.profitTiers].sort((a, b) => a.minBalance - b.minBalance);
     const activeTier = tiers.find((tier) => {
-      const withinMin = userBalance >= tier.minBalance;
-      const withinMax = tier.maxBalance === 0 ? true : userBalance <= tier.maxBalance;
+      const withinMin = snapshotBalance >= tier.minBalance;
+      const withinMax = tier.maxBalance === 0 ? true : snapshotBalance <= tier.maxBalance;
       return withinMin && withinMax;
     });
 
     if (!activeTier) {
-      return { expected: 0, percentage: 0 };
+      return { expected: 0, percentage: 0, tier: null };
     }
 
-    const expected = (userBalance * activeTier.profitPercentage) / 100;
-    return { expected, percentage: activeTier.profitPercentage };
-  }, [settings, userBalance]);
+    const expected = (snapshotBalance * activeTier.profitPercentage) / 100;
+    return { expected, percentage: activeTier.profitPercentage, tier: activeTier };
+  }, [settings, snapshotBalance]);
+
+  const tierCards = useMemo(() => {
+    if (!settings?.profitTiers || settings.profitTiers.length === 0) {
+      return [];
+    }
+
+    const tiers = [...settings.profitTiers].sort((a, b) => a.minBalance - b.minBalance);
+
+    const formatRange = (tier) => {
+      const minLabel = `${formatters.formatCurrency(tier.minBalance)} USDT`;
+      if (!tier.maxBalance || tier.maxBalance === 0) {
+        return `≥ ${minLabel}`;
+      }
+      return `${minLabel} – ${formatters.formatCurrency(tier.maxBalance)} USDT`;
+    };
+
+    return tiers.map((tier) => ({
+      id: `${tier.minBalance}-${tier.maxBalance}`,
+      label: formatRange(tier),
+      percentage: tier.profitPercentage,
+      minBalance: tier.minBalance,
+      maxBalance: tier.maxBalance,
+    }));
+  }, [settings]);
 
   const renderMarketData = () => {
     if (isLoading && marketData.length === 0) {
@@ -124,19 +188,51 @@ const HomePage = () => {
           <p className="text-3xl font-ios-display font-bold text-text-primary mb-3 text-center">
             {formatters.formatCurrency(withdrawableBalance)}
           </p>
-          <div className="bg-system-secondary rounded-ios p-4 space-y-1">
-            <p className="text-xs uppercase tracking-wide text-text-tertiary">Proyección en 24h</p>
-            <p className="text-lg font-ios-display text-text-primary">
-              ≈ {formatters.formatCurrency(profitProjection.expected)}
-            </p>
-            <p className="text-xs text-text-secondary">
-              Nivel aplicado: {profitProjection.percentage ? `${profitProjection.percentage}% diario` : 'sin nivel activo'}
-            </p>
-            {!profitProjection.percentage && (
-              <p className="text-xs text-text-tertiary">
-                Mantén saldo disponible para activar las ganancias del día.
+          <div className="bg-system-secondary rounded-ios p-4 space-y-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-text-tertiary">Proyección en 24h</p>
+              <p className="text-lg font-ios-display text-text-primary">
+                ≈ {formatters.formatCurrency(profitProjection.expected)}
               </p>
-            )}
+              <p className="text-xs text-text-secondary">
+                Nivel aplicado: {profitProjection.percentage ? `${profitProjection.percentage}% diario` : 'sin nivel activo'}
+              </p>
+              <p className="text-[11px] text-text-secondary">
+                Saldo base: {formatters.formatCurrency(snapshotBalance)}
+              </p>
+              {profitProjection.percentage > 0 && (
+                <p className="text-[11px] text-text-tertiary mt-1">
+                  Se recalcula al cambiar tu saldo o al completar el ciclo en {projectionTimeLeft}.
+                </p>
+              )}
+            </div>
+
+            <div className="border border-white/10 rounded-ios p-3 bg-white/5">
+              <p className="text-xs font-semibold text-text-primary mb-2">Niveles disponibles</p>
+              <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                {tierCards.map((tier) => {
+                  const isActive = profitProjection.tier
+                    ? tier.minBalance === profitProjection.tier.minBalance && tier.maxBalance === profitProjection.tier.maxBalance
+                    : false;
+                  return (
+                    <div
+                      key={tier.id}
+                      className={`text-xs px-3 py-2 rounded-lg border transition-colors ${
+                        isActive
+                          ? 'border-ios-green/40 bg-ios-green/10 text-ios-green'
+                          : 'border-white/10 bg-system-background/40 text-text-secondary'
+                      }`}
+                    >
+                      <p className="font-medium text-text-primary">{tier.label}</p>
+                      <p className={`${isActive ? 'text-ios-green' : 'text-text-secondary'}`}>{tier.percentage}% diario</p>
+                    </div>
+                  );
+                })}
+                {tierCards.length === 0 && (
+                  <p className="text-xs text-text-tertiary">Configura los niveles en el panel de administración para verlos aquí.</p>
+                )}
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>
