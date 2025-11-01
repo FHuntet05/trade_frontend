@@ -4,10 +4,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { IOSCard, IOSSegmentedControl } from '../components/ui/IOSComponents';
+import { IOSCard } from '../components/ui/IOSComponents';
 import Accordion from '../components/ui/Accordion';
 import api from '@/api/axiosConfig'; // Se importa el cliente de API.
 import Loader from '@/components/common/Loader'; // Se importa un componente de carga.
+import { FiFileText } from 'react-icons/fi';
+import TicketHistoryDrawer from '@/components/finance/TicketHistoryDrawer';
 
 const QuantitativePage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState(0); // El estado del filtro se mantiene.
@@ -17,6 +19,7 @@ const QuantitativePage = () => {
   const [plans, setPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const navigate = useNavigate(); // Hook para la navegación.
 
   // 2. useEffect para obtener los planes del backend al cargar la página.
@@ -114,11 +117,23 @@ const QuantitativePage = () => {
 
   return (
     <div className="min-h-screen bg-system-background ios-safe-top pb-20">
-      <div className="px-4 pt-6">
-        <h1 className="text-2xl font-ios-display font-bold text-text-primary mb-4">
-          Trading Cuantitativo
-        </h1>
-        
+      <div className="px-4 pt-6 space-y-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-ios-display font-bold text-text-primary mb-1">
+              Trading Cuantitativo
+            </h1>
+            <p className="text-text-secondary text-sm">Participa en planes algorítmicos cuidadosamente balanceados.</p>
+          </div>
+          <button
+            onClick={() => setIsHistoryOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-ios bg-system-secondary text-text-primary hover:text-white hover:bg-system-secondary/80 transition-colors"
+          >
+            <FiFileText className="w-4 h-4" />
+            <span className="text-sm font-medium">Tickets</span>
+          </button>
+        </div>
+
         <div className="mb-6">
           <Accordion title="¿Qué es el Trading Cuantitativo y cómo funciona?">
             <p className="font-ios text-sm text-text-secondary leading-relaxed">
@@ -135,6 +150,8 @@ const QuantitativePage = () => {
 
         {renderContent()}
       </div>
+
+      <TicketHistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
     </div>
   );
 };

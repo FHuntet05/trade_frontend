@@ -1,6 +1,3 @@
-// RUTA: frontend/src/pages/PurchasePlanPage.jsx
-// --- INICIO DE LA NUEVA PÁGINA DE COMPRA DE PLAN ---
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -8,20 +5,22 @@ import toast from 'react-hot-toast';
 import useUserStore from '@/store/userStore';
 import api from '@/api/axiosConfig';
 import { IOSLayout, IOSBackButton, IOSButton, IOSCard } from '@/components/ui/IOSComponents';
-import  Loader  from '@/components/common/Loader';
+import Loader from '@/components/common/Loader';
 import { formatters } from '@/utils/formatters';
 
-// Hook simple para debouncing
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
+
     return () => {
       clearTimeout(handler);
     };
   }, [value, delay]);
+
   return debouncedValue;
 };
 
@@ -33,18 +32,36 @@ const PurchasePlanPage = () => {
   const [plan, setPlan] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
   const [amount, setAmount] = useState('');
   const [calculatedGains, setCalculatedGains] = useState({ dailyGain: '0.00', totalReturn: '0.00' });
   const [isCalculating, setIsCalculating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
-  const debouncedAmount = useDebounce(amount, 500); // 500ms de delay
+  const debouncedAmount = useDebounce(amount, 500);
 
-  // Efecto para obtener los detalles del plan
+  const validateAmount = useCallback((rawValue) => {
+    if (!plan) {
+      return '';
+    }
+    if (!rawValue) {
+      return 'Ingresa un monto para calcular tu retorno.';
+    }
+    const numericAmount = parseFloat(rawValue);
+    if (Number.isNaN(numericAmount) || numericAmount <= 0) {
+      return 'El valor ingresado no es válido.';
+    }
+    if (numericAmount < plan.minInvestment) {
+      return `El mínimo permitido es ${formatters.formatCurrency(plan.minInvestment)}.`;
+    }
+    if (numericAmount > plan.maxInvestment) {
+      return `El máximo permitido es ${formatters.formatCurrency(plan.maxInvestment)}.`;
+    }
+    return '';
+  }, [plan]);
+
   useEffect(() => {
     const fetchPlanDetails = async () => {
-      // NOTA: Asume que existe un endpoint GET /api/quantitative/plans/:id en el backend.
       try {
         const response = await api.get(`/quantitative/plans/${planId}`);
         if (response.data.success) {
@@ -58,36 +75,42 @@ const PurchasePlanPage = () => {
         setIsLoading(false);
       }
     };
+
     fetchPlanDetails();
   }, [planId]);
 
-  // Efecto para calcular las ganancias cuando el monto (debounced) cambia
   useEffect(() => {
     const calculate = async () => {
       const numericAmount = parseFloat(debouncedAmount);
-      if (!plan || !debouncedAmount || isNaN(numericAmount) || numericAmount <= 0) {
+      const currentError = validateAmount(debouncedAmount);
+      if (!plan || !debouncedAmount || currentError || Number.isNaN(numericAmount) || numericAmount <= 0) {
         setCalculatedGains({ dailyGain: '0.00', totalReturn: '0.00' });
         return;
       }
+
       setIsCalculating(true);
       try {
-  const response = await api.post('/quantitative/calculate', { planId, amount: numericAmount });
+        const response = await api.post('/quantitative/calculate', { planId, amount: numericAmount });
         if (response.data.success) {
           setCalculatedGains(response.data.data);
+          setValidationError('');
         }
       } catch (err) {
-        console.error("Error calculating gains:", err);
+        console.error('Error calculating gains:', err);
       } finally {
         setIsCalculating(false);
       }
     };
+
     calculate();
-  }, [debouncedAmount, planId, plan]);
+  }, [debouncedAmount, planId, plan, validateAmount]);
 
   const handleConfirmPurchase = async () => {
     const numericAmount = parseFloat(amount);
-    if (isSubmitting || !plan || isNaN(numericAmount) || numericAmount < plan.minInvestment || numericAmount > plan.maxInvestment) {
-      toast.error('Por favor, introduce un monto válido.');
+    const currentError = validateAmount(amount);
+
+    if (isSubmitting || !plan || currentError) {
+      setValidationError(currentError || 'Ingresa un monto válido.');
       return;
     }
 
@@ -95,17 +118,16 @@ const PurchasePlanPage = () => {
     toast.loading('Procesando tu compra...');
 
     try {
-  const response = await api.post('/quantitative/initiate-purchase', { planId, amount: numericAmount });
+      const response = await api.post('/quantitative/initiate-purchase', { planId, amount: numericAmount });
       toast.dismiss();
 
       if (response.data.purchaseType === 'instant') {
         toast.success(response.data.message || '¡Compra realizada con éxito!');
-        // Aquí podrías actualizar el userStore con el nuevo balance si lo deseas
-        navigate('/home'); // Redirigir al dashboard
+        navigate('/home');
       } else if (response.data.purchaseType === 'deposit_required') {
         toast('Saldo insuficiente. Redirigiendo a depósito...', { icon: '⚠️' });
         const { ticketId } = response.data.data;
-        navigate(`/deposit/pending/${ticketId}`); // Redirigir a la página de pago pendiente
+        navigate(`/deposit/pending/${ticketId}`);
       }
     } catch (err) {
       toast.dismiss();
@@ -115,8 +137,13 @@ const PurchasePlanPage = () => {
     }
   };
 
-  if (isLoading) return <div className="w-full h-screen flex justify-center items-center"><Loader /></div>;
-  if (error) return <div className="w-full h-screen flex justify-center items-center text-red-500 p-4">{error}</div>;
+  if (isLoading) {
+    return <div className="w-full h-screen flex justify-center items-center"><Loader /></div>;
+  }
+
+  if (error) {
+    return <div className="w-full h-screen flex justify-center items-center text-red-500 p-4">{error}</div>;
+  }
 
   return (
     <IOSLayout>
@@ -138,12 +165,29 @@ const PurchasePlanPage = () => {
               <input
                 type="number"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setAmount(value);
+                  setValidationError(validateAmount(value));
+                }}
+                onBlur={(e) => setValidationError(validateAmount(e.target.value))}
                 placeholder={`Mín: ${plan.minInvestment} / Máx: ${plan.maxInvestment}`}
-                className="w-full p-4 text-2xl font-ios-display bg-system-secondary border border-gray-300 rounded-ios focus:outline-none focus:ring-2 focus:ring-ios-green text-center"
+                className={`w-full p-4 text-2xl font-ios-display rounded-ios focus:outline-none focus:ring-2 text-center transition-colors ${
+                  validationError
+                    ? 'bg-red-500/10 border border-red-400 focus:ring-red-400 text-red-100'
+                    : 'bg-system-secondary border border-gray-300 focus:ring-ios-green text-text-primary'
+                }`}
               />
-              <p className="text-xs text-text-tertiary mt-2 text-center">Tu saldo actual: {formatters.formatCurrency(user?.balance?.usdt || 0)}</p>
+              <div className="mt-2 text-center space-y-1">
+                <p className="text-xs text-text-tertiary">Tu saldo actual: {formatters.formatCurrency(user?.balance?.usdt || 0)}</p>
+                {validationError ? (
+                  <p className="text-xs text-red-300 font-medium">{validationError}</p>
+                ) : (
+                  <p className="text-xs text-text-secondary">Rango permitido: {formatters.formatCurrency(plan.minInvestment)} - {formatters.formatCurrency(plan.maxInvestment)}</p>
+                )}
+              </div>
             </div>
+
             <div className="space-y-3 pt-4 border-t border-gray-200">
               <div className="flex justify-between text-sm">
                 <span className="text-text-secondary">Ganancia diaria estimada</span>
@@ -175,5 +219,3 @@ const PurchasePlanPage = () => {
 };
 
 export default PurchasePlanPage;
-
-// --- FIN DE LA NUEVA PÁGINA DE COMPRA DE PLAN ---

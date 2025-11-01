@@ -17,8 +17,7 @@ import toast from 'react-hot-toast'; // --- INICIO DE LA MODIFICACIÓN --- Se im
 const HomePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  // --- INICIO DE LA MODIFICACIÓN --- Se extrae la nueva acción y los datos del usuario
-  const { user, claimDailyBonus } = useUserStore();
+  const { user, claimDailyBonus, settings } = useUserStore();
   const { marketData, isLoading, fetchMarketData } = useMarketStore();
   // --- FIN DE LA MODIFICACIÓN ---
 
@@ -26,8 +25,6 @@ const HomePage = () => {
     fetchMarketData();
   }, [fetchMarketData]);
 
-  const targetEndDate = user?.activeInvestments?.[0]?.endDate;
-  const { timeLeft, isFinished } = useCountdown(targetEndDate);
   const handleDeposit = () => navigate('/deposit');
   const handleSupport = () => navigate('/support');
 
@@ -57,6 +54,26 @@ const HomePage = () => {
   
   const userBalance = user?.balance?.usdt || 0;
   const withdrawableBalance = user?.withdrawableBalance || 0;
+
+  const profitProjection = useMemo(() => {
+    if (!settings?.profitTiers || userBalance <= 0) {
+      return { expected: 0, percentage: 0 };
+    }
+
+    const tiers = [...settings.profitTiers].sort((a, b) => a.minBalance - b.minBalance);
+    const activeTier = tiers.find((tier) => {
+      const withinMin = userBalance >= tier.minBalance;
+      const withinMax = tier.maxBalance === 0 ? true : userBalance <= tier.maxBalance;
+      return withinMin && withinMax;
+    });
+
+    if (!activeTier) {
+      return { expected: 0, percentage: 0 };
+    }
+
+    const expected = (userBalance * activeTier.profitPercentage) / 100;
+    return { expected, percentage: activeTier.profitPercentage };
+  }, [settings, userBalance]);
 
   const renderMarketData = () => {
     if (isLoading && marketData.length === 0) {
@@ -102,17 +119,22 @@ const HomePage = () => {
           </motion.button>
         </div>
         
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-internal-card rounded-ios-card p-4 shadow-ios-card text-center">
-          <p className="text-text-secondary text-sm mb-1 font-ios">{t('home.availableWithdrawal')}</p>
-          <p className="text-3xl font-ios-display font-bold text-text-primary mb-3">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-internal-card rounded-ios-card p-4 shadow-ios-card">
+          <p className="text-text-secondary text-sm mb-1 font-ios text-center">{t('home.availableWithdrawal')}</p>
+          <p className="text-3xl font-ios-display font-bold text-text-primary mb-3 text-center">
             {formatters.formatCurrency(withdrawableBalance)}
           </p>
-          <div className="bg-system-secondary rounded-ios p-3 inline-flex items-center justify-center">
-            {isFinished ? (
-              <p className="text-text-secondary text-sm font-ios">Realiza una inversión para ver tus ganancias</p>
-            ) : (
-              <p className="text-text-secondary text-sm font-ios">
-                ⏰ {t('home.nextProfitIn')} <span className="font-semibold text-text-primary">{timeLeft}</span>
+          <div className="bg-system-secondary rounded-ios p-4 space-y-1">
+            <p className="text-xs uppercase tracking-wide text-text-tertiary">Proyección en 24h</p>
+            <p className="text-lg font-ios-display text-text-primary">
+              ≈ {formatters.formatCurrency(profitProjection.expected)}
+            </p>
+            <p className="text-xs text-text-secondary">
+              Nivel aplicado: {profitProjection.percentage ? `${profitProjection.percentage}% diario` : 'sin nivel activo'}
+            </p>
+            {!profitProjection.percentage && (
+              <p className="text-xs text-text-tertiary">
+                Mantén saldo disponible para activar las ganancias del día.
               </p>
             )}
           </div>

@@ -5,9 +5,10 @@ import { motion } from 'framer-motion';
 import useInvestmentStore from '@/store/investmentStore';
 import useUserStore from '@/store/userStore';
 import InvestmentModal from '@/components/market/InvestmentModal';
-import { FiTrendingUp, FiCheckCircle } from 'react-icons/fi';
+import { FiTrendingUp, FiCheckCircle, FiFileText } from 'react-icons/fi';
 import useSWR from 'swr';
 import api from '@/api/axiosConfig'; // Asegúrate de que esta importación sea correcta
+import TicketHistoryDrawer from '@/components/finance/TicketHistoryDrawer';
 
 // Helper para obtener datos con axios (para SWR)
 const fetcher = (url) => api.get(url).then(res => res.data);
@@ -95,6 +96,7 @@ const MarketPage = () => {
     
     const [selectedItem, setSelectedItem] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
     useEffect(() => {
         fetchInvestmentPackages();
@@ -141,12 +143,23 @@ const MarketPage = () => {
 
     return (
         <div className="min-h-screen bg-system-background pb-24">
-            <div className="p-4 pt-6">
-                <h1 className="text-3xl font-ios-display font-bold text-text-primary mb-2">
-                    Mercado
-                </h1>
-                <p className="text-text-secondary mb-6">Elige un plan de inversión para empezar a generar ganancias.</p>
-                
+            <div className="p-4 pt-6 space-y-6">
+                <div className="flex items-center justify-between gap-3">
+                    <div>
+                        <h1 className="text-3xl font-ios-display font-bold text-text-primary mb-1">
+                            Mercado
+                        </h1>
+                        <p className="text-text-secondary">Elige un plan de inversión para empezar a generar ganancias.</p>
+                    </div>
+                    <button
+                        onClick={() => setIsHistoryOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-ios bg-system-secondary text-text-primary hover:text-white hover:bg-system-secondary/80 transition-colors"
+                    >
+                        <FiFileText className="w-4 h-4" />
+                        <span className="text-sm font-medium">Tickets</span>
+                    </button>
+                </div>
+
                 {renderContent()}
             </div>
         
@@ -158,6 +171,8 @@ const MarketPage = () => {
                     userBalance={user?.balance?.usdt || 0}
                 />
             )}
+
+            <TicketHistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
         </div>
     );
 };
