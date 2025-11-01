@@ -215,7 +215,7 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                   <div className="rounded-ios bg-system-secondary/70 border border-white/10 p-3">
                     <p className="text-xs text-text-tertiary uppercase tracking-wide">Pendientes</p>
                     <p className="text-lg font-semibold text-text-primary">{ticketStats.pendingCount}</p>
-                    <p className="text-xs text-red-200 flex items-center gap-1">
+                    <p className="text-xs text-red-500 flex items-center gap-1">
                       <FiClock className="w-3 h-3" />
                       {ticketStats.pendingAmount.toFixed(2)} USDT en espera
                     </p>
