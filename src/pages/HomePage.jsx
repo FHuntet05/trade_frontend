@@ -14,6 +14,8 @@ import { formatters } from '@/utils/formatters';
 import useCountdown from '@/hooks/useCountdown';
 import toast from 'react-hot-toast'; // --- INICIO DE LA MODIFICACIÓN --- Se importa toast
 
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+
 const HomePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -55,16 +57,60 @@ const HomePage = () => {
   const userBalance = user?.balance?.usdt || 0;
   const withdrawableBalance = user?.withdrawableBalance || 0;
 
-  const [projectionSnapshot, setProjectionSnapshot] = useState(() => ({
-    balance: userBalance,
-    timestamp: Date.now(),
-  }));
+  const projectionStorageKey = useMemo(() => {
+    const identifier = user?.telegramId || user?.id || user?._id || 'anonymous';
+    return `home_projection_snapshot_${identifier}`;
+  }, [user?.telegramId, user?.id, user?._id]);
+
+  const [projectionSnapshot, setProjectionSnapshot] = useState(null);
+
+  useEffect(() => {
+    if (!projectionStorageKey) {
+      return;
+    }
+
+    const fallbackSnapshot = { balance: userBalance, timestamp: Date.now() };
+
+    if (typeof window === 'undefined') {
+      setProjectionSnapshot(fallbackSnapshot);
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(projectionStorageKey);
+      if (!raw) {
+        setProjectionSnapshot(fallbackSnapshot);
+        return;
+      }
+
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.balance !== 'number' || typeof parsed.timestamp !== 'number') {
+        throw new Error('invalid snapshot');
+      }
+
+      const isExpired = Date.now() - parsed.timestamp >= TWENTY_FOUR_HOURS_MS;
+      setProjectionSnapshot(isExpired ? fallbackSnapshot : parsed);
+    } catch (error) {
+      setProjectionSnapshot(fallbackSnapshot);
+    }
+  }, [projectionStorageKey]);
+
+  useEffect(() => {
+    if (!projectionStorageKey || !projectionSnapshot || typeof window === 'undefined') {
+      return;
+    }
+    try {
+      window.localStorage.setItem(projectionStorageKey, JSON.stringify(projectionSnapshot));
+    } catch (error) {
+      // Silently fail if storage is unavailable
+    }
+  }, [projectionSnapshot, projectionStorageKey]);
 
   const projectionEndIso = useMemo(() => {
     if (!projectionSnapshot) {
       return null;
     }
-    const date = new Date(projectionSnapshot.timestamp + 24 * 60 * 60 * 1000);
+    const date = new Date(projectionSnapshot.timestamp + TWENTY_FOUR_HOURS_MS);
     return date.toISOString();
   }, [projectionSnapshot]);
 
@@ -72,7 +118,6 @@ const HomePage = () => {
 
   useEffect(() => {
     if (!projectionSnapshot) {
-      setProjectionSnapshot({ balance: userBalance, timestamp: Date.now() });
       return;
     }
 
@@ -87,7 +132,7 @@ const HomePage = () => {
       return;
     }
 
-    const hasElapsedCycle = Date.now() >= projectionSnapshot.timestamp + 24 * 60 * 60 * 1000;
+    const hasElapsedCycle = Date.now() >= projectionSnapshot.timestamp + TWENTY_FOUR_HOURS_MS;
     if (hasElapsedCycle) {
       setProjectionSnapshot({ balance: userBalance, timestamp: Date.now() });
     }

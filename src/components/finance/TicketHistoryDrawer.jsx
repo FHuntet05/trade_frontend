@@ -208,14 +208,14 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto pb-24">
               {activeTab === 'tickets' && (
                 <section className="px-5 pt-4 pb-2 border-b border-white/5 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-ios bg-system-secondary/70 border border-white/10 p-3">
                     <p className="text-xs text-text-tertiary uppercase tracking-wide">Pendientes</p>
                     <p className="text-lg font-semibold text-text-primary">{ticketStats.pendingCount}</p>
-                    <p className="text-xs text-cyan-200 flex items-center gap-1">
+                    <p className="text-xs text-red-200 flex items-center gap-1">
                       <FiClock className="w-3 h-3" />
                       {ticketStats.pendingAmount.toFixed(2)} USDT en espera
                     </p>
