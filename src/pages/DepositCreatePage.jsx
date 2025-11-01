@@ -87,7 +87,7 @@ const formatChainDescription = (option) => {
     return `Red ${option.chain || 'BSC'} · Acreditación automática`;
   }
   if (option.isStaticWallet) {
-    return `${option.chain || 'Método manual'} · Billetera fija administrada por soporte`;
+    return `${option.chain || 'Método manual'} · Depósito manual`;
   }
   if (option.chain) {
     return `${option.chain} · Confirmación manual`;
@@ -103,8 +103,10 @@ const getMinAmount = (option) => {
 const formatLimitsText = (option) => {
   if (!option) return '';
   const min = getMinAmount(option);
-  const maxText = option.maxAmount && option.maxAmount > 0 ? ` · Máximo ${option.maxAmount} ${option.currency}` : '';
-  return `Mínimo ${min} ${option.currency}${maxText}`;
+  const maxText = option.maxAmount && option.maxAmount > 0
+    ? ` · Máximo ${option.maxAmount} ${option.currency}`
+    : '';
+  return `Mínimo ${min} USDT en ${option.currency}${maxText}`;
 };
 
 const getMethodDescription = (option) => {
@@ -113,7 +115,7 @@ const getMethodDescription = (option) => {
     return 'Los tickets automáticos expiran tras 30 minutos y se acreditan al confirmar la red blockchain.';
   }
   if (option.isStaticWallet) {
-    return 'Este método usa una billetera fija configurada por el equipo. Envía únicamente el activo indicado y conserva tu comprobante por si soporte lo solicita.';
+    return 'Envía únicamente el activo indicado y conserva tu comprobante por si soporte lo solicita.';
   }
   return 'Los depósitos manuales se acreditan cuando el equipo valida el comprobante enviado al soporte.';
 };
@@ -331,15 +333,6 @@ const DepositCreatePage = () => {
                     </p>
                   </div>
                 </div>
-
-                {selectedOption.isStaticWallet && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-ios-card p-3 text-blue-900">
-                    <p className="font-ios text-xs font-semibold">Billetera fija asignada</p>
-                    <p className="font-ios text-xs mt-1">
-                      La dirección de depósito proviene de la billetera fija configurada en ajustes de administrador. Verifica la red indicada antes de enviar y guarda tu comprobante.
-                    </p>
-                  </div>
-                )}
 
                 {selectedOption.instructions && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-ios-card p-3 text-yellow-900">
