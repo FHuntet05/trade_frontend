@@ -12,21 +12,73 @@ const ICON_SOURCES = {
   USDT: '/assets/images/USDT.png',
   USDC: '/assets/images/USDT.png',
   BTC: '/assets/images/BTC.png',
+  BITCOIN: '/assets/images/BTC.png',
   ETH: '/assets/images/ETH.png',
+  ETHEREUM: '/assets/images/ETH.png',
   BNB: '/assets/images/BNB.png',
+  BSC: '/assets/images/BNB.png',
   SOL: '/assets/images/SOL.png',
+  SOLANA: '/assets/images/SOL.png',
   TRX: '/assets/images/TRON.png',
+  TRON: '/assets/images/TRON.png',
   LTC: '/assets/images/litecoin.png',
+  LITECOIN: '/assets/images/litecoin.png',
   TON: '/assets/images/TON.png',
   BEP20: '/assets/images/bep20-usdt.png',
 };
 
+const FALLBACK_ICON = ICON_SOURCES.BEP20;
+
+const resolveMappedIcon = (key) => {
+  if (!key) return null;
+  const candidates = Array.isArray(key)
+    ? key
+    : [key];
+  for (const candidate of candidates) {
+    const normalized = candidate.toUpperCase();
+    if (ICON_SOURCES[normalized]) {
+      return ICON_SOURCES[normalized];
+    }
+    const collapsed = normalized.replace(/[^A-Z0-9]/g, '');
+    if (ICON_SOURCES[collapsed]) {
+      return ICON_SOURCES[collapsed];
+    }
+  }
+  return null;
+};
+
 const getIconSource = (option) => {
-  if (!option) return ICON_SOURCES.BEP20;
-  const key = option.icon || option.currency;
-  if (!key) return ICON_SOURCES.BEP20;
-  const normalized = key.toUpperCase();
-  return ICON_SOURCES[normalized] || ICON_SOURCES.BEP20;
+  if (!option) return FALLBACK_ICON;
+
+  const rawIcon = option.icon || option.currency || option.name;
+  if (!rawIcon) return FALLBACK_ICON;
+
+  const value = String(rawIcon).trim();
+  if (!value) return FALLBACK_ICON;
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  if (value.startsWith('/')) {
+    return value;
+  }
+
+  if (/\.(png|jpg|jpeg|svg|webp)$/i.test(value)) {
+    return value.startsWith('/') ? value : `/${value}`;
+  }
+
+  const mapped = resolveMappedIcon([
+    value,
+    value.replace(/\s+/g, ''),
+    ...value.split(/[-_\s]+/),
+  ]);
+
+  if (mapped) {
+    return mapped;
+  }
+
+  return FALLBACK_ICON;
 };
 
 const formatChainDescription = (option) => {
