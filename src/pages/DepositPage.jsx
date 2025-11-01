@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { HiChevronLeft, HiOutlineDocumentSearch, HiOutlineRefresh } from 'react-icons/hi2';
-import { FiClock, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
+import { FiClock, FiCheckCircle, FiAlertTriangle } from 'react-icons/fi';
 import api from '@/api/axiosConfig';
 import Loader from '@/components/common/Loader';
 
@@ -16,12 +16,12 @@ const statusConfig = {
   },
   processing: {
     label: 'En proceso',
-    icon: <FiInfo className="text-blue-400" />,
+    icon: <HiOutlineDocumentSearch className="text-blue-400" />,
     badgeClass: 'bg-blue-500/10 text-blue-200'
   },
   awaiting_manual_review: {
     label: 'En revisión',
-    icon: <FiInfo className="text-blue-400" />,
+    icon: <HiOutlineDocumentSearch className="text-blue-400" />,
     badgeClass: 'bg-blue-500/10 text-blue-200'
   },
   completed: {
