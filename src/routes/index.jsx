@@ -15,6 +15,7 @@ import SupportPage from '@/pages/SupportPage';
 import AboutPage from '@/pages/AboutPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import DepositPage from '@/pages/DepositPage';
+import DepositCreatePage from '@/pages/DepositCreatePage';
 import FinancialHistoryPage from '@/pages/FinancialHistoryPage';
 import PurchasePlanPage from '@/pages/PurchasePlanPage';
 import PendingDepositPage from '../pages/PendingDepositPage';
@@ -28,16 +29,17 @@ const AppRoutes = () => {
       <Route element={<Layout />}>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<HomePage />} />
-        <Route path="/market" element={<MarketPage />} />
-        <Route path="/quantitative" element={<QuantitativePage />} />
+  <Route path="/market" element={<MarketPage />} />
+  <Route path="/quantitative" element={<QuantitativePage />} />
         <Route path="/quantitative/purchase/:planId" element={<PurchasePlanPage />} />
+  <Route path="/deposit" element={<DepositPage />} />
         <Route path="/deposit/pending/:ticketId" element={<PendingDepositPage />} />
+  <Route path="/deposit/create" element={<DepositCreatePage />} />
         <Route path="/wheel" element={<WheelPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
       
       {/* Rutas sin el layout principal */}
-      <Route path="/deposit" element={<DepositPage />} />
       <Route path="/history" element={<FinancialHistoryPage />} />
       <Route path="/language" element={<LanguagePage />} />
       

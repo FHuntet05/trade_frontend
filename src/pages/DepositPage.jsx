@@ -1,90 +1,197 @@
-// RUTA: frontend/src/pages/DepositPage.jsx
-// --- INICIO DE LA CORRECCIÓN DE RENDERIZADO ---
+// RUTA: frontend/src/pages/DepositPage.jsx (Flow actualizado)
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-// Se importan los iconos que faltaban y se unifican. Se eliminan los no usados.
-import { CopyIcon } from '@/components/icons/AppIcons';
-import { HiChevronLeft, HiExclamationTriangle } from 'react-icons/hi2';
-import { FaCheck } from 'react-icons/fa'; // Se usa un icono estándar para el checkmark.
-import api from '../api/axiosConfig';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { HiChevronLeft, HiOutlineDocumentSearch, HiOutlineRefresh } from 'react-icons/hi2';
+import { FiClock, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
+import api from '@/api/axiosConfig';
+import Loader from '@/components/common/Loader';
+
+const statusConfig = {
+  pending: {
+    label: 'Pendiente',
+    icon: <FiClock className="text-yellow-400" />,
+    badgeClass: 'bg-yellow-500/10 text-yellow-200'
+  },
+  processing: {
+    label: 'En proceso',
+    icon: <FiInfo className="text-blue-400" />,
+    badgeClass: 'bg-blue-500/10 text-blue-200'
+  },
+  awaiting_manual_review: {
+    label: 'En revisión',
+    icon: <FiInfo className="text-blue-400" />,
+    badgeClass: 'bg-blue-500/10 text-blue-200'
+  },
+  completed: {
+    label: 'Completado',
+    icon: <FiCheckCircle className="text-green-400" />,
+    badgeClass: 'bg-green-500/10 text-green-200'
+  },
+  expired: {
+    label: 'Expirado',
+    icon: <FiAlertTriangle className="text-red-400" />,
+    badgeClass: 'bg-red-500/10 text-red-200'
+  },
+  cancelled: {
+    label: 'Cancelado',
+    icon: <FiAlertTriangle className="text-red-400" />,
+    badgeClass: 'bg-red-500/10 text-red-200'
+  },
+  rejected: {
+    label: 'Rechazado',
+    icon: <FiAlertTriangle className="text-red-400" />,
+    badgeClass: 'bg-red-500/10 text-red-200'
+  }
+};
 
 const DepositPage = () => {
-  const { t } = useTranslation();
-  // El parámetro en la ruta es `networkId`, se debe usar consistentemente.
-  const { networkId } = useParams(); 
   const navigate = useNavigate();
-  
-  const [depositInfo, setDepositInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [copySuccess, setCopySuccess] = useState('');
+  const [tickets, setTickets] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Se corrige el nombre del parámetro en la llamada a la API.
-    api.get(`/wallet/deposit-address?network=${networkId}`)
-      .then(res => setDepositInfo(res.data))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
-  }, [networkId]);
-
-  const handleCopy = () => {
-    if (depositInfo?.address) {
-      navigator.clipboard.writeText(depositInfo.address);
-      setCopySuccess(t('common.copied'));
-      setTimeout(() => setCopySuccess(''), 2000);
+  const loadTickets = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/deposits/my-tickets?limit=20');
+      setTickets(response.data.data || []);
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || 'No se pudieron cargar tus tickets de depósito.';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  // Se añade un console.log para verificar el montaje del componente.
-  console.log('Renderizando DepositPage');
+
+  useEffect(() => {
+    loadTickets();
+  }, []);
+
+  const renderTicket = (ticket) => {
+    const status = statusConfig[ticket.status] || statusConfig.pending;
+    return (
+      <div
+        key={ticket.ticketId}
+        className="bg-internal-card rounded-ios-xl p-4 border border-white/5 space-y-3"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-text-secondary">
+            {status.icon}
+            <span className={`text-xs font-semibold rounded-full px-2 py-1 ${status.badgeClass}`}>
+              {status.label}
+            </span>
+          </div>
+          <span className="text-xs text-text-tertiary">
+            Creado: {new Date(ticket.createdAt).toLocaleString()}
+          </span>
+        </div>
+
+        <div className="flex justify-between text-sm">
+          <span className="text-text-secondary">Monto</span>
+          <span className="font-semibold text-text-primary">
+            {Number(ticket.amount).toFixed(2)} {ticket.currency}
+          </span>
+        </div>
+
+        <div className="flex justify-between text-sm">
+          <span className="text-text-secondary">Método</span>
+          <span className="font-semibold text-text-primary">{ticket.methodName || ticket.methodKey}</span>
+        </div>
+
+        {ticket.chain && (
+          <div className="flex justify-between text-sm">
+            <span className="text-text-secondary">Red</span>
+            <span className="font-semibold text-text-primary">{ticket.chain}</span>
+          </div>
+        )}
+
+        {ticket.depositAddress && (
+          <div className="flex justify-between text-xs text-text-tertiary">
+            <span>Dirección</span>
+            <span className="text-right break-all max-w-[60%]">{ticket.depositAddress}</span>
+          </div>
+        )}
+
+        {ticket.status === 'pending' && ticket.expiresAt && (
+          <div className="text-xs text-yellow-300">
+            Expira: {new Date(ticket.expiresAt).toLocaleString()}
+          </div>
+        )}
+
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => navigate(`/deposit/pending/${ticket.ticketId}`)}
+          className="w-full bg-system-secondary text-text-primary py-2 rounded-ios-button text-sm font-semibold"
+        >
+          Ver detalles
+        </motion.button>
+      </div>
+    );
+  };
 
   return (
-    // La estructura JSX se mantiene, pero ahora los iconos están definidos.
-    <div className="flex flex-col h-full space-y-6 animate-fade-in p-4 bg-system-background">
-      <div className="text-white space-y-6">
-        <header className="flex items-center justify-between">
-          <button onClick={() => navigate(-1)}><HiChevronLeft size={28} /></button>
-          <h1 className="text-xl font-bold">{t('depositPage.title')}</h1>
+    <div className="min-h-screen bg-system-background pb-24">
+      <div className="p-4 pt-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <button onClick={() => navigate(-1)} className="text-text-primary">
+            <HiChevronLeft size={28} />
+          </button>
+          <h1 className="text-xl font-ios-display font-bold text-text-primary">
+            Depósitos
+          </h1>
           <div className="w-7"></div>
-        </header>
-        
-        {loading && <div className="text-center py-10">{t('depositPage.loadingAddress')}</div>}
-        
-        {!loading && depositInfo && (
-          <main className="flex flex-col items-center space-y-6">
-            <div className="bg-white p-2 rounded-lg">
-              <img src={depositInfo.qrCodeUrl} alt="QR de depósito" className="w-40 h-40" />
-            </div>
-            
-            <p className="text-sm text-gray-400">{t('depositPage.addressLabel', { network: depositInfo.network.toUpperCase() })}</p>
-            
-            <div className="w-full bg-gray-900/50 border border-white/20 rounded-lg p-2 flex items-center gap-2">
-              <span className="text-sm break-all flex-grow px-2">{depositInfo.address}</span>
-              <button onClick={handleCopy} className="bg-pink-500 rounded p-2 flex-shrink-0">
-                {copySuccess ? <FaCheck className="w-5 h-5" /> : <CopyIcon className="w-5 h-5" />}
-              </button>
-            </div>
+        </div>
 
-            <button className="w-full py-3 font-bold text-white rounded-lg bg-gradient-to-r from-pink-500 to-purple-600">
-              {t('depositPage.rechargeCompleteButton')}
-            </button>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => navigate('/deposit/create')}
+          className="w-full bg-ios-green text-white py-4 rounded-ios-button font-ios font-bold text-lg"
+        >
+          Crear nuevo depósito
+        </motion.button>
 
-            <div className="w-full text-sm text-gray-300 space-y-2">
-              <h3 className="flex items-center gap-2 font-semibold"><HiExclamationTriangle />{t('depositPage.reminder.title')}</h3>
-              <ul className="list-decimal list-inside space-y-1 text-gray-400">
-                <li>{t('depositPage.reminder.item1')}</li>
-                <li>{t('depositPage.reminder.item2', { network: depositInfo.network.toUpperCase() })}</li>
-                <li>{t('depositPage.reminder.item3')}</li>
-                <li>{t('depositPage.reminder.item4')}</li>
-              </ul>
-            </div>
-          </main>
+        <div className="bg-internal-card rounded-ios-xl p-4 border border-white/5">
+          <h2 className="text-lg font-ios-display font-semibold text-text-primary mb-1">
+            ¿Cómo funciona?
+          </h2>
+          <p className="text-sm text-text-secondary">
+            Genera un ticket para obtener una dirección única de depósito. Envía el monto indicado y el sistema acreditará
+            automáticamente los fondos cuando la transacción se confirme en la blockchain.
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between text-text-secondary text-sm">
+          <span className="flex items-center gap-2">
+            <HiOutlineDocumentSearch /> Tus tickets recientes
+          </span>
+          <button onClick={loadTickets} className="flex items-center gap-1 text-ios-green">
+            <HiOutlineRefresh /> Actualizar
+          </button>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-10">
+            <Loader text="Cargando tickets..." />
+          </div>
+        ) : error ? (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-ios-xl p-4 text-red-200 text-sm">
+            {error}
+          </div>
+        ) : tickets.length === 0 ? (
+          <div className="bg-system-secondary rounded-ios-xl p-6 text-center text-text-secondary text-sm">
+            No tienes depósitos registrados. Crea tu primer ticket para obtener una dirección única.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {tickets.map(renderTicket)}
+          </div>
         )}
       </div>
     </div>
   );
 };
-export default DepositPage;
 
-// --- FIN DE LA CORRECCIÓN DE RENDERIZADO ---
+export default DepositPage;

@@ -23,14 +23,14 @@ const PendingDepositPage = () => {
   const [ticket, setTicket] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isConfirming, setIsConfirming] = useState(false);
-
   const { timeLeft, isFinished } = useCountdown(ticket?.expiresAt);
 
   useEffect(() => {
+    let intervalId;
+
     const fetchTicketDetails = async () => {
       try {
-        const response = await api.get(`/api/user/pending-purchase/${ticketId}`);
+        const response = await api.get(`/deposits/ticket/${ticketId}`);
         if (response.data.success) {
           setTicket(response.data.data);
         } else {
@@ -42,7 +42,11 @@ const PendingDepositPage = () => {
         setIsLoading(false);
       }
     };
+
     fetchTicketDetails();
+    intervalId = setInterval(fetchTicketDetails, 10000); // refrescar cada 10s
+
+    return () => clearInterval(intervalId);
   }, [ticketId]);
 
   const handleCopy = (text) => {
@@ -50,24 +54,24 @@ const PendingDepositPage = () => {
     toast.success('Copiado al portapapeles');
   };
 
-  const handleManualConfirmation = async () => {
-    setIsConfirming(true);
-    toast.loading('Verificando pago...');
-    try {
-      const response = await api.post(`/api/quantitative/confirm-manual/${ticketId}`);
-      toast.dismiss();
-      toast.success(response.data.message || '¡Pago verificado y compra completada!');
-      navigate('/home');
-    } catch (err) {
-      toast.dismiss();
-      toast.error(err.response?.data?.message || 'No se pudo confirmar el pago. Asegúrate de tener saldo suficiente.');
-    } finally {
-      setIsConfirming(false);
+  const handleManualConfirmation = () => {
+    if (!ticket) return;
+    if (ticket.methodType === 'manual') {
+      toast('Nuestro equipo revisará tu comprobante y acreditará el depósito manualmente.', {
+        icon: '🧾'
+      });
+    } else {
+      toast('Estamos verificando la transacción en la blockchain. Se actualizará automáticamente al confirmarse.', {
+        icon: '⏳'
+      });
     }
   };
 
   if (isLoading) return <div className="w-full h-screen flex justify-center items-center"><Loader /></div>;
   if (error) return <div className="w-full h-screen flex flex-col justify-center items-center text-center p-4"><p className='text-red-500'>{error}</p><IOSButton className="mt-4" onClick={() => navigate('/home')}>Volver al Inicio</IOSButton></div>;
+
+  const isAutomatic = ticket.methodType === 'automatic';
+  const showCountdown = isAutomatic && Boolean(ticket.expiresAt);
 
   return (
     <IOSLayout>
@@ -79,50 +83,69 @@ const PendingDepositPage = () => {
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 p-4 space-y-4 pb-24">
           <div className="text-center p-4 bg-yellow-100/80 text-yellow-800 rounded-ios">
-            <h2 className="font-bold">Orden de Pago Pendiente</h2>
-            <p className="text-sm">Para activar tu plan de inversión, envía la cantidad exacta a la dirección indicada.</p>
+            <h2 className="font-bold">Ticket de Depósito ({ticket.methodName})</h2>
+            <p className="text-sm">
+              {isAutomatic
+                ? 'Envía la cantidad indicada a la dirección asignada antes de que el ticket expire.'
+                : 'Sigue las instrucciones para completar tu depósito. Una vez enviado, envia el comprobante al soporte si es necesario.'}
+            </p>
           </div>
 
           <IOSCard className="text-center">
             <p className="text-sm text-text-secondary">Monto a Enviar</p>
             <div className="flex items-center justify-center gap-2 my-2">
-              <p className="text-3xl font-ios-display font-bold text-text-primary">{ticket.amount.toFixed(2)}</p>
-              <span className="text-lg text-text-secondary">USDT</span>
+              <p className="text-3xl font-ios-display font-bold text-text-primary">{Number(ticket.amount).toFixed(2)}</p>
+              <span className="text-lg text-text-secondary">{ticket.currency}</span>
             </div>
-            <p className="text-xs text-text-tertiary">(Red BEP20)</p>
+            {ticket.chain && (
+              <p className="text-xs text-text-tertiary">Red: {ticket.chain}</p>
+            )}
           </IOSCard>
 
-          <IOSCard className="flex flex-col items-center">
-            <p className="text-sm text-text-secondary mb-4">Escanea o copia la dirección de depósito</p>
-            <div className="p-2 bg-white rounded-lg">
-              {/* 4. Se envuelve el componente QRCode en <Suspense>.
-                  - 'fallback' define qué mostrar mientras el código del QR se descarga.
-                  - Esto evita que la página crashee o muestre un error.
-              */}
-              <Suspense fallback={<div style={{ width: 160, height: 160, backgroundColor: '#f0f0f0', borderRadius: '8px' }} />}>
-                <QRCode value={ticket.depositAddress} size={160} />
-              </Suspense>
-            </div>
-            <div 
-              className="mt-4 p-3 bg-system-secondary rounded-ios w-full text-center font-mono text-sm break-all cursor-pointer flex items-center justify-between"
-              onClick={() => handleCopy(ticket.depositAddress)}
-            >
-              {ticket.depositAddress}
-              <FiCopy className="ml-2 flex-shrink-0" />
-            </div>
-          </IOSCard>
+          {ticket.depositAddress && (
+            <IOSCard className="flex flex-col items-center">
+              <p className="text-sm text-text-secondary mb-4">{isAutomatic ? 'Escanea o copia la dirección de depósito' : 'Dirección para tu depósito'}</p>
+              <div className="p-2 bg-white rounded-lg">
+                <Suspense fallback={<div style={{ width: 160, height: 160, backgroundColor: '#f0f0f0', borderRadius: '8px' }} />}>
+                  <QRCode value={ticket.depositAddress} size={160} />
+                </Suspense>
+              </div>
+              <div 
+                className="mt-4 p-3 bg-system-secondary rounded-ios w-full text-center font-mono text-sm break-all cursor-pointer flex items-center justify-between"
+                onClick={() => handleCopy(ticket.depositAddress)}
+              >
+                {ticket.depositAddress}
+                <FiCopy className="ml-2 flex-shrink-0" />
+              </div>
+            </IOSCard>
+          )}
+
+          {ticket.instructions && (
+            <IOSCard className="bg-yellow-500/10 border border-yellow-500/30">
+              <p className="text-sm font-semibold text-yellow-300 mb-2">Instrucciones</p>
+              <p className="text-xs text-yellow-200 whitespace-pre-line text-left">
+                {ticket.instructions}
+              </p>
+            </IOSCard>
+          )}
           
-          <div className={`text-center p-3 rounded-ios ${isFinished ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-            <p className="text-sm font-semibold">{isFinished ? 'La orden ha expirado' : `Tiempo restante: ${timeLeft}`}</p>
-          </div>
+          {showCountdown ? (
+            <div className={`text-center p-3 rounded-ios ${isFinished ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+              <p className="text-sm font-semibold">{isFinished ? 'La orden ha expirado' : `Tiempo restante: ${timeLeft}`}</p>
+            </div>
+          ) : (
+            <div className="text-center p-3 rounded-ios bg-blue-100 text-blue-700">
+              <p className="text-sm font-semibold">Este ticket no tiene expiración automática.</p>
+            </div>
+          )}
 
           <IOSButton
             onClick={handleManualConfirmation}
-            disabled={isConfirming || isFinished}
+            disabled={isAutomatic && isFinished}
             variant="primary"
             className="w-full"
           >
-            {isConfirming ? 'Verificando...' : 'He Realizado el Pago'}
+            He realizado el pago
           </IOSButton>
         </motion.div>
       </div>

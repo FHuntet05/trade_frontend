@@ -76,6 +76,21 @@ const useUserStore = create(
       },
       // --- FIN DE LA MODIFICACIÓN (Bono Diario) ---
 
+      updateUser: (partialUser) => {
+        set((state) => {
+          if (!state.user) return state;
+          return {
+            user: {
+              ...state.user,
+              ...partialUser,
+              balance: partialUser.balance
+                ? { ...state.user.balance, ...partialUser.balance }
+                : state.user.balance,
+            }
+          };
+        });
+      },
+
       updateUserBalances: (newBalances) => {
         set((state) => {
           if (!state.user) return state;

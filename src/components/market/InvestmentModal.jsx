@@ -1,9 +1,11 @@
 // RUTA: frontend/src/components/market/InvestmentModal.jsx
+// --- VERSIÓN MEJORADA CON VERIFICACIÓN DE SALDO Y REDIRECCIÓN A DEPÓSITO ---
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import useMarketStore from '@/store/marketStore'; // Asumimos que la lógica de compra estará aquí
+import { useNavigate } from 'react-router-dom';
+import useMarketStore from '@/store/marketStore';
 import useUserStore from '@/store/userStore';
 import { CryptoIcon } from '@/components/icons/CryptoIcons';
 import { formatters } from '@/utils/formatters';
@@ -12,55 +14,45 @@ import api from '@/api/axiosConfig';
 
 const InvestmentModal = ({ isOpen, onClose, item, userBalance }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { fetchMarketItems } = useMarketStore();
-  const { updateUser } = useUserStore();
+  const { updateUser, user } = useUserStore();
   
-  const [amount, setAmount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (item) {
-      setAmount(item.minInvestment);
-      setError('');
-    }
-  }, [item]);
   
   if (!item) return null;
 
-  const estimatedProfit = (amount * item.dailyProfitPercentage) / 100;
-  const totalReturn = amount + (estimatedProfit * item.durationDays);
-
-  const handleAmountChange = (e) => {
-    const value = e.target.value;
-    setAmount(value === '' ? '' : Number(value));
-    
-    if (Number(value) < item.minInvestment) {
-      setError(`El mínimo es ${item.minInvestment} USDT`);
-    } else if (Number(value) > item.maxInvestment) {
-      setError(`El máximo es ${item.maxInvestment} USDT`);
-    } else if (Number(value) > userBalance) {
-      setError('Saldo insuficiente');
-    } else {
-      setError('');
-    }
-  };
+  // Calcular métricas del item
+  const dailyProfit = item.dailyProfitAmount || 0;
+  const totalReturn = item.price + (dailyProfit * item.durationDays);
+  const hasSufficientBalance = userBalance >= item.price;
+  const missingAmount = item.price - userBalance;
   
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (error || isLoading) return;
+  const handlePurchase = async () => {
+    // VERIFICACIÓN DE SALDO: Caso crítico
+    if (!hasSufficientBalance) {
+      toast.error(`Saldo insuficiente. Necesitas ${missingAmount.toFixed(2)} USDT más.`);
+      return;
+    }
 
     setIsLoading(true);
     try {
       const response = await api.post('/investments/purchase', {
         itemId: item._id,
-        amount: Number(amount),
       });
 
       if (response.data.success) {
-        toast.success('Compra realizada con éxito!');
-        updateUser({ balance: { usdt: response.data.data.newBalance } });
-        fetchMarketItems(); // Opcional: para refrescar datos si fuera necesario
+        toast.success('¡Compra realizada con éxito!');
+        
+        // Actualizar el saldo del usuario en el store
+        updateUser({ 
+          balance: { 
+            ...user.balance,
+            usdt: response.data.data.newBalance 
+          } 
+        });
+        
+        fetchMarketItems(); // Refrescar items si es necesario
         onClose();
       }
     } catch (err) {
@@ -69,6 +61,17 @@ const InvestmentModal = ({ isOpen, onClose, item, userBalance }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDepositRedirect = () => {
+    onClose();
+    // Redirigir a la página de depósito con el monto requerido
+    navigate('/deposit/create', { 
+      state: { 
+        requiredAmount: missingAmount,
+        reason: `Compra de ${item.name}`
+      } 
+    });
   };
 
   return (
@@ -92,11 +95,15 @@ const InvestmentModal = ({ isOpen, onClose, item, userBalance }) => {
             <div className="p-5">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                  <CryptoIcon symbol={item.symbol} className="w-8 h-8 text-text-primary" />
+                  <img 
+                    src={item.imageUrl} 
+                    alt={item.name} 
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
                 </div>
                 <div>
                   <h3 className="font-ios-display font-bold text-xl text-text-primary">
-                    Comprar {item.name}
+                    {item.name}
                   </h3>
                   <p className="font-ios text-text-secondary">
                     Saldo disponible: {formatters.formatCurrency(userBalance)}
@@ -104,47 +111,80 @@ const InvestmentModal = ({ isOpen, onClose, item, userBalance }) => {
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="font-ios text-sm text-text-secondary mb-1 block">
-                    Monto (USDT)
-                  </label>
-                  <input
-                    type="number"
-                    value={amount}
-                    onChange={handleAmountChange}
-                    placeholder={`Min: ${item.minInvestment}`}
-                    className="w-full bg-system-secondary p-3 rounded-ios-button text-text-primary font-ios text-lg focus:outline-none focus:ring-2 focus:ring-ios-green"
-                  />
-                  {error && <p className="text-red-500 text-xs mt-1 font-ios">{error}</p>}
-                </div>
-
-                <div className="bg-system-secondary rounded-ios-card p-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-ios text-text-secondary">Ganancia Diaria Estimada</span>
+              <div className="space-y-4">
+                {/* Información del Item */}
+                <div className="bg-system-secondary rounded-ios-card p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <span className="font-ios text-sm text-text-secondary">Precio</span>
+                    <span className="font-ios font-bold text-text-primary">
+                      {formatters.formatCurrency(item.price)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-ios text-sm text-text-secondary">Ganancia Diaria</span>
                     <span className="font-ios font-semibold text-ios-green">
-                      ~{formatters.formatCurrency(estimatedProfit, 4)}
+                      +{formatters.formatCurrency(dailyProfit)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="font-ios text-text-secondary">Retorno Total Estimado</span>
+                  <div className="flex justify-between">
+                    <span className="font-ios text-sm text-text-secondary">Duración</span>
                     <span className="font-ios font-semibold text-text-primary">
-                      ~{formatters.formatCurrency(totalReturn)}
+                      {item.durationDays} días
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-white/10 pt-2">
+                    <span className="font-ios text-sm text-text-secondary">Retorno Total Estimado</span>
+                    <span className="font-ios font-bold text-text-primary">
+                      {formatters.formatCurrency(totalReturn)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-ios text-sm text-text-secondary">ROI</span>
+                    <span className="font-ios font-bold text-ios-green">
+                      {item.totalRoiPercentage}%
                     </span>
                   </div>
                 </div>
 
-                <div className="pt-2">
+                {/* Mensaje de saldo insuficiente */}
+                {!hasSufficientBalance && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-ios-card p-3">
+                    <p className="font-ios text-sm text-red-400">
+                      ⚠️ Saldo insuficiente. Necesitas {formatters.formatCurrency(missingAmount)} USDT más.
+                    </p>
+                  </div>
+                )}
+
+                {/* Botones de Acción */}
+                <div className="pt-2 space-y-2">
+                  {hasSufficientBalance ? (
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handlePurchase}
+                      disabled={isLoading}
+                      className="w-full bg-ios-green text-white py-3.5 rounded-ios-button font-ios font-semibold text-base disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? 'Procesando...' : 'Confirmar Compra'}
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleDepositRedirect}
+                      className="w-full bg-blue-500 text-white py-3.5 rounded-ios-button font-ios font-semibold text-base"
+                    >
+                      💰 Depositar Fondos
+                    </motion.button>
+                  )}
+                  
                   <motion.button
                     whileTap={{ scale: 0.98 }}
-                    type="submit"
-                    disabled={isLoading || !!error || amount === ''}
-                    className="w-full bg-ios-green text-white py-3.5 rounded-ios-button font-ios font-semibold text-base disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    onClick={onClose}
+                    className="w-full bg-gray-200 text-gray-800 py-3 rounded-ios-button font-ios font-semibold text-base"
                   >
-                    {isLoading ? 'Procesando...' : 'Confirmar Compra'}
+                    Cancelar
                   </motion.button>
                 </div>
-              </form>
+              </div>
             </div>
           </motion.div>
         </div>
