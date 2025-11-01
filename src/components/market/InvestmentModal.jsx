@@ -35,31 +35,45 @@ const InvestmentModal = ({ isOpen, onClose, item, userBalance }) => {
     }
 
     setIsLoading(true);
+
+    let purchaseData = null;
+
     try {
-      const response = await api.post('/investments/purchase', {
+      const { data } = await api.post('/investments/purchase', {
         itemId: item._id,
       });
 
-      if (response.data.success) {
-        toast.success('¡Compra realizada con éxito!');
-        
-        // Actualizar el saldo del usuario en el store
-        updateUser({ 
-          balance: { 
-            ...user.balance,
-            usdt: response.data.data.newBalance 
-          } 
-        });
-        
-        fetchMarketItems(); // Refrescar items si es necesario
-        onClose();
+      if (!data?.success) {
+        throw new Error(data?.message || 'Error al procesar la compra.');
       }
+
+      purchaseData = data;
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Error al procesar la compra.';
+      const errorMessage = err.response?.data?.message || err.message || 'Error al procesar la compra.';
       toast.error(errorMessage);
-    } finally {
       setIsLoading(false);
+      return;
     }
+
+    toast.success('¡Compra realizada con éxito!');
+
+    // Actualizar el saldo del usuario en el store
+    updateUser({
+      balance: {
+        ...user.balance,
+        usdt: purchaseData.data?.newBalance ?? user.balance?.usdt ?? 0,
+      },
+    });
+
+    // Refrescar items si es necesario, sin romper el flujo principal si falla
+    try {
+      await fetchMarketItems();
+    } catch (refreshError) {
+      console.warn('La compra fue exitosa, pero no se pudo refrescar el mercado.', refreshError);
+    }
+
+    onClose();
+    setIsLoading(false);
   };
 
   const handleDepositRedirect = () => {
