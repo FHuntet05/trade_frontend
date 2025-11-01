@@ -24,6 +24,7 @@ const PendingDepositPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const { timeLeft, isFinished } = useCountdown(ticket?.expiresAt);
+  const isStaticWalletTicket = Boolean(ticket?.metadata?.staticWalletKey);
 
   useEffect(() => {
     let intervalId;
@@ -117,6 +118,14 @@ const PendingDepositPage = () => {
                 {ticket.depositAddress}
                 <FiCopy className="ml-2 flex-shrink-0" />
               </div>
+            </IOSCard>
+          )}
+
+          {isStaticWalletTicket && (
+            <IOSCard className="bg-blue-500/10 border border-blue-500/30">
+              <p className="text-xs text-blue-200">
+                Este ticket usa una billetera fija configurada por el equipo para {ticket.currency}. Verifica que estás enviando a la red correcta ({ticket.chain || 'red indicada'}) y conserva tu comprobante.
+              </p>
             </IOSCard>
           )}
 

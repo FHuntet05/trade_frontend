@@ -42,9 +42,10 @@ const SettingsToggle = ({ name, label, register }) => (
 );
 
 const AdminSettingsPage = () => {
-    const { register, handleSubmit, reset, control, formState: { isSubmitting, isDirty } } = useForm({
+    const { register, handleSubmit, reset, control, watch, formState: { isSubmitting, isDirty } } = useForm({
         defaultValues: {
-            profitTiers: []
+            profitTiers: [],
+            staticWallets: []
         }
     });
     const { fields, append, remove } = useFieldArray({
@@ -52,6 +53,7 @@ const AdminSettingsPage = () => {
         name: "profitTiers"
     });
     const [isLoading, setIsLoading] = useState(true);
+    const staticWallets = watch('staticWallets') || [];
 
     const loadSettings = useCallback(async () => {
         setIsLoading(true);
@@ -128,6 +130,89 @@ const AdminSettingsPage = () => {
                         
                         {/* --- LÓGICA DE SWAP ELIMINADA --- */}
                     </div>
+                </div>
+
+                <div className="mt-6">
+                    <SettingsCard
+                        title="Billeteras Estáticas"
+                        description="Configura direcciones fijas para depósitos manuales en criptomonedas soportadas."
+                    >
+                        <div className="space-y-5">
+                            {staticWallets.length === 0 ? (
+                                <p className="text-sm text-text-secondary">
+                                    No hay billeteras configuradas. Guarda la configuración para inicializar los valores por defecto.
+                                </p>
+                            ) : (
+                                staticWallets.map((wallet, index) => {
+                                    const statusBadgeClasses = wallet?.isActive
+                                        ? 'bg-green-500/20 text-green-300 border border-green-400/40'
+                                        : 'bg-dark-tertiary text-text-secondary border border-white/10';
+
+                                    return (
+                                        <div
+                                            key={wallet?.key || index}
+                                            className="bg-dark-tertiary/30 border border-white/10 rounded-lg p-4 space-y-4"
+                                        >
+                                            <input type="hidden" {...register(`staticWallets.${index}.key`)} />
+                                            <input type="hidden" {...register(`staticWallets.${index}.currency`)} />
+                                            <input type="hidden" {...register(`staticWallets.${index}.chain`)} />
+                                            <input type="hidden" {...register(`staticWallets.${index}.icon`)} />
+
+                                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                                                        {wallet?.currency || 'Crypto'}
+                                                        <span className="text-xs text-text-secondary uppercase tracking-wide">
+                                                            {wallet?.chain || 'Chain no definida'}
+                                                        </span>
+                                                    </h3>
+                                                    <p className="text-xs text-text-secondary">Identificador: {wallet?.key}</p>
+                                                </div>
+                                                <label className="flex items-center gap-2 text-xs text-text-secondary">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register(`staticWallets.${index}.isActive`)}
+                                                        className="w-4 h-4 text-green-500 focus:ring-green-500 rounded"
+                                                    />
+                                                    Activar para usuarios
+                                                    <span className={`ml-2 px-2 py-1 rounded-full text-[10px] font-semibold uppercase ${statusBadgeClasses}`}>
+                                                        {wallet?.isActive ? 'Activo' : 'Inactivo'}
+                                                    </span>
+                                                </label>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-medium text-text-secondary mb-1">
+                                                    Dirección de depósito
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    {...register(`staticWallets.${index}.address`)}
+                                                    placeholder="Ingresa la dirección fija (ej. 0x... o bc1...)"
+                                                    className="w-full bg-white text-black p-2 rounded-md border border-dark-tertiary text-sm"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-medium text-text-secondary mb-1">
+                                                    Instrucciones para el usuario
+                                                </label>
+                                                <textarea
+                                                    rows={3}
+                                                    {...register(`staticWallets.${index}.instructions`)}
+                                                    placeholder="Ejemplo: Envía únicamente BTC a esta dirección y comparte tu comprobante con soporte."
+                                                    className="w-full bg-white text-black p-2 rounded-md border border-dark-tertiary text-sm resize-y"
+                                                />
+                                                <p className="text-[11px] text-text-secondary mt-2">
+                                                    Esta información se mostrará en la pantalla del ticket. Mantén un tono claro y directo.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </SettingsCard>
                 </div>
 
                 {/* --- NUEVA SECCIÓN: GESTIÓN DE RANGOS DE GANANCIA --- */}

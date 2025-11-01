@@ -7,6 +7,80 @@ import { motion } from 'framer-motion';
 import { HiChevronLeft, HiInformationCircle } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import api from '@/api/axiosConfig';
+import { CryptoIcon } from '@/components/icons/CryptoIcons';
+
+const gradientByCurrency = {
+  USDT: 'from-emerald-500/80 via-emerald-400/60 to-emerald-500/30',
+  BTC: 'from-amber-500/80 via-orange-500/60 to-amber-500/30',
+  ETH: 'from-indigo-500/80 via-purple-500/60 to-indigo-500/30',
+  LTC: 'from-slate-400/80 via-slate-300/60 to-slate-400/30',
+  TRX: 'from-rose-500/80 via-red-500/60 to-rose-500/30',
+  SOL: 'from-cyan-500/80 via-teal-400/60 to-cyan-500/30',
+  TON: 'from-sky-500/80 via-blue-400/60 to-sky-500/30',
+  BNB: 'from-yellow-500/80 via-orange-400/60 to-yellow-500/30',
+  DEFAULT: 'from-cyan-500/70 via-slate-500/40 to-cyan-500/20',
+};
+
+const methodBadges = {
+  automatic: {
+    label: 'Automático',
+    className: 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30'
+  },
+  manual: {
+    label: 'Manual',
+    className: 'bg-amber-500/20 text-amber-200 border border-amber-400/40'
+  },
+  static: {
+    label: 'Wallet fija',
+    className: 'bg-blue-500/20 text-blue-200 border border-blue-400/40'
+  }
+};
+
+const getGradientClass = (symbol) => gradientByCurrency[symbol?.toUpperCase()] || gradientByCurrency.DEFAULT;
+
+const getMethodBadge = (option) => {
+  if (!option) return methodBadges.manual;
+  if (option.type === 'automatic') return methodBadges.automatic;
+  if (option.isStaticWallet) return methodBadges.static;
+  return methodBadges.manual;
+};
+
+const formatChainDescription = (option) => {
+  if (!option) return '';
+  if (option.type === 'automatic') {
+    return `Red ${option.chain || 'BSC'} · Acreditación automática`;
+  }
+  if (option.isStaticWallet) {
+    return `${option.chain || 'Método manual'} · Billetera fija administrada por soporte`;
+  }
+  if (option.chain) {
+    return `${option.chain} · Confirmación manual`;
+  }
+  return 'Confirmación manual del equipo';
+};
+
+const getMinAmount = (option) => {
+  if (!option) return 0.01;
+  return option.minAmount && option.minAmount > 0 ? option.minAmount : 0.01;
+};
+
+const formatLimitsText = (option) => {
+  if (!option) return '';
+  const min = getMinAmount(option);
+  const maxText = option.maxAmount && option.maxAmount > 0 ? ` · Máximo ${option.maxAmount} ${option.currency}` : '';
+  return `Mínimo ${min} ${option.currency}${maxText}`;
+};
+
+const getMethodDescription = (option) => {
+  if (!option) return '';
+  if (option.type === 'automatic') {
+    return 'Los tickets automáticos expiran tras 30 minutos y se acreditan al confirmar la red blockchain.';
+  }
+  if (option.isStaticWallet) {
+    return 'Este método usa una billetera fija configurada por el equipo. Envía únicamente el activo indicado y conserva tu comprobante por si soporte lo solicita.';
+  }
+  return 'Los depósitos manuales se acreditan cuando el equipo valida el comprobante enviado al soporte.';
+};
 
 const DepositCreatePage = () => {
   const navigate = useNavigate();
@@ -100,26 +174,39 @@ const DepositCreatePage = () => {
 
   const renderOptionButton = (option) => {
     const isActive = option.key === selectedKey;
-    const minAmount = option.minAmount && option.minAmount > 0 ? option.minAmount : 0.01;
+    const badge = getMethodBadge(option);
+    const gradient = getGradientClass(option.icon || option.currency);
 
     return (
       <motion.button
         key={option.key}
         type="button"
-        whileTap={{ scale: 0.98 }}
+        whileTap={{ scale: 0.97 }}
         onClick={() => setSelectedKey(option.key)}
-        className={`flex flex-col items-start gap-1 p-4 rounded-ios-xl border transition-all ${
-          isActive ? 'border-ios-green bg-ios-green/10 text-white' : 'border-transparent bg-system-secondary text-text-primary'
+        className={`relative flex items-center gap-4 rounded-2xl border px-4 py-3 transition-all duration-200 ${
+          isActive
+            ? 'border-ios-green/70 bg-white/10 shadow-lg shadow-emerald-500/25 text-white'
+            : 'border-white/10 bg-system-secondary/50 text-text-primary hover:border-white/25 hover:bg-system-secondary/70'
         }`}
       >
-        <span className="font-ios font-semibold text-base">{option.name}</span>
-        <span className="font-ios text-xs text-text-secondary">
-          {option.currency} · {option.chain || 'Método manual'}
-        </span>
-        <span className="font-ios text-xs text-text-secondary">
-          Mínimo: {minAmount} {option.currency}
-          {option.maxAmount > 0 ? ` · Máximo: ${option.maxAmount} ${option.currency}` : ''}
-        </span>
+        <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${gradient}`}>
+          <CryptoIcon symbol={option.icon || option.currency} className="h-7 w-7 text-white" />
+        </div>
+        <div className="flex-1 text-left">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-ios font-semibold text-sm">{option.name}</span>
+            <span className={`px-2 py-1 text-[10px] font-semibold uppercase tracking-wide rounded-full ${badge.className}`}>
+              {badge.label}
+            </span>
+          </div>
+          <p className="font-ios text-xs text-text-secondary mt-1">
+            {formatChainDescription(option)}
+          </p>
+          <p className="font-ios text-[11px] text-text-tertiary mt-1">{formatLimitsText(option)}</p>
+        </div>
+        {isActive && (
+          <span className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-ios-green/60" />
+        )}
       </motion.button>
     );
   };
@@ -169,7 +256,18 @@ const DepositCreatePage = () => {
             </div>
 
             {selectedOption && (
-              <div className="bg-internal-card rounded-ios-xl p-4 space-y-4">
+              <div className="bg-internal-card rounded-ios-xl p-5 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${getGradientClass(selectedOption.icon || selectedOption.currency)}`}>
+                    <CryptoIcon symbol={selectedOption.icon || selectedOption.currency} className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="font-ios font-semibold text-lg text-white">{selectedOption.name}</h2>
+                    <p className="font-ios text-xs text-text-secondary mt-1">{formatChainDescription(selectedOption)}</p>
+                    <p className="font-ios text-[11px] text-text-tertiary mt-1">{formatLimitsText(selectedOption)}</p>
+                  </div>
+                </div>
+
                 <div>
                   <label className="font-ios text-sm text-text-secondary mb-2 block">
                     Monto a Depositar ({selectedOption.currency})
@@ -179,22 +277,33 @@ const DepositCreatePage = () => {
                     value={amount}
                     onChange={(event) => setAmount(event.target.value)}
                     step="0.01"
-                    min={selectedOption.minAmount && selectedOption.minAmount > 0 ? selectedOption.minAmount : 0.01}
+                    min={getMinAmount(selectedOption)}
                     placeholder="Ingresa el monto"
                     className="w-full bg-system-secondary p-3 rounded-ios-button text-text-primary font-ios text-lg focus:outline-none focus:ring-2 focus:ring-ios-green"
                     required
                   />
-                  <p className="font-ios text-xs text-text-secondary mt-2">
-                    Mínimo {selectedOption.minAmount && selectedOption.minAmount > 0 ? selectedOption.minAmount : 0.01} {selectedOption.currency}
-                    {selectedOption.maxAmount > 0 ? ` · Máximo ${selectedOption.maxAmount} ${selectedOption.currency}` : ''}
-                  </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 font-ios text-[11px] text-text-secondary mt-2">
+                    <span>{formatLimitsText(selectedOption)}</span>
+                    <span className="uppercase tracking-wide text-text-tertiary">Moneda: {selectedOption.currency}</span>
+                  </div>
                 </div>
 
-                <p className="font-ios text-xs text-text-secondary">
-                  {selectedOption.type === 'automatic'
-                    ? 'Los tickets automáticos expiran tras 30 minutos y se acreditan al detectar la transacción en blockchain.'
-                    : 'Los depósitos manuales se acreditan cuando el equipo valida el comprobante enviado al soporte.'}
-                </p>
+                <div className="bg-system-secondary/60 border border-white/10 rounded-ios-card p-3">
+                  <div className="flex items-start gap-3">
+                    <HiInformationCircle className="text-ios-green flex-shrink-0" size={22} />
+                    <p className="font-ios text-xs text-text-secondary">
+                      {getMethodDescription(selectedOption)}
+                    </p>
+                  </div>
+                </div>
+
+                {selectedOption.isStaticWallet && (
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-ios-card p-3">
+                    <p className="font-ios text-xs text-blue-200">
+                      La dirección de depósito proviene de la billetera fija configurada en ajustes de administrador. Verifica la red indicada antes de enviar y guarda tu comprobante.
+                    </p>
+                  </div>
+                )}
 
                 {selectedOption.instructions && (
                   <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-ios-card p-3">
