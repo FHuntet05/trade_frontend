@@ -109,6 +109,18 @@ const AdminSettingsPage = () => {
                             <SettingsInput name="depositCommissionLevel3" label="Comisión Nivel 3 (%)" type="number" step="0.1" register={register} />
                         </SettingsCard>
                         
+                        <SettingsCard title="Ganancias Pasivas por Saldo" description="Activa ganancias automáticas sobre el saldo disponible (balance.usdt) de los usuarios.">
+                            <SettingsToggle name="isPassiveProfitEnabled" label="Habilitar Ganancias Pasivas" register={register} />
+                            <div className="bg-dark-tertiary/30 p-4 rounded-md border border-white/5">
+                                <p className="text-xs text-text-secondary mb-2">
+                                    <strong>Nota:</strong> Las ganancias se calculan sobre el saldo disponible (USDT) según los rangos configurados en "Profit Tiers". Los usuarios deben mantener el saldo durante 24h.
+                                </p>
+                                <p className="text-xs text-text-secondary">
+                                    Edita los rangos de ganancia en la base de datos mediante profitTiers (minBalance, maxBalance, profitPercentage).
+                                </p>
+                            </div>
+                        </SettingsCard>
+                        
                         {/* --- LÓGICA DE SWAP ELIMINADA --- */}
                     </div>
                 </div>
