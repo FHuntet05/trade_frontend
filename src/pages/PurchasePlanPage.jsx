@@ -46,7 +46,7 @@ const PurchasePlanPage = () => {
     const fetchPlanDetails = async () => {
       // NOTA: Asume que existe un endpoint GET /api/quantitative/plans/:id en el backend.
       try {
-        const response = await api.get(`/api/quantitative/plans/${planId}`);
+        const response = await api.get(`/quantitative/plans/${planId}`);
         if (response.data.success) {
           setPlan(response.data.data);
         } else {
@@ -71,7 +71,7 @@ const PurchasePlanPage = () => {
       }
       setIsCalculating(true);
       try {
-        const response = await api.post('/api/quantitative/calculate', { planId, amount: numericAmount });
+  const response = await api.post('/quantitative/calculate', { planId, amount: numericAmount });
         if (response.data.success) {
           setCalculatedGains(response.data.data);
         }
@@ -95,7 +95,7 @@ const PurchasePlanPage = () => {
     toast.loading('Procesando tu compra...');
 
     try {
-      const response = await api.post('/api/quantitative/initiate-purchase', { planId, amount: numericAmount });
+  const response = await api.post('/quantitative/initiate-purchase', { planId, amount: numericAmount });
       toast.dismiss();
 
       if (response.data.purchaseType === 'instant') {

@@ -43,6 +43,11 @@ const icons = {
 };
 
 export const CryptoIcon = ({ symbol, ...props }) => {
+  if (!symbol || typeof symbol !== 'string') {
+    const FallbackIcon = defaultIcon;
+    return <FallbackIcon {...props} />;
+  }
+
   const IconComponent = icons[symbol.toUpperCase()] || defaultIcon;
   return <IconComponent {...props} />;
 };
