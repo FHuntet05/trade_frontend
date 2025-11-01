@@ -7,18 +7,18 @@ import { motion } from 'framer-motion';
 import { HiChevronLeft, HiInformationCircle } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import api from '@/api/axiosConfig';
-import { CryptoIcon } from '@/components/icons/CryptoIcons';
 
-const gradientByCurrency = {
-  USDT: 'from-emerald-500/80 via-emerald-400/60 to-emerald-500/30',
-  BTC: 'from-amber-500/80 via-orange-500/60 to-amber-500/30',
-  ETH: 'from-indigo-500/80 via-purple-500/60 to-indigo-500/30',
-  LTC: 'from-slate-400/80 via-slate-300/60 to-slate-400/30',
-  TRX: 'from-rose-500/80 via-red-500/60 to-rose-500/30',
-  SOL: 'from-cyan-500/80 via-teal-400/60 to-cyan-500/30',
-  TON: 'from-sky-500/80 via-blue-400/60 to-sky-500/30',
-  BNB: 'from-yellow-500/80 via-orange-400/60 to-yellow-500/30',
-  DEFAULT: 'from-cyan-500/70 via-slate-500/40 to-cyan-500/20',
+const ICON_SOURCES = {
+  USDT: '/assets/images/USDT.png',
+  USDC: '/assets/images/USDT.png',
+  BTC: '/assets/images/BTC.png',
+  ETH: '/assets/images/ETH.png',
+  BNB: '/assets/images/BNB.png',
+  SOL: '/assets/images/SOL.png',
+  TRX: '/assets/images/TRON.png',
+  LTC: '/assets/images/litecoin.png',
+  TON: '/assets/images/TON.png',
+  BEP20: '/assets/images/bep20-usdt.png',
 };
 
 const methodBadges = {
@@ -36,13 +36,19 @@ const methodBadges = {
   }
 };
 
-const getGradientClass = (symbol) => gradientByCurrency[symbol?.toUpperCase()] || gradientByCurrency.DEFAULT;
-
 const getMethodBadge = (option) => {
   if (!option) return methodBadges.manual;
   if (option.type === 'automatic') return methodBadges.automatic;
   if (option.isStaticWallet) return methodBadges.static;
   return methodBadges.manual;
+};
+
+const getIconSource = (option) => {
+  if (!option) return ICON_SOURCES.BEP20;
+  const key = option.icon || option.currency;
+  if (!key) return ICON_SOURCES.BEP20;
+  const normalized = key.toUpperCase();
+  return ICON_SOURCES[normalized] || ICON_SOURCES.BEP20;
 };
 
 const formatChainDescription = (option) => {
@@ -175,7 +181,7 @@ const DepositCreatePage = () => {
   const renderOptionButton = (option) => {
     const isActive = option.key === selectedKey;
     const badge = getMethodBadge(option);
-    const gradient = getGradientClass(option.icon || option.currency);
+    const iconSrc = getIconSource(option);
 
     return (
       <motion.button
@@ -183,30 +189,30 @@ const DepositCreatePage = () => {
         type="button"
         whileTap={{ scale: 0.97 }}
         onClick={() => setSelectedKey(option.key)}
-        className={`relative flex items-center gap-4 rounded-2xl border px-4 py-3 transition-all duration-200 ${
+        className={`relative h-full min-h-[130px] w-full rounded-2xl border px-4 py-4 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ios-green ${
           isActive
             ? 'border-ios-green/70 bg-white/10 shadow-lg shadow-emerald-500/25 text-white'
-            : 'border-white/10 bg-system-secondary/50 text-text-primary hover:border-white/25 hover:bg-system-secondary/70'
+            : 'border-white/10 bg-system-secondary/40 text-text-primary hover:border-white/25 hover:bg-system-secondary/60'
         }`}
       >
-        <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${gradient}`}>
-          <CryptoIcon symbol={option.icon || option.currency} className="h-7 w-7 text-white" />
-        </div>
-        <div className="flex-1 text-left">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-ios font-semibold text-sm">{option.name}</span>
-            <span className={`px-2 py-1 text-[10px] font-semibold uppercase tracking-wide rounded-full ${badge.className}`}>
-              {badge.label}
-            </span>
+        <div className="flex w-full flex-col items-center justify-center gap-3">
+          <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-white ${isActive ? 'ring-2 ring-ios-green/70' : 'ring-1 ring-black/5'}`}>
+            <img src={iconSrc} alt={option.name} className="h-8 w-8 object-contain" loading="lazy" />
           </div>
-          <p className="font-ios text-xs text-text-secondary mt-1">
-            {formatChainDescription(option)}
-          </p>
-          <p className="font-ios text-[11px] text-text-tertiary mt-1">{formatLimitsText(option)}</p>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span className={`font-ios font-semibold text-sm ${isActive ? 'text-white' : 'text-text-primary'}`}>{option.name}</span>
+              <span className={`px-2 py-1 text-[10px] font-semibold uppercase tracking-wide rounded-full ${badge.className}`}>
+                {badge.label}
+              </span>
+            </div>
+            <p className={`font-ios text-[11px] leading-tight ${isActive ? 'text-white/80' : 'text-text-secondary'}`}>
+              {formatChainDescription(option)}
+            </p>
+            <p className={`font-ios text-[10px] leading-tight ${isActive ? 'text-white/60' : 'text-text-tertiary'}`}>{formatLimitsText(option)}</p>
+          </div>
         </div>
-        {isActive && (
-          <span className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-ios-green/60" />
-        )}
+        {isActive && <span className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-ios-green/60" />}
       </motion.button>
     );
   };
@@ -250,7 +256,7 @@ const DepositCreatePage = () => {
               <label className="font-ios text-sm text-text-secondary block">
                 Selecciona un método
               </label>
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {depositOptions.map(renderOptionButton)}
               </div>
             </div>
@@ -258,8 +264,13 @@ const DepositCreatePage = () => {
             {selectedOption && (
               <div className="bg-internal-card rounded-ios-xl p-5 space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${getGradientClass(selectedOption.icon || selectedOption.currency)}`}>
-                    <CryptoIcon symbol={selectedOption.icon || selectedOption.currency} className="h-8 w-8 text-white" />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white ring-2 ring-ios-green/60">
+                    <img
+                      src={getIconSource(selectedOption)}
+                      alt={selectedOption.name}
+                      className="h-10 w-10 object-contain"
+                      loading="lazy"
+                    />
                   </div>
                   <div className="flex-1">
                     <h2 className="font-ios font-semibold text-lg text-white">{selectedOption.name}</h2>
@@ -298,18 +309,19 @@ const DepositCreatePage = () => {
                 </div>
 
                 {selectedOption.isStaticWallet && (
-                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-ios-card p-3">
-                    <p className="font-ios text-xs text-blue-200">
+                  <div className="bg-blue-50 border border-blue-200 rounded-ios-card p-3 text-blue-900">
+                    <p className="font-ios text-xs font-semibold">Billetera fija asignada</p>
+                    <p className="font-ios text-xs mt-1">
                       La dirección de depósito proviene de la billetera fija configurada en ajustes de administrador. Verifica la red indicada antes de enviar y guarda tu comprobante.
                     </p>
                   </div>
                 )}
 
                 {selectedOption.instructions && (
-                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-ios-card p-3">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-ios-card p-3 text-yellow-900">
                     <div className="flex items-start gap-3">
-                      <HiInformationCircle className="text-yellow-400 flex-shrink-0" size={22} />
-                      <p className="font-ios text-xs text-yellow-200 whitespace-pre-line">
+                      <HiInformationCircle className="text-yellow-500 flex-shrink-0" size={22} />
+                      <p className="font-ios text-xs whitespace-pre-line">
                         {selectedOption.instructions}
                       </p>
                     </div>

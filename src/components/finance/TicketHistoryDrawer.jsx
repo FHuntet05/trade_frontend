@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FiX, FiClock, FiCheckCircle, FiAlertTriangle, FiInfo, FiArrowRightCircle, FiZap } from 'react-icons/fi';
+import { FiX, FiClock, FiCheckCircle, FiAlertTriangle, FiInfo, FiArrowRightCircle, FiZap, FiXCircle } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 import api from '@/api/axiosConfig';
 import Loader from '@/components/common/Loader';
 import useUserStore from '@/store/userStore';
@@ -27,6 +28,7 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
   const [isLoadingTickets, setIsLoadingTickets] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [tickets, setTickets] = useState([]);
+  const [cancellingTicketId, setCancellingTicketId] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const user = useUserStore((state) => state.user);
 
@@ -73,8 +75,8 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
       }
     };
 
-    fetchTickets();
-    fetchTransactions();
+  fetchTickets();
+  fetchTransactions();
 
     return () => {
       isCancelled = true;
@@ -122,6 +124,26 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
       return acc;
     }, base);
   }, [tickets]);
+
+  const handleCancelTicket = async (ticketId) => {
+    setCancellingTicketId(ticketId);
+    try {
+      const { data } = await api.put(`/deposits/ticket/${ticketId}/cancel`);
+      toast.success(data?.message || 'Ticket cancelado');
+      setTickets((prev) =>
+        prev.map((ticket) =>
+          ticket.ticketId === ticketId
+            ? { ...ticket, ...(data?.data || {}), status: 'cancelled' }
+            : ticket
+        )
+      );
+    } catch (error) {
+      const message = error.response?.data?.message || 'No se pudo cancelar el ticket.';
+      toast.error(message);
+    } finally {
+      setCancellingTicketId(null);
+    }
+  };
 
   const statusDisplayOrder = useMemo(() => {
     const baseOrder = [...STATUS_ORDER];
@@ -295,13 +317,28 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                               {ticket.expiresAt && (
                                 <p className="text-xs text-text-tertiary">Expira: {new Date(ticket.expiresAt).toLocaleString()}</p>
                               )}
-                              <button
-                                onClick={() => window.open(`/deposit/pending/${ticket.ticketId}`, '_self')}
-                                className="w-full mt-1 flex items-center justify-center gap-2 text-xs font-semibold text-ios-green hover:text-white transition-colors"
-                              >
-                                Ver detalle
-                                <FiArrowRightCircle className="w-4 h-4" />
-                              </button>
+                              <div className="flex flex-col gap-2 mt-1">
+                                {['pending', 'processing', 'awaiting_manual_review'].includes(ticket.status) && (
+                                  <button
+                                    onClick={() => window.open(`/deposit/pending/${ticket.ticketId}`, '_self')}
+                                    className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-ios-green hover:text-white transition-colors"
+                                  >
+                                    Ver detalle
+                                    <FiArrowRightCircle className="w-4 h-4" />
+                                  </button>
+                                )}
+
+                                {['pending', 'awaiting_manual_review'].includes(ticket.status) && (
+                                  <button
+                                    onClick={() => handleCancelTicket(ticket.ticketId)}
+                                    disabled={cancellingTicketId === ticket.ticketId}
+                                    className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-red-300 hover:text-red-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                  >
+                                    <FiXCircle className="w-4 h-4" />
+                                    {cancellingTicketId === ticket.ticketId ? 'Cancelando...' : 'Cancelar ticket'}
+                                  </button>
+                                )}
+                              </div>
                             </motion.div>
                           ))}
                         </div>

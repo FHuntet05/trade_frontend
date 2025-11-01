@@ -14,7 +14,21 @@ import { FiCopy } from 'react-icons/fi';
 
 // 3. Se define el componente QRCode para que se cargue de forma "perezosa" (lazy).
 //    React no cargará el código de esta librería hasta que sea estrictamente necesario.
-const QRCode = lazy(() => import('qrcode.react'));
+const QRCode = lazy(async () => {
+  const mod = await import('qrcode.react');
+  const component =
+    mod.QRCodeCanvas ||
+    mod.QRCodeSVG ||
+    mod.default?.QRCodeCanvas ||
+    mod.default?.QRCodeSVG ||
+    mod.default;
+
+  if (!component) {
+    throw new Error('No se encontró el componente QRCode en qrcode.react');
+  }
+
+  return { default: component };
+});
 
 const PendingDepositPage = () => {
   const { ticketId } = useParams();
@@ -38,7 +52,12 @@ const PendingDepositPage = () => {
           throw new Error('Ticket no encontrado');
         }
       } catch (err) {
-        setError('No se pudo cargar la información del ticket. Puede que haya expirado o no sea válido.');
+        if (err.response?.status === 404) {
+          setError('No se pudo cargar la información del ticket. Puede que haya expirado o no sea válido.');
+          clearInterval(intervalId);
+        } else {
+          setError('Error al obtener la información del ticket. Intenta nuevamente.');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -122,17 +141,18 @@ const PendingDepositPage = () => {
           )}
 
           {isStaticWalletTicket && (
-            <IOSCard className="bg-blue-500/10 border border-blue-500/30">
-              <p className="text-xs text-blue-200">
-                Este ticket usa una billetera fija configurada por el equipo para {ticket.currency}. Verifica que estás enviando a la red correcta ({ticket.chain || 'red indicada'}) y conserva tu comprobante.
+            <IOSCard className="bg-blue-50 border border-blue-200 text-blue-900">
+              <p className="text-xs font-semibold mb-1">Billetera fija</p>
+              <p className="text-xs">
+                Este ticket usa una billetera fija configurada por el equipo para {ticket.currency}. Verifica la red indicada ({ticket.chain || 'red especificada'}) y guarda tu comprobante para soporte.
               </p>
             </IOSCard>
           )}
 
           {ticket.instructions && (
-            <IOSCard className="bg-yellow-500/10 border border-yellow-500/30">
-              <p className="text-sm font-semibold text-yellow-300 mb-2">Instrucciones</p>
-              <p className="text-xs text-yellow-200 whitespace-pre-line text-left">
+            <IOSCard className="bg-yellow-50 border border-yellow-200 text-yellow-900">
+              <p className="text-sm font-semibold mb-2">Instrucciones</p>
+              <p className="text-xs whitespace-pre-line text-left">
                 {ticket.instructions}
               </p>
             </IOSCard>

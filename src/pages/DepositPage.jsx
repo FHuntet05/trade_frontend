@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiChevronLeft, FiRefreshCw, FiClock, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
+import { FiChevronLeft, FiRefreshCw, FiClock, FiCheckCircle, FiAlertTriangle, FiInfo, FiXCircle } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 import api from '@/api/axiosConfig';
 import Loader from '@/components/common/Loader';
 
@@ -50,6 +51,7 @@ const DepositPage = () => {
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cancellingTicketId, setCancellingTicketId] = useState(null);
 
   const loadTickets = async () => {
     setIsLoading(true);
@@ -69,8 +71,24 @@ const DepositPage = () => {
     loadTickets();
   }, []);
 
+  const handleCancelTicket = async (ticketId) => {
+    setCancellingTicketId(ticketId);
+    try {
+      const { data } = await api.put(`/deposits/ticket/${ticketId}/cancel`);
+      toast.success(data?.message || 'Ticket cancelado');
+      await loadTickets();
+    } catch (err) {
+      const message = err.response?.data?.message || 'No se pudo cancelar el ticket.';
+      toast.error(message);
+    } finally {
+      setCancellingTicketId(null);
+    }
+  };
+
   const renderTicket = (ticket) => {
     const status = statusConfig[ticket.status] || statusConfig.pending;
+    const canViewDetails = ['pending', 'processing', 'awaiting_manual_review'].includes(ticket.status);
+    const canCancel = ['pending', 'awaiting_manual_review'].includes(ticket.status);
     return (
       <div
         key={ticket.ticketId}
@@ -119,14 +137,29 @@ const DepositPage = () => {
             Expira: {new Date(ticket.expiresAt).toLocaleString()}
           </div>
         )}
+        <div className="flex flex-col gap-2">
+          {canViewDetails && (
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate(`/deposit/pending/${ticket.ticketId}`)}
+              className="w-full bg-system-secondary text-text-primary py-2 rounded-ios-button text-sm font-semibold"
+            >
+              Ver detalles
+            </motion.button>
+          )}
 
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => navigate(`/deposit/pending/${ticket.ticketId}`)}
-          className="w-full bg-system-secondary text-text-primary py-2 rounded-ios-button text-sm font-semibold"
-        >
-          Ver detalles
-        </motion.button>
+          {canCancel && (
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              disabled={cancellingTicketId === ticket.ticketId}
+              onClick={() => handleCancelTicket(ticket.ticketId)}
+              className="w-full bg-red-500/15 text-red-200 border border-red-500/30 py-2 rounded-ios-button text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <FiXCircle className="w-4 h-4" />
+              {cancellingTicketId === ticket.ticketId ? 'Cancelando...' : 'Cancelar ticket'}
+            </motion.button>
+          )}
+        </div>
       </div>
     );
   };
