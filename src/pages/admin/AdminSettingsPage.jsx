@@ -1,10 +1,10 @@
-// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (VERSIÓN CORREGIDA Y SIMPLIFICADA)
+// RUTA: frontend/src/pages/admin/AdminSettingsPage.jsx (VERSIÓN CON GESTIÓN DE RANGOS)
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import adminApi from '@/pages/admin/api/adminApi';
-import { HiOutlineCog6Tooth } from 'react-icons/hi2';
+import { HiOutlineCog6Tooth, HiPlus, HiTrash } from 'react-icons/hi2';
 import Loader from '@/components/common/Loader';
 
 const SettingsCard = ({ title, description, children }) => (
@@ -42,7 +42,15 @@ const SettingsToggle = ({ name, label, register }) => (
 );
 
 const AdminSettingsPage = () => {
-    const { register, handleSubmit, reset, formState: { isSubmitting, isDirty } } = useForm();
+    const { register, handleSubmit, reset, control, formState: { isSubmitting, isDirty } } = useForm({
+        defaultValues: {
+            profitTiers: []
+        }
+    });
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "profitTiers"
+    });
     const [isLoading, setIsLoading] = useState(true);
 
     const loadSettings = useCallback(async () => {
@@ -113,16 +121,106 @@ const AdminSettingsPage = () => {
                             <SettingsToggle name="isPassiveProfitEnabled" label="Habilitar Ganancias Pasivas" register={register} />
                             <div className="bg-dark-tertiary/30 p-4 rounded-md border border-white/5">
                                 <p className="text-xs text-text-secondary mb-2">
-                                    <strong>Nota:</strong> Las ganancias se calculan sobre el saldo disponible (USDT) según los rangos configurados en "Profit Tiers". Los usuarios deben mantener el saldo durante 24h.
-                                </p>
-                                <p className="text-xs text-text-secondary">
-                                    Edita los rangos de ganancia en la base de datos mediante profitTiers (minBalance, maxBalance, profitPercentage).
+                                    <strong>Nota:</strong> Las ganancias se calculan sobre el saldo disponible (USDT) según los rangos configurados abajo. Los usuarios deben mantener el saldo durante 24h.
                                 </p>
                             </div>
                         </SettingsCard>
                         
                         {/* --- LÓGICA DE SWAP ELIMINADA --- */}
                     </div>
+                </div>
+
+                {/* --- NUEVA SECCIÓN: GESTIÓN DE RANGOS DE GANANCIA --- */}
+                <div className="mt-6">
+                    <SettingsCard 
+                        title="Rangos de Ganancia Pasiva (Profit Tiers)" 
+                        description="Define los porcentajes de ganancia según el saldo disponible del usuario. El cron job diario usa estos rangos para calcular las ganancias."
+                    >
+                        <div className="space-y-4">
+                            {fields.map((field, index) => (
+                                <div key={field.id} className="bg-dark-tertiary/20 p-4 rounded-lg border border-white/10">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="text-sm font-semibold text-white">Rango #{index + 1}</h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => remove(index)}
+                                            className="text-red-500 hover:text-red-400 transition-colors"
+                                            title="Eliminar rango"
+                                        >
+                                            <HiTrash className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-text-secondary mb-1">
+                                                Saldo Mínimo (USDT)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                {...register(`profitTiers.${index}.minBalance`, { 
+                                                    valueAsNumber: true,
+                                                    required: true,
+                                                    min: 0
+                                                })}
+                                                className="w-full bg-white text-black p-2 rounded-md border border-dark-tertiary text-sm"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-text-secondary mb-1">
+                                                Saldo Máximo (USDT)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                {...register(`profitTiers.${index}.maxBalance`, { 
+                                                    valueAsNumber: true,
+                                                    required: true,
+                                                    min: 0
+                                                })}
+                                                className="w-full bg-white text-black p-2 rounded-md border border-dark-tertiary text-sm"
+                                                placeholder="100"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-text-secondary mb-1">
+                                                Ganancia Diaria (%)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                {...register(`profitTiers.${index}.profitPercentage`, { 
+                                                    valueAsNumber: true,
+                                                    required: true,
+                                                    min: 0,
+                                                    max: 100
+                                                })}
+                                                className="w-full bg-white text-black p-2 rounded-md border border-dark-tertiary text-sm"
+                                                placeholder="1.5"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            <button
+                                type="button"
+                                onClick={() => append({ minBalance: 0, maxBalance: 100, profitPercentage: 1 })}
+                                className="w-full py-3 px-4 bg-accent/20 hover:bg-accent/30 text-accent border border-accent/50 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
+                            >
+                                <HiPlus className="w-5 h-5" />
+                                Agregar Nuevo Rango
+                            </button>
+
+                            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                                <p className="text-xs text-blue-300">
+                                    <strong>💡 Ejemplo:</strong> Si configuras un rango de 10-30 USDT con 10% de ganancia, 
+                                    un usuario con 20 USDT recibirá 2 USDT cada 24h en su saldo retirable.
+                                </p>
+                            </div>
+                        </div>
+                    </SettingsCard>
                 </div>
             </form>
         </div>
