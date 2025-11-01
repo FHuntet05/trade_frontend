@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import useMarketStore from '@/store/marketStore';
 import useUserStore from '@/store/userStore';
-import { CryptoIcon } from '@/components/icons/CryptoIcons';
 import { formatters } from '@/utils/formatters';
 import toast from 'react-hot-toast';
 import api from '@/api/axiosConfig';

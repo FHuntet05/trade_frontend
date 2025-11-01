@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { HiChevronLeft, HiOutlineRefresh } from 'react-icons/hi2';
-import { FiClock, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
+import { FiChevronLeft, FiRefreshCw, FiClock, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 import api from '@/api/axiosConfig';
 import Loader from '@/components/common/Loader';
 
@@ -137,7 +136,7 @@ const DepositPage = () => {
       <div className="p-4 pt-6 space-y-6">
         <div className="flex items-center justify-between">
           <button onClick={() => navigate(-1)} className="text-text-primary">
-            <HiChevronLeft size={28} />
+            <FiChevronLeft size={26} />
           </button>
           <h1 className="text-xl font-ios-display font-bold text-text-primary">
             Depósitos
@@ -168,7 +167,7 @@ const DepositPage = () => {
             <HiOutlineDocumentSearch /> Tus tickets recientes
           </span>
           <button onClick={loadTickets} className="flex items-center gap-1 text-ios-green">
-            <HiOutlineRefresh /> Actualizar
+            <FiRefreshCw /> Actualizar
           </button>
         </div>
 
