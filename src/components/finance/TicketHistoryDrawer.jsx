@@ -178,7 +178,7 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
         >
           <div className="flex-1 bg-black/50" onClick={onClose} />
           <motion.aside
-            className="w-full max-w-md bg-system-background h-full overflow-y-auto shadow-2xl border-l border-white/10"
+            className="w-full max-w-md bg-system-background h-full shadow-2xl border-l border-white/10 flex flex-col"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
@@ -208,13 +208,14 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
               ))}
             </div>
 
-            {activeTab === 'tickets' && (
-              <section className="px-5 pt-4 pb-2 border-b border-white/5 space-y-3">
+            <div className="flex-1 overflow-y-auto">
+              {activeTab === 'tickets' && (
+                <section className="px-5 pt-4 pb-2 border-b border-white/5 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-ios bg-system-secondary/70 border border-white/10 p-3">
                     <p className="text-xs text-text-tertiary uppercase tracking-wide">Pendientes</p>
                     <p className="text-lg font-semibold text-text-primary">{ticketStats.pendingCount}</p>
-                    <p className="text-xs text-yellow-200 flex items-center gap-1">
+                    <p className="text-xs text-cyan-200 flex items-center gap-1">
                       <FiClock className="w-3 h-3" />
                       {ticketStats.pendingAmount.toFixed(2)} USDT en espera
                     </p>
@@ -233,21 +234,21 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                   <span>{ticketStats.totalCount} • {ticketStats.totalAmount.toFixed(2)} USDT</span>
                 </div>
               </section>
-            )}
+              )}
 
-            {activeTab === 'tickets' && (
-              <section className="px-5 py-4 space-y-5">
-                {isLoadingTickets ? (
-                  <div className="py-10"><Loader text="Cargando tickets..." /></div>
-                ) : tickets.length === 0 ? (
-                  <div className="p-6 bg-system-secondary rounded-ios text-center text-text-secondary text-sm">
-                    Aún no tienes tickets de depósito.
-                  </div>
-                ) : (
-                  statusDisplayOrder.map((status) => {
-                    const config = statusConfig[status] || statusConfig.pending;
-                    return (
-                      <div key={status} className="space-y-3">
+              {activeTab === 'tickets' && (
+                <section className="px-5 py-4 space-y-5">
+                  {isLoadingTickets ? (
+                    <div className="py-10"><Loader text="Cargando tickets..." /></div>
+                  ) : tickets.length === 0 ? (
+                    <div className="p-6 bg-system-secondary rounded-ios text-center text-text-secondary text-sm">
+                      Aún no tienes tickets de depósito.
+                    </div>
+                  ) : (
+                    statusDisplayOrder.map((status) => {
+                      const config = statusConfig[status] || statusConfig.pending;
+                      return (
+                        <div key={status} className="space-y-3">
                         <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                           <span className={`text-base ${config.tone}`}>{config.icon}</span>
                           {config.label}
@@ -304,19 +305,19 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                             </motion.div>
                           ))}
                         </div>
-                      </div>
-                    );
-                  })
-                )}
-              </section>
-            )}
+                        </div>
+                      );
+                    })
+                  )}
+                </section>
+              )}
 
-            {activeTab === 'investments' && (
-              <section className="px-5 py-4 space-y-5">
-                {(isLoadingTransactions && transactions.length === 0) ? (
-                  <div className="py-10"><Loader text="Cargando movimientos..." /></div>
-                ) : (
-                  <>
+              {activeTab === 'investments' && (
+                <section className="px-5 py-4 space-y-5">
+                  {(isLoadingTransactions && transactions.length === 0) ? (
+                    <div className="py-10"><Loader text="Cargando movimientos..." /></div>
+                  ) : (
+                    <>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-ios bg-system-secondary/70 border border-white/10 p-3">
                         <p className="text-xs text-text-tertiary uppercase tracking-wide">Ganancia diaria total</p>
@@ -396,6 +397,7 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                 )}
               </section>
             )}
+            </div>
           </motion.aside>
         </motion.div>
       )}

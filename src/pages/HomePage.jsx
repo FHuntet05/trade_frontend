@@ -188,28 +188,26 @@ const HomePage = () => {
           <p className="text-3xl font-ios-display font-bold text-text-primary mb-3 text-center">
             {formatters.formatCurrency(withdrawableBalance)}
           </p>
-          <div className="bg-system-secondary rounded-ios p-4 space-y-3">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-text-tertiary">Proyección en 24h</p>
-              <p className="text-lg font-ios-display text-text-primary">
-                ≈ {formatters.formatCurrency(profitProjection.expected)}
-              </p>
-              <p className="text-xs text-text-secondary">
-                Nivel aplicado: {profitProjection.percentage ? `${profitProjection.percentage}% diario` : 'sin nivel activo'}
-              </p>
-              <p className="text-[11px] text-text-secondary">
-                Saldo base: {formatters.formatCurrency(snapshotBalance)}
-              </p>
-              {profitProjection.percentage > 0 && (
-                <p className="text-[11px] text-text-tertiary mt-1">
-                  Se recalcula al cambiar tu saldo o al completar el ciclo en {projectionTimeLeft}.
+          <div className="bg-system-secondary rounded-ios p-3 space-y-3">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-text-tertiary">Proyección en 24h</p>
+                <p className="text-xl font-ios-display text-text-primary leading-tight">
+                  ≈ {formatters.formatCurrency(profitProjection.expected)}
                 </p>
-              )}
+              </div>
+              <div className="text-right text-[11px] text-text-secondary space-y-0.5">
+                <p>Saldo base: {formatters.formatCurrency(snapshotBalance)}</p>
+                <p> {profitProjection.percentage ? `${profitProjection.percentage}% diario` : 'Sin nivel activo'}</p>
+                {profitProjection.percentage > 0 && (
+                  <p className="text-text-tertiary">Ciclo: {projectionTimeLeft}</p>
+                )}
+              </div>
             </div>
 
-            <div className="border border-white/10 rounded-ios p-3 bg-white/5">
-              <p className="text-xs font-semibold text-text-primary mb-2">Niveles disponibles</p>
-              <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+            <div>
+              <p className="text-[11px] font-semibold text-text-primary mb-1 uppercase">Niveles</p>
+              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-1">
                 {tierCards.map((tier) => {
                   const isActive = profitProjection.tier
                     ? tier.minBalance === profitProjection.tier.minBalance && tier.maxBalance === profitProjection.tier.maxBalance
@@ -217,7 +215,7 @@ const HomePage = () => {
                   return (
                     <div
                       key={tier.id}
-                      className={`text-xs px-3 py-2 rounded-lg border transition-colors ${
+                      className={`px-3 py-2 rounded-ios-lg border text-[11px] leading-tight transition-colors ${
                         isActive
                           ? 'border-ios-green/40 bg-ios-green/10 text-ios-green'
                           : 'border-white/10 bg-system-background/40 text-text-secondary'
@@ -229,7 +227,7 @@ const HomePage = () => {
                   );
                 })}
                 {tierCards.length === 0 && (
-                  <p className="text-xs text-text-tertiary">Configura los niveles en el panel de administración para verlos aquí.</p>
+                  <p className="text-[11px] text-text-tertiary">Configura los niveles en el panel de administración.</p>
                 )}
               </div>
             </div>
