@@ -14,6 +14,8 @@ const cryptoLogos = {
     'BNB': '/assets/images/networks/bnb.png',
     'TRX': '/assets/images/networks/tron.png',
     'LTC': '/assets/images/networks/litecoin.png',
+  'TON': '/assets/images/TON.png',
+  'DOGE': '/assets/images/DOG.png',
 };
 
 const getCryptoLogo = (name) => {

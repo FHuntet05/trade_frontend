@@ -5,6 +5,38 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { formatters } from '@/utils/formatters';
 
+const SYMBOL_ASSET_MAP = {
+  BTC: '/assets/images/BTC.png',
+  ETH: '/assets/images/ETH.png',
+  BNB: '/assets/images/BNB.png',
+  SOL: '/assets/images/SOL.png',
+  USDT: '/assets/images/USDT.png',
+  TON: '/assets/images/TON.png',
+  LTC: '/assets/images/litecoin.png',
+  TRX: '/assets/images/TRON.png',
+  DOGE: '/assets/images/DOG.png',
+};
+
+const DEFAULT_ASSET = '/assets/images/USDT.png';
+
+const resolveIconSource = (crypto) => {
+  if (!crypto) {
+    return DEFAULT_ASSET;
+  }
+
+  const symbol = typeof crypto.symbol === 'string' ? crypto.symbol.trim().toUpperCase() : '';
+  if (symbol && SYMBOL_ASSET_MAP[symbol]) {
+    return SYMBOL_ASSET_MAP[symbol];
+  }
+
+  const imageValue = crypto.image;
+  if (typeof imageValue === 'string' && imageValue.trim() !== '') {
+    return imageValue;
+  }
+
+  return DEFAULT_ASSET;
+};
+
 // Cambiamos el nombre del prop de 'cryptos' a 'data' para mayor claridad
 export const CryptoList = ({ data, isLoading }) => { 
   if (isLoading) {
@@ -29,8 +61,8 @@ export const CryptoList = ({ data, isLoading }) => {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <img 
-                src={crypto.image} 
+              <img
+                src={resolveIconSource(crypto)}
                 alt={`${crypto.name} icon`}
                 className="w-10 h-10 rounded-full"
               />

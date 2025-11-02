@@ -339,7 +339,7 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                                   <button
                                     onClick={() => handleCancelTicket(ticket.ticketId)}
                                     disabled={cancellingTicketId === ticket.ticketId}
-                                    className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-red-400 bg-red-500/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-red-500 hover:border-red-300 hover:bg-red-500/20 hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-red-400 bg-red-500/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-red-500 hover:border-red-300 hover:bg-red-500/20 hover:text-red-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                   >
                                     <FiXCircle className="w-4 h-4" />
                                     {cancellingTicketId === ticket.ticketId ? 'Cancelando...' : 'Cancelar ticket'}
