@@ -18,16 +18,16 @@ const SETTINGS_TABS = [
 const WHEEL_TYPES = [
     { value: 'usdt', label: 'USDT' },
     { value: 'spins', label: 'Giros extra' },
-    { value: 'xp', label: 'XP' },
-    { value: 'item', label: 'Ítem especial' },
+    { value: 'none', label: 'Sin premio' },
 ];
 
 const ensureEightSegments = (segments = []) => {
+    const allowedTypes = new Set(['usdt', 'spins', 'none']);
     const sanitized = segments.map((segment) => ({
         _id: segment?._id?.toString?.() || segment?.segmentId?.toString?.() || '',
         segmentId: segment?.segmentId?.toString?.() || '',
-        type: segment?.type || 'usdt',
-        value: typeof segment?.value === 'number' ? segment.value : Number(segment?.value || 0),
+        type: allowedTypes.has(segment?.type) ? segment.type : 'none',
+    value: typeof segment?.value === 'number' ? segment.value : Number(segment?.value || 0),
         text: segment?.text || '',
         imageUrl: segment?.imageUrl || '',
         weight: typeof segment?.weight === 'number' ? segment.weight : Number(segment?.weight || 1),
@@ -39,9 +39,9 @@ const ensureEightSegments = (segments = []) => {
         sanitized.push({
             _id: '',
             segmentId: '',
-            type: 'usdt',
+            type: 'none',
             value: 0,
-            text: '',
+            text: 'Sin premio',
             imageUrl: '',
             weight: 1,
             isRare: false,
@@ -53,7 +53,6 @@ const ensureEightSegments = (segments = []) => {
 };
 
 const normalizeWheelConfig = (config) => ({
-    xpToUsdtConversionRate: typeof config?.xpToUsdtConversionRate === 'number' ? config.xpToUsdtConversionRate : 0.0001,
     pitySystemThreshold: typeof config?.pitySystemThreshold === 'number' ? config.pitySystemThreshold : 100,
     pitySystemGuaranteedPrizeSegmentId: config?.pitySystemGuaranteedPrizeSegmentId?.toString?.() || '',
     segments: ensureEightSegments(config?.segments || []),
@@ -176,9 +175,10 @@ const AdminSettingsPage = () => {
 
     const onSubmitWheel = async (formValues) => {
         const sanitizedSegments = ensureEightSegments(formValues.segments).map((segment) => {
+            const numericValue = Number.isFinite(segment.value) ? segment.value : 0;
             const payload = {
                 type: segment.type,
-                value: Number.isFinite(segment.value) ? segment.value : 0,
+                value: segment.type === 'none' ? 0 : numericValue,
                 text: segment.text?.trim() || '',
                 imageUrl: segment.imageUrl?.trim() || '',
                 weight: Number.isFinite(segment.weight) ? segment.weight : 1,
@@ -203,14 +203,16 @@ const AdminSettingsPage = () => {
             return;
         }
 
-        const hasInvalidActive = activeSegments.some((segment) => !segment.text || segment.value <= 0 || segment.weight <= 0);
+        const hasInvalidActive = activeSegments.some((segment) => {
+            const valueInvalid = segment.type === 'none' ? segment.value < 0 : segment.value <= 0;
+            return !segment.text || valueInvalid || segment.weight <= 0;
+        });
         if (hasInvalidActive) {
-            toast.error('Revisa los segmentos activos: todos necesitan texto, valor y peso mayores a cero.');
+            toast.error('Revisa los segmentos activos: los premios deben tener texto, pesos positivos y, si entregan USDT o giros, un valor mayor a cero.');
             return;
         }
 
         const payload = {
-            xpToUsdtConversionRate: Number(formValues.xpToUsdtConversionRate) || 0,
             pitySystemThreshold: Number(formValues.pitySystemThreshold) || 1,
             pitySystemGuaranteedPrizeSegmentId: formValues.pitySystemGuaranteedPrizeSegmentId || null,
             segments: sanitizedSegments.slice(0, 8),
@@ -545,19 +547,9 @@ const AdminSettingsPage = () => {
 
                     <SettingsCard
                         title="Parámetros generales"
-                        description="Estos valores afectan la conversión de recompensas y el sistema de piedad del motor de ruleta."
+                        description="Controla el sistema de piedad y documenta cómo funciona el peso de cada premio."
                     >
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-text-secondary mb-1">Conversión XP → USDT</label>
-                                <input
-                                    type="number"
-                                    step="0.0001"
-                                    {...registerWheel('xpToUsdtConversionRate', { valueAsNumber: true })}
-                                    className="w-full bg-white text-black p-2 rounded-md border border-dark-tertiary text-sm"
-                                />
-                                <p className="text-[11px] text-text-secondary mt-2">Se usa cuando un premio entrega XP en lugar de USDT.</p>
-                            </div>
                             <div>
                                 <label className="block text-xs font-medium text-text-secondary mb-1">Umbral sistema de piedad</label>
                                 <input
@@ -567,7 +559,7 @@ const AdminSettingsPage = () => {
                                     {...registerWheel('pitySystemThreshold', { valueAsNumber: true })}
                                     className="w-full bg-white text-black p-2 rounded-md border border-dark-tertiary text-sm"
                                 />
-                                <p className="text-[11px] text-text-secondary mt-2">Número de giros sin premio raro antes de forzar el premio configurado.</p>
+                                <p className="text-[11px] text-text-secondary mt-2">Número de giros sin premio raro antes de forzar el premio seleccionado abajo.</p>
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-text-secondary mb-1">Premio garantizado</label>
@@ -584,6 +576,15 @@ const AdminSettingsPage = () => {
                                 </select>
                                 <p className="text-[11px] text-text-secondary mt-2">
                                     Solo aparecen segmentos activos guardados previamente. Guarda la ruleta para que nuevos premios estén disponibles aquí.
+                                </p>
+                            </div>
+                            <div className="bg-dark-tertiary/40 border border-white/10 rounded-lg p-3 text-xs text-text-secondary space-y-2">
+                                <p className="font-semibold text-white">¿Qué es el peso?</p>
+                                <p>
+                                    El peso es la probabilidad relativa de cada premio. Si tienes dos premios con peso 1 y otro con peso 3, el último será tres veces más probable.
+                                </p>
+                                <p className="text-[11px]">
+                                    Usa valores mayores para premios comunes y valores pequeños para premios raros.
                                 </p>
                             </div>
                         </div>
