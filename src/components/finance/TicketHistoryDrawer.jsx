@@ -422,9 +422,20 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                           <div key={`${inv.transactionId}-${index}`} className="p-3 rounded-ios bg-system-secondary border border-white/5 text-xs text-text-secondary space-y-1">
                             <p className="text-text-primary font-medium">Saldo asignado: {Number(inv.amount || 0).toFixed(2)} USDT</p>
                             {inv.symbol && <p>Activo vinculado: {inv.symbol}</p>}
+                            {inv.type && (
+                              <p className="uppercase tracking-wide text-[10px] text-text-tertiary">
+                                Tipo: {inv.type === 'quantitative' ? 'Plan Cuantitativo' : 'Mercado'}
+                              </p>
+                            )}
                             {inv.endDate && <p>Finaliza: {new Date(inv.endDate).toLocaleDateString()}</p>}
-                            {inv.dailyProfit && (
-                              <p className="text-ios-green flex items-center gap-1"><FiZap className="w-3 h-3" /> Rendimiento diario: {Number(inv.dailyProfit).toFixed(2)} USDT</p>
+                            {(inv.dailyProfitAmount ?? inv.dailyProfit) ? (
+                              <p className="text-ios-green flex items-center gap-1">
+                                <FiZap className="w-3 h-3" /> Rendimiento diario:{' '}
+                                {Number((inv.dailyProfitAmount ?? inv.dailyProfit) || 0).toFixed(2)} USDT
+                              </p>
+                            ) : null}
+                            {typeof inv.accruedProfit === 'number' && inv.accruedProfit > 0 && (
+                              <p>Ganancia acumulada: {Number(inv.accruedProfit).toFixed(2)} USDT</p>
                             )}
                           </div>
                         ))}

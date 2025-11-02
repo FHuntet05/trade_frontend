@@ -222,7 +222,7 @@ const DepositCreatePage = () => {
         type="button"
         whileTap={{ scale: 0.97 }}
         onClick={() => setSelectedKey(option.key)}
-        className={`group flex min-w-[90px] cursor-pointer flex-col items-center gap-2 rounded-2xl border px-3 py-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ios-green/60 ${
+        className={`group flex min-w-[110px] flex-shrink-0 cursor-pointer flex-col items-center gap-2 rounded-2xl border px-3 py-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ios-green/60 ${
           isActive
             ? 'border-ios-green/70 bg-emerald-50 text-emerald-700 shadow-md shadow-emerald-200'
             : 'border-transparent bg-white/0 text-gray-600 hover:border-ios-green/40 hover:bg-emerald-50/50 hover:text-emerald-700'
@@ -280,8 +280,8 @@ const DepositCreatePage = () => {
               <label className="font-ios text-sm text-text-secondary block">
                 Selecciona un método
               </label>
-              <div className="rounded-[28px] border border-ios-green/60 bg-white/95 px-4 py-3">
-                <div className="flex flex-wrap items-stretch justify-center gap-3 sm:gap-4">
+              <div className="rounded-[28px] border border-ios-green/60 bg-white/95 px-2 py-3">
+                <div className="flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-2 sm:gap-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                   {depositOptions.map(renderOptionButton)}
                 </div>
               </div>
