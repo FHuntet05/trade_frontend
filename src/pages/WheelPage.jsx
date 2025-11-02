@@ -299,7 +299,7 @@ const WheelPage = () => {
                     innerBorderWidth={3}
                     radiusLineColor={"transparent"}
                     radiusLineWidth={0}
-                    pointerAngle={0}
+                    pointerAngle={90}
                     pointerProps={{ style: { display: "none" } }}
                     disableInitialAnimation={true}
                     showWinnerBorder={false}
