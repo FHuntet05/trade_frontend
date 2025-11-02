@@ -15,7 +15,7 @@ const SYMBOL_ASSET_MAP = {
   TONCOIN: '/assets/images/TON.png',
   LTC: '/assets/images/litecoin.png',
   TRX: '/assets/images/TRON.png',
-  DOGE: '/assets/images/DOG.png',
+  DOGE: '/assets/images/DOGE.png',
 };
 
 const DEFAULT_ASSET = '/assets/images/USDT.png';

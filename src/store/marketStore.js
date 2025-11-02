@@ -4,6 +4,18 @@
 import create from 'zustand';
 import api from '@/api/axiosConfig';
 
+const DEFAULT_MARKET_SKELETON = [
+  { symbol: 'BTC', name: 'Bitcoin', price: 0, change: 0, image: '/assets/images/BTC.png' },
+  { symbol: 'ETH', name: 'Ethereum', price: 0, change: 0, image: '/assets/images/ETH.png' },
+  { symbol: 'BNB', name: 'BNB', price: 0, change: 0, image: '/assets/images/BNB.png' },
+  { symbol: 'SOL', name: 'Solana', price: 0, change: 0, image: '/assets/images/SOL.png' },
+  { symbol: 'USDT', name: 'Tether', price: 1, change: 0, image: '/assets/images/USDT.png' },
+  { symbol: 'TON', name: 'Toncoin', price: 0, change: 0, image: '/assets/images/TON.png' },
+  { symbol: 'LTC', name: 'Litecoin', price: 0, change: 0, image: '/assets/images/litecoin.png' },
+  { symbol: 'TRX', name: 'TRON', price: 0, change: 0, image: '/assets/images/TRON.png' },
+  { symbol: 'DOGE', name: 'Dogecoin', price: 0, change: 0, image: '/assets/images/DOG.png' },
+];
+
 const CACHE_DURATION_MS = 5 * 60 * 1000;
 
 const useMarketStore = create((set, get) => ({
@@ -26,12 +38,20 @@ const useMarketStore = create((set, get) => ({
 
     try {
       const response = await api.get('/market/prices');
-      
-      // 1. CORRECCIÓN CRÍTICA: Se transforma el objeto de la API en un array.
-      const dataArray = Object.values(response.data);
-      
+
+      const rawData = response.data || {};
+      const dataArray = Object.values(rawData).map((entry) => ({
+        ...entry,
+        symbol: typeof entry.symbol === 'string' ? entry.symbol.toUpperCase() : entry.symbol,
+      }));
+
+      const mergedData = DEFAULT_MARKET_SKELETON.map((fallback) => {
+        const match = dataArray.find((item) => (item.symbol || '').toUpperCase() === fallback.symbol);
+        return match ? { ...fallback, ...match } : fallback;
+      });
+
       set({
-        marketData: dataArray, // Se guarda el array
+        marketData: mergedData,
         lastFetched: new Date(),
         isLoading: false,
         error: null, // Se limpia el error en una petición exitosa
