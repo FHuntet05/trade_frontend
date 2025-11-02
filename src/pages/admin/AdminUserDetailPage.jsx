@@ -9,15 +9,73 @@ import useAdminStore from '@/store/adminStore';
 import Loader from '@/components/common/Loader';
 import { 
     HiArrowLeft, HiOutlinePencil, HiOutlineKey, HiOutlineCurrencyDollar,
-    HiOutlineShoppingCart, HiOutlineGift, HiOutlineUsers, HiOutlineReceiptRefund 
+    HiOutlineShoppingCart, HiOutlineGift, HiOutlineUsers, HiOutlineReceiptRefund,
+    HiOutlineTicket, HiOutlineChartBar, HiOutlineXCircle
 } from 'react-icons/hi2';
 import EditUserModal from './components/EditUserModal';
 import ResetPasswordModal from './components/ResetPasswordModal';
 
 const PLACEHOLDER_AVATAR = 'https://i.postimg.cc/mD21B6r7/user-avatar-placeholder.png';
+const ADMIN_OPEN_TICKET_STATUSES = ['pending', 'awaiting_manual_review', 'processing'];
+const TICKET_STATUS_LABELS = {
+    pending: 'Pendiente',
+    awaiting_manual_review: 'En revisión manual',
+    processing: 'En proceso',
+    completed: 'Completado',
+    expired: 'Expirado',
+    cancelled: 'Cancelado',
+    rejected: 'Rechazado'
+};
+const TICKET_STATUS_STYLES = {
+    pending: 'bg-yellow-500/10 text-yellow-200 border border-yellow-500/30',
+    awaiting_manual_review: 'bg-blue-500/10 text-blue-200 border border-blue-500/30',
+    processing: 'bg-blue-500/10 text-blue-200 border border-blue-500/30',
+    completed: 'bg-green-500/10 text-green-200 border border-green-500/30',
+    expired: 'bg-red-500/10 text-red-200 border border-red-500/30',
+    cancelled: 'bg-red-500/10 text-red-200 border border-red-500/30',
+    rejected: 'bg-red-500/10 text-red-200 border border-red-500/30'
+};
 
-const UserSummaryCard = ({ user, onEdit, onResetPassword }) => {
-    const totalStock = user.activeInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+const computeTicketStatsClient = (tickets = []) => {
+    return tickets.reduce((stats, ticket) => {
+        const amount = Number(ticket.amount || 0);
+        stats.total += 1;
+        stats.totalAmount += amount;
+
+        if (ADMIN_OPEN_TICKET_STATUSES.includes(ticket.status)) {
+            stats.open += 1;
+        }
+
+        if (ticket.status === 'completed') {
+            stats.completed += 1;
+            stats.completedAmount += amount;
+        }
+
+        if (['cancelled', 'expired', 'rejected'].includes(ticket.status)) {
+            stats.closed += 1;
+        }
+
+        return stats;
+    }, {
+        total: 0,
+        totalAmount: 0,
+        open: 0,
+        closed: 0,
+        completed: 0,
+        completedAmount: 0
+    });
+};
+
+const UserSummaryCard = ({ user, onEdit, onResetPassword, ticketStats, passiveIncome, investmentSummary }) => {
+    const totalStock = (user.activeInvestments || []).reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    const openTickets = ticketStats?.open ?? 0;
+    const completedTickets = ticketStats?.completed ?? 0;
+    const closedTickets = ticketStats?.closed ?? 0;
+    const passiveDaily = passiveIncome?.isEnabled ? passiveIncome.dailyAmount || 0 : 0;
+    const passivePercentage = passiveIncome?.isEnabled ? passiveIncome.percentage || 0 : 0;
+    const investmentDaily = investmentSummary?.totals?.dailyProfit?.total || 0;
+    const marketDaily = investmentSummary?.totals?.dailyProfit?.market || 0;
+    const quantitativeDaily = investmentSummary?.totals?.dailyProfit?.quantitative || 0;
 
     return (
         <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
@@ -38,11 +96,46 @@ const UserSummaryCard = ({ user, onEdit, onResetPassword }) => {
                     <button onClick={onEdit} className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/40" title="Editar Usuario y Saldos"><HiOutlinePencil className="w-5 h-5 text-blue-300" /></button>
                 </div>
             </div>
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-white/10 pt-4">
-                <div><p className="text-sm text-text-secondary">Saldo Stock</p><p className="text-lg font-mono font-bold">${totalStock.toFixed(2)}</p></div>
-                <div><p className="text-sm text-text-secondary">Saldo Retirable</p><p className="text-lg font-mono font-bold">${(user.withdrawableBalance ?? 0).toFixed(2)}</p></div>
-                <div><p className="text-sm text-text-secondary">Balance (USDT)</p><p className="text-lg font-mono font-bold">${(user.balance?.usdt ?? 0).toFixed(2)}</p></div>
-                <div><p className="text-sm text-text-secondary">Giros Ruleta</p><p className="text-lg font-mono font-bold">{user.balance?.spins ?? 0}</p></div>
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 border-t border-white/10 pt-4">
+                <div>
+                    <p className="text-sm text-text-secondary">Saldo Stock</p>
+                    <p className="text-lg font-mono font-bold">${totalStock.toFixed(2)}</p>
+                    <p className="text-xs text-text-tertiary">Capital invertido actualmente</p>
+                </div>
+                <div>
+                    <p className="text-sm text-text-secondary">Saldo Retirable</p>
+                    <p className="text-lg font-mono font-bold">${(user.withdrawableBalance ?? 0).toFixed(2)}</p>
+                    <p className="text-xs text-text-tertiary">Disponible para retiro inmediato</p>
+                </div>
+                <div>
+                    <p className="text-sm text-text-secondary">Balance (USDT)</p>
+                    <p className="text-lg font-mono font-bold">${(user.balance?.usdt ?? 0).toFixed(2)}</p>
+                    <p className="text-xs text-text-tertiary">Saldo base que genera pasivo</p>
+                </div>
+                <div>
+                    <p className="text-sm text-text-secondary">Giros Ruleta</p>
+                    <p className="text-lg font-mono font-bold">{user.balance?.spins ?? 0}</p>
+                    <p className="text-xs text-text-tertiary">Balance de giros disponibles</p>
+                </div>
+                <div>
+                    <p className="text-sm text-text-secondary">Tickets abiertos</p>
+                    <p className="text-lg font-mono font-bold flex items-center gap-2">
+                        <HiOutlineTicket className="w-5 h-5 text-yellow-300" /> {openTickets}
+                    </p>
+                    <p className="text-xs text-text-tertiary">Completados: {completedTickets} · Cerrados: {closedTickets}</p>
+                </div>
+                <div>
+                    <p className="text-sm text-text-secondary">Ingresos diarios</p>
+                    <p className="text-lg font-mono font-bold flex items-center gap-2">
+                        <HiOutlineChartBar className="w-5 h-5 text-emerald-300" /> {(passiveDaily + investmentDaily).toFixed(2)} USDT
+                    </p>
+                    {passiveIncome?.isEnabled ? (
+                        <p className="text-xs text-text-tertiary">Pasivo: {passiveDaily.toFixed(2)} USDT ({passivePercentage.toFixed(2)}%)</p>
+                    ) : (
+                        <p className="text-xs text-text-tertiary">Pasivo desactivado</p>
+                    )}
+                    <p className="text-xs text-text-tertiary">Inversiones · Mercado: {marketDaily.toFixed(2)} • Cuant: {quantitativeDaily.toFixed(2)}</p>
+                </div>
             </div>
         </div>
     );
@@ -80,18 +173,166 @@ const TransactionHistoryTable = ({ transactions, title }) => (
     </div>
 );
 
-const InvestmentsTab = ({ user }) => {
-    const marketPurchases = user.transactions.filter(tx => tx.type === 'market_purchase');
-    const quantitativePurchases = user.transactions.filter(tx => tx.type === 'purchase');
-    const profitTransactions = user.transactions.filter(tx => tx.type.includes('profit'));
-    
+const DepositTicketsCard = ({ tickets = [], stats, onCancel, cancellingTicketId }) => {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <TransactionHistoryTable transactions={marketPurchases} title="Historial de Compras (Mercado)" />
-            <TransactionHistoryTable transactions={quantitativePurchases} title="Historial de Compras (Cuantitativo)" />
-            <div className="md:col-span-2">
-                <TransactionHistoryTable transactions={profitTransactions} title="Historial de Ganancias por Inversión" />
+        <div className="bg-dark-secondary p-5 rounded-lg border border-white/10 space-y-4">
+            <div className="flex items-center justify-between gap-4">
+                <div>
+                    <h3 className="text-lg font-semibold text-white">Tickets de depósito</h3>
+                    <p className="text-xs text-text-tertiary">Abiertos: {stats?.open ?? 0} · Completados: {stats?.completed ?? 0} · Cerrados: {stats?.closed ?? 0}</p>
+                </div>
             </div>
+
+            {tickets.length === 0 ? (
+                <div className="bg-dark-tertiary/60 border border-white/5 rounded-md p-4 text-sm text-text-secondary text-center">
+                    Este usuario no tiene tickets registrados.
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                        <thead className="text-xs uppercase text-text-secondary bg-dark-tertiary">
+                            <tr>
+                                <th className="p-3 text-left">Ticket</th>
+                                <th className="p-3 text-left">Método</th>
+                                <th className="p-3 text-left">Monto</th>
+                                <th className="p-3 text-left">Estado</th>
+                                <th className="p-3 text-left">Creado</th>
+                                <th className="p-3 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/10">
+                            {tickets.map((ticket) => {
+                                const statusStyle = TICKET_STATUS_STYLES[ticket.status] || 'bg-white/5 text-white';
+                                const statusLabel = TICKET_STATUS_LABELS[ticket.status] || ticket.status;
+                                const cancellable = ADMIN_OPEN_TICKET_STATUSES.includes(ticket.status);
+
+                                return (
+                                    <tr key={ticket.ticketId} className="hover:bg-dark-tertiary/40">
+                                        <td className="p-3 font-mono text-xs">{ticket.ticketId.slice(-8)}</td>
+                                        <td className="p-3">
+                                            <p className="text-text-primary font-medium">{ticket.methodName || ticket.methodKey || 'Sin nombre'}</p>
+                                            <p className="text-xs text-text-tertiary">{ticket.methodType === 'manual' ? 'Manual' : 'Automático'}{ticket.chain ? ` · ${ticket.chain}` : ''}</p>
+                                        </td>
+                                        <td className="p-3">
+                                            <p className="text-text-primary font-semibold">{Number(ticket.amount || 0).toFixed(2)} {ticket.currency}</p>
+                                        </td>
+                                        <td className="p-3">
+                                            <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${statusStyle}`}>
+                                                {statusLabel}
+                                            </span>
+                                        </td>
+                                        <td className="p-3 text-text-secondary text-xs">{new Date(ticket.createdAt).toLocaleString()}</td>
+                                        <td className="p-3 text-right">
+                                            {cancellable ? (
+                                                <button
+                                                    onClick={() => onCancel(ticket.ticketId)}
+                                                    disabled={cancellingTicketId === ticket.ticketId}
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-red-300 hover:text-red-100 transition disabled:opacity-60"
+                                                >
+                                                    <HiOutlineXCircle className="w-4 h-4" />
+                                                    {cancellingTicketId === ticket.ticketId ? 'Cancelando...' : 'Cancelar'}
+                                                </button>
+                                            ) : (
+                                                <span className="text-xs text-text-tertiary">—</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const InvestmentsTab = ({ summary }) => {
+    const marketPurchases = summary?.marketPurchases ?? [];
+    const quantitativePurchases = summary?.quantitativePurchases ?? [];
+    const profitTransactions = summary?.profitTransactions ?? [];
+    const passiveProfitTransactions = summary?.passiveProfitTransactions ?? [];
+    const totals = summary?.totals ?? {};
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-dark-secondary rounded-lg border border-white/10 p-4">
+                    <p className="text-xs uppercase text-text-secondary">Capital activo (Mercado)</p>
+                    <p className="text-2xl font-mono font-bold text-white">{(totals.activeCapital?.market ?? 0).toFixed(2)} USDT</p>
+                    <p className="text-xs text-text-tertiary">Rendimiento diario: {(totals.dailyProfit?.market ?? 0).toFixed(2)} USDT</p>
+                </div>
+                <div className="bg-dark-secondary rounded-lg border border-white/10 p-4">
+                    <p className="text-xs uppercase text-text-secondary">Capital activo (Cuant)</p>
+                    <p className="text-2xl font-mono font-bold text-white">{(totals.activeCapital?.quantitative ?? 0).toFixed(2)} USDT</p>
+                    <p className="text-xs text-text-tertiary">Rendimiento diario: {(totals.dailyProfit?.quantitative ?? 0).toFixed(2)} USDT</p>
+                </div>
+                <div className="bg-dark-secondary rounded-lg border border-white/10 p-4">
+                    <p className="text-xs uppercase text-text-secondary">Total inversiones activas</p>
+                    <p className="text-2xl font-mono font-bold text-white">{(totals.activeCapital?.total ?? 0).toFixed(2)} USDT</p>
+                    <p className="text-xs text-text-tertiary">Rendimiento diario combinado: {(totals.dailyProfit?.total ?? 0).toFixed(2)} USDT</p>
+                </div>
+            </div>
+
+            <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-text-primary">Compras de mercado</h3>
+                {marketPurchases.length === 0 ? (
+                    <p className="text-xs text-text-secondary bg-dark-tertiary/60 border border-white/5 rounded-lg px-3 py-3">
+                        No se registran compras de mercado.
+                    </p>
+                ) : (
+                    <div className="space-y-3">
+                        {marketPurchases.map((item) => (
+                            <div key={item.id} className="p-4 rounded-lg bg-dark-secondary border border-white/10 text-sm space-y-1">
+                                <div className="flex justify-between text-text-primary font-medium">
+                                    <span>{item.name}</span>
+                                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <p className="text-xs text-text-secondary">Monto invertido: {item.invested.toFixed(2)} USDT</p>
+                                <p className="text-xs text-text-secondary">Ganancia diaria estimada: {item.dailyProfit.toFixed(2)} USDT</p>
+                                <p className="text-xs text-text-secondary">Retorno estimado en {item.durationDays} días: {(item.invested + item.expectedReturn).toFixed(2)} USDT</p>
+                                <p className="text-[11px] text-text-tertiary">Estado: {item.isActive ? 'Activo' : item.status}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-text-primary">Planes cuantitativos</h3>
+                {quantitativePurchases.length === 0 ? (
+                    <p className="text-xs text-text-secondary bg-dark-tertiary/60 border border-white/5 rounded-lg px-3 py-3">
+                        Aún no hay registros de planes cuantitativos.
+                    </p>
+                ) : (
+                    <div className="space-y-3">
+                        {quantitativePurchases.map((item) => (
+                            <div key={item.id} className="p-4 rounded-lg bg-dark-secondary border border-white/10 text-sm space-y-1">
+                                <div className="flex justify-between text-text-primary font-medium">
+                                    <span>{item.name}</span>
+                                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <p className="text-xs text-text-secondary">Monto invertido: {item.invested.toFixed(2)} USDT</p>
+                                {item.dailyProfit !== null ? (
+                                    <p className="text-xs text-text-secondary">Distribución diaria actual: {item.dailyProfit.toFixed(2)} USDT</p>
+                                ) : (
+                                    <p className="text-xs text-text-tertiary">Plan finalizado o sin distribución activa.</p>
+                                )}
+                                {item.endDate && (
+                                    <p className="text-xs text-text-tertiary">Finaliza: {new Date(item.endDate).toLocaleDateString()}</p>
+                                )}
+                                <p className="text-[11px] text-text-tertiary">Estado: {item.isActive ? 'Activo' : item.status}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <TransactionHistoryTable transactions={profitTransactions} title="Historial de ganancias y retornos" />
+
+            {passiveProfitTransactions.length > 0 && (
+                <TransactionHistoryTable transactions={passiveProfitTransactions} title="Ganancias pasivas por saldo" />
+            )}
         </div>
     );
 };
@@ -147,6 +388,7 @@ const AdminUserDetailPage = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
     const [selectedTab, setSelectedTab] = useState(0);
+    const [cancellingTicketId, setCancellingTicketId] = useState(null);
 
     const isSuperAdmin = useAdminStore((state) => state.isSuperAdmin());
 
@@ -214,11 +456,43 @@ const AdminUserDetailPage = () => {
         });
     };
 
+    const handleCancelTicket = async (ticketId) => {
+        if (!userData?.user?._id) {
+            return;
+        }
+
+        setCancellingTicketId(ticketId);
+
+        try {
+            const { data } = await adminApi.put(`/admin/users/${userData.user._id}/deposit-tickets/${ticketId}/cancel`);
+            toast.success(data?.message || 'Ticket cancelado.');
+
+            const updatedTicket = data?.data;
+            setUserData((prev) => {
+                if (!prev) {
+                    return prev;
+                }
+                const updatedTickets = (prev.depositTickets || []).map((ticket) =>
+                    ticket.ticketId === ticketId ? updatedTicket : ticket
+                );
+                return {
+                    ...prev,
+                    depositTickets: updatedTickets,
+                    ticketStats: computeTicketStatsClient(updatedTickets)
+                };
+            });
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'No se pudo cancelar el ticket.');
+        } finally {
+            setCancellingTicketId(null);
+        }
+    };
+
     const filteredTransactions = useMemo(() => {
-        if (!userData?.user?.transactions) return {};
+        const source = userData?.transactions?.items || userData?.user?.transactions || [];
         return {
-            deposits: userData.user.transactions.filter(tx => tx.type === 'deposit'),
-            withdrawals: userData.user.transactions.filter(tx => tx.type === 'withdrawal'),
+            deposits: source.filter((tx) => tx.type === 'deposit'),
+            withdrawals: source.filter((tx) => tx.type === 'withdrawal'),
         };
     }, [userData]);
 
@@ -242,6 +516,16 @@ const AdminUserDetailPage = () => {
                 user={user}
                 onEdit={() => setIsEditModalOpen(true)}
                 onResetPassword={() => setIsResetPasswordModalOpen(true)}
+                ticketStats={userData.ticketStats}
+                passiveIncome={userData.passiveIncome}
+                investmentSummary={userData.investmentSummary}
+            />
+
+            <DepositTicketsCard 
+                tickets={userData.depositTickets}
+                stats={userData.ticketStats}
+                onCancel={handleCancelTicket}
+                cancellingTicketId={cancellingTicketId}
             />
 
             <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
@@ -254,7 +538,7 @@ const AdminUserDetailPage = () => {
                     ))}
                 </Tab.List>
                 <Tab.Panels className="mt-2">
-                    <Tab.Panel><InvestmentsTab user={user} /></Tab.Panel>
+                    <Tab.Panel><InvestmentsTab summary={userData.investmentSummary} /></Tab.Panel>
                     <Tab.Panel><WheelTab user={user} /></Tab.Panel>
                     <Tab.Panel className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <TransactionHistoryTable transactions={filteredTransactions.deposits} title="Historial de Depósitos" />

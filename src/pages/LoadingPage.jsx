@@ -41,7 +41,7 @@ const LoadingPage = () => {
         className="mb-12"
       >
         <div className="w-24 h-24 rounded-ios-2xl bg-gradient-to-br from-ios-green-light to-ios-green-dark flex items-center justify-center shadow-ios-card">
-          <span className="text-5xl text-white font-ios-display font-bold">AI</span>
+          <span className="text-5xl text-green-600 font-ios-display font-bold">AI</span>
         </div>
       </motion.div>
 
