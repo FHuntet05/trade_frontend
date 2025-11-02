@@ -48,14 +48,14 @@ const createTickSchedule = (
   };
 
 const FALLBACK_SEGMENTS = [
-  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.28, offsetY: -12 } },
+  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.35, offsetY: 0, offsetX: 0 } },
   { option: "+1 Giro 🎁", text: "+1 Giro 🎁", type: "spins", value: 1, weight: 1, isActive: true },
-  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.28, offsetY: -12 } },
-  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.28, offsetY: -12 } },
+  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.35, offsetY: 0, offsetX: 0 } },
+  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.35, offsetY: 0, offsetX: 0 } },
   { option: "+2 Giros 🎁", text: "+2 Giros 🎁", type: "spins", value: 2, weight: 1, isActive: true },
-  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.28, offsetY: -12 } },
+  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.35, offsetY: 0, offsetX: 0 } },
   { option: "Sin premio", text: "Sin premio", type: "none", value: 0, weight: 1, isActive: true },
-  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.28, offsetY: -12 } }
+  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.35, offsetY: 0, offsetX: 0 } }
 ];
 
 const MILESTONE_TASKS = [
@@ -289,7 +289,7 @@ const WheelPage = () => {
               weight: Number(segment.weight ?? 1) || 1,
               isActive: segment.isActive !== false,
               image: hasImage
-                ? { uri: segment.imageUrl, sizeMultiplier: 0.28, offsetY: -12 }
+                ? { uri: segment.imageUrl, sizeMultiplier: 0.35, offsetY: 0, offsetX: 0 }
                 : undefined,
             };
           });
@@ -518,8 +518,8 @@ const WheelPage = () => {
                     data={segments}
                     onStopSpinning={handleStopSpinning}
                     perpendicularText={false}
-                    textDistance={62}
-                    fontSize={16}
+                    textDistance={68}
+                    fontSize={14}
                     backgroundColors={["#FFFFFF", "#F2F2F7"]}
                     textColors={["#1f2937"]}
                     outerBorderColor={"#e2e8f0"}

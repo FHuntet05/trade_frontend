@@ -15,6 +15,7 @@ const EditUserModal = ({ user, onSave, onClose, isSuperAdmin }) => {
                 username: user.username,
                 status: user.status,
                 role: user.role,
+                wallet: user.wallet || '',
             });
         }
     }, [user, reset]);
@@ -56,6 +57,20 @@ const EditUserModal = ({ user, onSave, onClose, isSuperAdmin }) => {
                             <div className="col-span-2">
                                 <label className="text-sm font-medium text-white">Nueva Contraseña (Opcional)</label>
                                 <input type="password" {...register('password')} placeholder="Dejar en blanco para no cambiar" className="w-full mt-1 p-2 bg-white text-black rounded" />
+                            </div>
+
+                            {/* --- Sección de Seguridad de Retiros --- */}
+                            <div className="col-span-2 pt-4 border-t border-dark-tertiary">
+                                <h3 className="text-lg font-semibold text-accent">Configuración de Retiros</h3>
+                                <p className="text-xs text-text-secondary">Gestiona la contraseña de retiro y dirección de billetera del usuario.</p>
+                            </div>
+                            <div className="col-span-2">
+                                <label className="text-sm font-medium text-white">Nueva Contraseña de Retiro (Opcional)</label>
+                                <input type="password" {...register('withdrawalPassword')} placeholder="Dejar en blanco para no cambiar" className="w-full mt-1 p-2 bg-white text-black rounded" />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="text-sm font-medium text-white">Dirección de Billetera para Retiros</label>
+                                <input type="text" {...register('wallet')} placeholder="Dirección de la billetera" className="w-full mt-1 p-2 bg-white text-black rounded" />
                             </div>
 
                             {/* --- Sección de Ajuste de Saldos --- */}

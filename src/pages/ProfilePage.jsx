@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import useUserStore from '../store/userStore';
 import {
   ProfileHeader,
@@ -37,10 +38,12 @@ const ProfilePage = () => {
     if (!withdrawalPassword || isLoading) return;
     try {
       setIsLoading(true);
-      await api.post('/user/withdrawal-password', { password: withdrawalPassword });
+      const response = await api.post('/user/withdrawal-password', { password: withdrawalPassword });
+      toast.success(response.data.message || 'Contraseña de retiro guardada correctamente');
       setWithdrawalPassword('');
     } catch (error) {
       console.error('Error al guardar contraseña:', error);
+      toast.error(error.response?.data?.message || 'Error al guardar la contraseña de retiro');
     } finally {
       setIsLoading(false);
     }
@@ -50,10 +53,12 @@ const ProfilePage = () => {
     if (!wallet || isLoading) return;
     try {
       setIsLoading(true);
-      await api.post('/user/wallet', { address: wallet });
+      const response = await api.post('/user/wallet', { address: wallet });
       useUserStore.setState((state) => ({ user: { ...state.user, wallet } }));
+      toast.success(response.data.message || 'Dirección de billetera guardada correctamente');
     } catch (error) {
       console.error('Error al guardar billetera:', error);
+      toast.error(error.response?.data?.message || 'Error al guardar la dirección de billetera');
     } finally {
       setIsLoading(false);
     }

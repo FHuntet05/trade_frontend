@@ -18,11 +18,27 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
   const withdrawableBalance = user?.withdrawableBalance || 0;
   const minimumWithdrawal = settings?.minimumWithdrawal || 10;
 
+  // Pre-cargar la billetera del usuario cuando se abre el modal
+  React.useEffect(() => {
+    if (isVisible && user?.wallet) {
+      setWalletAddress(user.wallet);
+    }
+  }, [isVisible, user?.wallet]);
+
+  const hasWithdrawalPassword = user?.withdrawalPassword !== undefined;
+  const hasWallet = Boolean(user?.wallet);
+
   const isWithdrawalDisabled = useMemo(() => {
-    return withdrawableBalance < minimumWithdrawal;
-  }, [withdrawableBalance, minimumWithdrawal]);
+    return withdrawableBalance < minimumWithdrawal || !hasWithdrawalPassword || !hasWallet;
+  }, [withdrawableBalance, minimumWithdrawal, hasWithdrawalPassword, hasWallet]);
 
   const helperText = useMemo(() => {
+    if (!hasWithdrawalPassword) {
+      return t('withdrawalModal.helperNoPassword') || 'Por favor configura tu contraseña de retiro en tu perfil primero.';
+    }
+    if (!hasWallet) {
+      return t('withdrawalModal.helperNoWallet') || 'Por favor configura tu dirección de billetera en tu perfil primero.';
+    }
     if (withdrawableBalance < minimumWithdrawal) {
       return t('withdrawalModal.helperInsufficient', {
         minimum: formatters.formatCurrency(minimumWithdrawal),
@@ -31,7 +47,7 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
     return t('withdrawalModal.helperAvailable', {
       amount: formatters.formatCurrency(withdrawableBalance),
     });
-  }, [minimumWithdrawal, t, withdrawableBalance]);
+  }, [minimumWithdrawal, t, withdrawableBalance, hasWithdrawalPassword, hasWallet]);
 
   const handleConfirmWithdrawal = () => {
     console.log({ withdrawalPassword, walletAddress, amount });

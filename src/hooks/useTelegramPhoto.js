@@ -41,34 +41,36 @@ export const useTelegramPhoto = (telegramId, options = {}) => {
       return;
     }
 
-    if (!cacheBust && photoCache.has(telegramId)) {
-      setState({ src: photoCache.get(telegramId), loading: false, error: null });
+    const cacheKey = `photo_${telegramId}`;
+
+    if (!cacheBust && photoCache.has(cacheKey)) {
+      setState({ src: photoCache.get(cacheKey), loading: false, error: null });
       return;
     }
 
     let cancelled = false;
-    let objectUrl;
 
     const fetchPhoto = async () => {
       try {
         setState((prev) => ({ ...prev, loading: true, error: null }));
-        const response = await api.get(`/user/photo/${telegramId}`, {
-          responseType: "blob",
-          params: cacheBust ? { v: Date.now() } : undefined,
-        });
+        
+        // Construir la URL con el parámetro de cache bust si es necesario
+        const baseUrl = `/user/photo/${telegramId}`;
+        const url = cacheBust ? `${baseUrl}?v=${Date.now()}` : baseUrl;
+        
+        // Usar la URL directamente ya que el backend hace redirect
+        const photoUrl = `${api.defaults.baseURL}${url}`;
 
         if (cancelled) {
           return;
         }
 
-        objectUrl = URL.createObjectURL(response.data);
-
         if (!cacheBust) {
-          photoCache.set(telegramId, objectUrl);
+          photoCache.set(cacheKey, photoUrl);
           registerCacheCleanup();
         }
 
-        setState({ src: objectUrl, loading: false, error: null });
+        setState({ src: photoUrl, loading: false, error: null });
       } catch (error) {
         if (!cancelled) {
           setState({ src: null, loading: false, error });
@@ -80,13 +82,6 @@ export const useTelegramPhoto = (telegramId, options = {}) => {
 
     return () => {
       cancelled = true;
-      if (cacheBust && objectUrl) {
-        try {
-          URL.revokeObjectURL(objectUrl);
-        } catch (error) {
-          // ignore revoke errors
-        }
-      }
     };
   }, [telegramId, cacheBust, refreshKey]);
 
