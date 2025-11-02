@@ -283,11 +283,13 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                             <motion.div
                               key={ticket.ticketId}
                               layout
-                              className="p-4 rounded-ios bg-system-secondary border border-white/5 space-y-2 hover:border-white/10 transition-colors"
+                              className="p-4 rounded-2xl bg-system-secondary border border-white/8 space-y-3 shadow-[0_12px_24px_-18px_rgba(0,0,0,0.65)] hover:border-ios-green/40 transition-colors"
                             >
                               <div className="flex items-start justify-between gap-3 text-sm">
-                                <div className="text-text-primary font-medium">{ticket.currency} {Number(ticket.amount).toFixed(2)}</div>
-                                <div className="text-xs text-text-tertiary text-right leading-tight">
+                                <div className="text-text-primary text-base font-semibold tracking-tight">
+                                  {ticket.currency} {Number(ticket.amount).toFixed(2)}
+                                </div>
+                                <div className="text-xs text-text-tertiary text-right leading-tight font-medium">
                                   {new Date(ticket.createdAt).toLocaleString()}
                                 </div>
                               </div>
@@ -305,23 +307,28 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                                 )}
                               </div>
                               {ticket.depositAddress && (
-                                <div className="text-xs text-text-tertiary bg-black/20 border border-white/5 rounded-md p-2 break-all">
-                                  Destino: {ticket.depositAddress}
+                                <div className="text-xs font-medium text-text-secondary bg-black/15 border border-white/8 rounded-lg p-2.5 break-all">
+                                  <span className="text-text-tertiary uppercase tracking-wide mr-1">Destino:</span>
+                                  {ticket.depositAddress}
                                 </div>
                               )}
                               {ticket.instructions && ticket.methodType === 'manual' && (
-                                <div className="text-xs text-yellow-200 bg-yellow-500/10 border border-yellow-500/20 rounded-md p-2">
-                                  {ticket.instructions}
+                                <div className="rounded-xl border border-yellow-400/70 bg-[#FEF3C7]/90 px-3 py-2">
+                                  <p className="text-[11px] font-semibold text-[#7C5200] leading-snug">
+                                    {ticket.instructions}
+                                  </p>
                                 </div>
                               )}
                               {ticket.expiresAt && (
-                                <p className="text-xs text-text-tertiary">Expira: {new Date(ticket.expiresAt).toLocaleString()}</p>
+                                <p className="text-[11px] font-medium text-text-tertiary uppercase tracking-wide">
+                                  Expira: {new Date(ticket.expiresAt).toLocaleString()}
+                                </p>
                               )}
                               <div className="flex flex-col gap-2 mt-1">
                                 {['pending', 'processing', 'awaiting_manual_review'].includes(ticket.status) && (
                                   <button
                                     onClick={() => window.open(`/deposit/pending/${ticket.ticketId}`, '_self')}
-                                    className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-ios-green hover:text-white transition-colors"
+                                    className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-ios-green/40 bg-ios-green/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-ios-green hover:border-ios-green/80 hover:bg-ios-green/20 hover:text-white transition-colors"
                                   >
                                     Ver detalle
                                     <FiArrowRightCircle className="w-4 h-4" />
@@ -332,7 +339,7 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                                   <button
                                     onClick={() => handleCancelTicket(ticket.ticketId)}
                                     disabled={cancellingTicketId === ticket.ticketId}
-                                    className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-red-300 hover:text-red-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-red-400/60 bg-red-500/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-red-200 hover:border-red-300 hover:bg-red-500/20 hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                   >
                                     <FiXCircle className="w-4 h-4" />
                                     {cancellingTicketId === ticket.ticketId ? 'Cancelando...' : 'Cancelar ticket'}
