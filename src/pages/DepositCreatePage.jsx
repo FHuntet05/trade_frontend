@@ -1,10 +1,10 @@
 // RUTA: frontend/src/pages/DepositCreatePage.jsx
 // Página para crear un nuevo ticket de depósito
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { HiChevronLeft, HiInformationCircle } from 'react-icons/hi2';
+import { HiChevronLeft, HiChevronRight, HiInformationCircle } from 'react-icons/hi2';
 import toast from 'react-hot-toast';
 import api from '@/api/axiosConfig';
 
@@ -133,6 +133,10 @@ const DepositCreatePage = () => {
   const [selectedKey, setSelectedKey] = useState(null);
   const [isLoadingOptions, setIsLoadingOptions] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showScrollControls, setShowScrollControls] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const optionsScrollRef = useRef(null);
 
   const selectedOption = useMemo(
     () => depositOptions.find((option) => option.key === selectedKey) || null,
@@ -171,6 +175,41 @@ const DepositCreatePage = () => {
       setAmount(String(min));
     }
   }, [selectedOption]);
+
+  useEffect(() => {
+    const el = optionsScrollRef.current;
+    if (!el) {
+      setShowScrollControls(false);
+      return;
+    }
+
+    const updateScrollState = () => {
+      const hasOverflow = el.scrollWidth > el.clientWidth + 8;
+      setShowScrollControls(hasOverflow);
+      if (hasOverflow) {
+        setCanScrollLeft(el.scrollLeft > 8);
+        setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
+      } else {
+        setCanScrollLeft(false);
+        setCanScrollRight(false);
+      }
+    };
+
+    updateScrollState();
+    el.addEventListener('scroll', updateScrollState);
+    window.addEventListener('resize', updateScrollState);
+
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      window.removeEventListener('resize', updateScrollState);
+    };
+  }, [depositOptions]);
+
+  const scrollOptions = (offset) => {
+    const el = optionsScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: offset, behavior: 'smooth' });
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -222,21 +261,21 @@ const DepositCreatePage = () => {
         type="button"
         whileTap={{ scale: 0.97 }}
         onClick={() => setSelectedKey(option.key)}
-        className={`group flex min-w-[110px] flex-shrink-0 cursor-pointer flex-col items-center gap-2 rounded-2xl border px-3 py-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ios-green/60 ${
+        className={`group flex min-w-[96px] flex-shrink-0 cursor-pointer flex-col items-center gap-1.5 rounded-2xl border px-3 py-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ios-green/60 ${
           isActive
             ? 'border-ios-green/70 bg-emerald-50 text-emerald-700 shadow-md shadow-emerald-200'
             : 'border-transparent bg-white/0 text-gray-600 hover:border-ios-green/40 hover:bg-emerald-50/50 hover:text-emerald-700'
         }`}
       >
-        <div className={`flex h-12 w-12 items-center justify-center rounded-full border bg-white ${
+        <div className={`flex h-11 w-11 items-center justify-center rounded-full border bg-white ${
           isActive ? 'border-ios-green/80 shadow-inner shadow-emerald-100' : 'border-emerald-100 shadow-sm'
         }`}>
-          <img src={iconSrc} alt={option.name} className="h-8 w-8 object-contain" loading="lazy" />
+          <img src={iconSrc} alt={option.name} className="h-7 w-7 object-contain" loading="lazy" />
         </div>
-        <span className={`font-ios text-xs font-semibold ${isActive ? 'text-emerald-700' : 'text-gray-600'}`}>
+        <span className={`font-ios text-xs font-semibold tracking-tight ${isActive ? 'text-emerald-700' : 'text-gray-600'}`}>
           {option.name}
         </span>
-        <span className="font-ios text-[10px] text-gray-400">{option.chain || option.currency}</span>
+        <span className="font-ios text-[10px] text-gray-400 uppercase">{option.chain || option.currency}</span>
       </motion.button>
     );
   };
@@ -255,12 +294,16 @@ const DepositCreatePage = () => {
         </div>
 
         {reason && (
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-ios-card p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <HiInformationCircle className="text-blue-400 flex-shrink-0" size={24} />
-              <div>
-                <p className="font-ios text-sm text-blue-300 font-semibold mb-1">Motivo del depósito</p>
-                <p className="font-ios text-sm text-blue-200">{reason}</p>
+          <div className="relative mb-6 overflow-hidden rounded-3xl border border-ios-green/30 bg-gradient-to-br from-ios-green/15 via-transparent to-transparent p-[1px]">
+            <div className="rounded-[22px] bg-system-background/95 p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-ios-green/15 p-2 text-ios-green">
+                  <HiInformationCircle size={20} />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-ios text-sm font-semibold uppercase tracking-wide text-ios-green">Motivo del depósito</p>
+                  <p className="font-ios text-base font-medium text-text-primary">{reason}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -276,14 +319,44 @@ const DepositCreatePage = () => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-internal-card rounded-ios-xl p-4 space-y-4">
-              <label className="font-ios text-sm text-text-secondary block">
-                Selecciona un método
-              </label>
-              <div className="rounded-[28px] border border-ios-green/60 bg-white/95 px-2 py-3">
-                <div className="flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-2 sm:gap-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-                  {depositOptions.map(renderOptionButton)}
+            <div className="bg-internal-card rounded-ios-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="font-ios text-sm font-semibold uppercase tracking-wide text-text-secondary">
+                  Selecciona un método
+                </label>
+                {showScrollControls && (
+                  <div className="flex items-center gap-1 text-text-secondary">
+                    <button
+                      type="button"
+                      onClick={() => scrollOptions(-160)}
+                      disabled={!canScrollLeft}
+                      className="rounded-full border border-white/10 bg-white/5 p-1 transition hover:bg-white/10 disabled:opacity-40"
+                    >
+                      <HiChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollOptions(160)}
+                      disabled={!canScrollRight}
+                      className="rounded-full border border-white/10 bg-white/5 p-1 transition hover:bg-white/10 disabled:opacity-40"
+                    >
+                      <HiChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                <div className="rounded-[26px] border border-ios-green/60 bg-white/95 px-1.5 py-2.5">
+                  <div
+                    ref={optionsScrollRef}
+                    className="flex items-stretch gap-2 overflow-x-auto overflow-y-hidden px-1.5 pb-1" style={{ WebkitOverflowScrolling: 'touch' }}
+                  >
+                    {depositOptions.map(renderOptionButton)}
+                  </div>
                 </div>
+                {showScrollControls && canScrollRight && (
+                  <div className="pointer-events-none absolute inset-y-2 right-3 w-10 rounded-[20px] bg-gradient-to-l from-white to-transparent opacity-80" />
+                )}
               </div>
             </div>
 
