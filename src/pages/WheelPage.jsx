@@ -12,21 +12,15 @@ import useTeamStore from "@/store/teamStore";
 import { IOSButton, IOSCard } from "../components/ui/IOSComponents";
 
 const FALLBACK_SEGMENTS = [
-  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5, offsetY: 25 } },
+  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.42, offsetY: -10 } },
   { option: "+1 Giro 🎁", text: "+1 Giro 🎁", type: "spins", value: 1, weight: 1, isActive: true },
-  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5, offsetY: 25 } },
-  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5, offsetY: 25 } },
+  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.42, offsetY: -10 } },
+  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.42, offsetY: -10 } },
   { option: "+2 Giros 🎁", text: "+2 Giros 🎁", type: "spins", value: 2, weight: 1, isActive: true },
-  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5, offsetY: 25 } },
+  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.42, offsetY: -10 } },
   { option: "Sin premio", text: "Sin premio", type: "none", value: 0, weight: 1, isActive: true },
-  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.5, offsetY: 25 } }
+  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.42, offsetY: -10 } }
 ];
-
-const SEGMENT_TYPE_LABELS = {
-  usdt: "USDT",
-  spins: "Giros extra",
-  none: "Sin premio",
-};
 
 const MILESTONE_TASKS = [
   {
@@ -77,16 +71,6 @@ const WheelPage = () => {
   }));
 
   const [segments, setSegments] = useState(FALLBACK_SEGMENTS);
-  const [segmentDetails, setSegmentDetails] = useState(() =>
-    FALLBACK_SEGMENTS.map((segment) => ({
-      text: segment.text,
-      type: segment.type,
-      value: segment.value,
-      weight: segment.weight,
-      isActive: segment.isActive,
-      imageUrl: segment.image?.uri || '',
-    }))
-  );
   const [mustSpin, setMustSpin] = useState(false);
   const [prizeNumber, setPrizeNumber] = useState(0);
   const [pendingSpinResult, setPendingSpinResult] = useState(null);
@@ -102,53 +86,38 @@ const WheelPage = () => {
   const { data } = await api.get("/wheel/config");
         const apiSegments = data?.data?.segments || [];
         if (apiSegments.length) {
-          const mappedSegments = apiSegments.map((segment) => ({
-            option: segment.text || `Premio ${segment.weight || 1}`,
-            image: segment.imageUrl
-              ? { uri: segment.imageUrl, sizeMultiplier: 0.5, offsetY: 25 }
-              : undefined,
-          }));
-          setSegments(mappedSegments);
-          setSegmentDetails(
-            apiSegments.map((segment) => ({
-              text: segment.text || '',
-              type: SEGMENT_TYPE_LABELS[segment.type] ? segment.type : 'none',
-              value: typeof segment.value === 'number' ? segment.value : Number(segment.value || 0),
-              weight: typeof segment.weight === 'number' ? segment.weight : Number(segment.weight || 0),
-              isActive: Boolean(segment.isActive),
-              imageUrl: segment.imageUrl || '',
-            }))
-          );
+          const normalizedSegments = apiSegments.map((segment, index) => {
+            const type = ['usdt', 'spins', 'none'].includes(segment.type) ? segment.type : 'none';
+            const hasImage = Boolean(segment.imageUrl);
+            const numericValue = Number(segment.value ?? 0);
+            const normalizedValue = Number.isFinite(numericValue) ? numericValue : 0;
+            const fallbackLabel = segment.text?.trim()
+              || (type === 'usdt'
+                ? `${normalizedValue.toFixed(2)} USDT`
+                : type === 'spins'
+                ? `${normalizedValue} giros`
+                : 'Sin premio');
+            const label = fallbackLabel || `Premio ${index + 1}`;
+
+            return {
+              option: label,
+              image: hasImage
+                ? { uri: segment.imageUrl, sizeMultiplier: 0.42, offsetY: -10 }
+                : undefined,
+            };
+          });
+
+          setSegments(normalizedSegments);
           setIsWheelDisabled(false);
           setConfigMessage("");
         } else {
           setSegments(FALLBACK_SEGMENTS);
-          setSegmentDetails(
-            FALLBACK_SEGMENTS.map((segment) => ({
-              text: segment.text,
-              type: segment.type,
-              value: segment.value,
-              weight: segment.weight,
-              isActive: segment.isActive,
-              imageUrl: segment.image?.uri || '',
-            }))
-          );
           setConfigMessage("La ruleta aún no tiene premios activos. Comunícate con soporte para configurarla.");
           setIsWheelDisabled(true);
         }
       } catch (error) {
         console.error("wheel/config", error);
         setSegments(FALLBACK_SEGMENTS);
-        setSegmentDetails(
-          FALLBACK_SEGMENTS.map((segment) => ({
-            text: segment.text,
-            type: segment.type,
-            value: segment.value,
-            weight: segment.weight,
-            isActive: segment.isActive,
-            imageUrl: segment.image?.uri || '',
-          }))
-        );
         const backendMessage = error.response?.data?.message;
         if (error.response?.status === 404) {
           setConfigMessage(backendMessage || "La ruleta aún no ha sido configurada por el administrador.");
@@ -262,17 +231,6 @@ const WheelPage = () => {
     window.open(link, "_blank", "noopener,noreferrer");
   };
 
-  const describeSegmentValue = (segment) => {
-    const numericValue = Number(segment.value || 0);
-    if (segment.type === "usdt") {
-      return `${numericValue.toFixed(2)} USDT`;
-    }
-    if (segment.type === "spins") {
-      return `${numericValue} giros`;
-    }
-    return "Sin premio";
-  };
-
   return (
     <div className="min-h-screen w-full bg-[#f5f7fb] px-4 py-6 md:px-8">
       <div className="mx-auto w-full max-w-5xl space-y-6">
@@ -330,7 +288,7 @@ const WheelPage = () => {
                     data={segments}
                     onStopSpinning={handleStopSpinning}
                     perpendicularText={false}
-                    textDistance={75}
+                    textDistance={82}
                     fontSize={14}
                     backgroundColors={["#FFFFFF", "#F2F2F7"]}
                     textColors={["#1f2937"]}
@@ -366,57 +324,6 @@ const WheelPage = () => {
 
                 {availableSpins <= 0 && !isWheelDisabled && (
                   <p className="mt-3 text-xs text-slate-500">Gana más giros completando las misiones de invitación o las tareas especiales.</p>
-                )}
-
-                {segmentDetails.length > 0 && (
-                  <div className="mt-8 w-full">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Premios configurados</h3>
-                      <span className="text-[11px] text-slate-400">Los premios inactivos se muestran atenuados.</span>
-                    </div>
-                    <div className="mt-3 grid w-full gap-3 sm:grid-cols-2">
-                      {segmentDetails.map((segment, index) => {
-                        const isInactive = !segment.isActive;
-                        const capsuleClasses = isInactive
-                          ? "border-slate-200 bg-slate-100 text-slate-400"
-                          : "border-emerald-100 bg-emerald-50 text-emerald-700";
-
-                        return (
-                          <div
-                            key={`${segment.text}-${index}`}
-                            className={`flex items-center gap-3 rounded-xl border border-slate-200/70 bg-slate-50/70 px-3 py-3 ${isInactive ? "opacity-60" : "opacity-100"}`}
-                          >
-                            {segment.imageUrl ? (
-                              <img
-                                src={segment.imageUrl}
-                                alt={segment.text || `Segmento ${index + 1}`}
-                                className="h-10 w-10 flex-shrink-0 rounded-full object-cover"
-                                onError={(event) => {
-                                  event.currentTarget.src = "/assets/images/USDT.png";
-                                }}
-                              />
-                            ) : (
-                              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600">
-                                {index + 1}
-                              </div>
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-slate-900">
-                                {index + 1}. {segment.text || "Sin título"}
-                              </p>
-                              <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${capsuleClasses}`}>
-                                  {SEGMENT_TYPE_LABELS[segment.type] || segment.type}
-                                </span>
-                                <span>{describeSegmentValue(segment)}</span>
-                                <span>Peso: {Number(segment.weight || 0)}</span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
                 )}
               </div>
             </div>

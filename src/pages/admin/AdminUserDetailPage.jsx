@@ -210,18 +210,18 @@ const DepositTicketsCard = ({ tickets = [], stats, onCancel, cancellingTicketId 
                                     <tr key={ticket.ticketId} className="hover:bg-dark-tertiary/40">
                                         <td className="p-3 font-mono text-xs">{ticket.ticketId.slice(-8)}</td>
                                         <td className="p-3">
-                                            <p className="text-text-primary font-medium">{ticket.methodName || ticket.methodKey || 'Sin nombre'}</p>
+                                            <p className="text-white font-medium">{ticket.methodName || ticket.methodKey || 'Sin nombre'}</p>
                                             <p className="text-xs text-text-tertiary">{ticket.methodType === 'manual' ? 'Manual' : 'Automático'}{ticket.chain ? ` · ${ticket.chain}` : ''}</p>
                                         </td>
                                         <td className="p-3">
-                                            <p className="text-text-primary font-semibold">{Number(ticket.amount || 0).toFixed(2)} {ticket.currency}</p>
+                                            <p className="text-white font-semibold">{Number(ticket.amount || 0).toFixed(2)} {ticket.currency}</p>
                                         </td>
                                         <td className="p-3">
                                             <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${statusStyle}`}>
                                                 {statusLabel}
                                             </span>
                                         </td>
-                                        <td className="p-3 text-text-secondary text-xs">{new Date(ticket.createdAt).toLocaleString()}</td>
+                                        <td className="p-3 text-white text-xs">{new Date(ticket.createdAt).toLocaleString()}</td>
                                         <td className="p-3 text-right">
                                             {cancellable ? (
                                                 <button
@@ -275,7 +275,7 @@ const InvestmentsTab = ({ summary }) => {
             </div>
 
             <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-text-primary">Compras de mercado</h3>
+                <h3 className="text-sm font-semibold text-white">Compras de mercado</h3>
                 {marketPurchases.length === 0 ? (
                     <p className="text-xs text-text-secondary bg-dark-tertiary/60 border border-white/5 rounded-lg px-3 py-3">
                         No se registran compras de mercado.
@@ -284,7 +284,7 @@ const InvestmentsTab = ({ summary }) => {
                     <div className="space-y-3">
                         {marketPurchases.map((item) => (
                             <div key={item.id} className="p-4 rounded-lg bg-dark-secondary border border-white/10 text-sm space-y-1">
-                                <div className="flex justify-between text-text-primary font-medium">
+                                <div className="flex justify-between text-white font-medium">
                                     <span>{item.name}</span>
                                     <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                                 </div>
@@ -299,7 +299,7 @@ const InvestmentsTab = ({ summary }) => {
             </div>
 
             <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-text-primary">Planes cuantitativos</h3>
+                <h3 className="text-sm font-semibold text-white">Planes cuantitativos</h3>
                 {quantitativePurchases.length === 0 ? (
                     <p className="text-xs text-text-secondary bg-dark-tertiary/60 border border-white/5 rounded-lg px-3 py-3">
                         Aún no hay registros de planes cuantitativos.
@@ -308,7 +308,7 @@ const InvestmentsTab = ({ summary }) => {
                     <div className="space-y-3">
                         {quantitativePurchases.map((item) => (
                             <div key={item.id} className="p-4 rounded-lg bg-dark-secondary border border-white/10 text-sm space-y-1">
-                                <div className="flex justify-between text-text-primary font-medium">
+                                <div className="flex justify-between text-white font-medium">
                                     <span>{item.name}</span>
                                     <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                                 </div>
