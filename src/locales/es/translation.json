@@ -79,14 +79,51 @@
   },
   "taskCenter": "Centro de Tareas",
   "profilePage": {
-    "balanceNtxLabel": "Cartera de Valor (NTX)",
-    "balanceUsdtLabel": "Cartera de Corretaje (USDT)",
-    "toasts": {
-      "insufficientBalance": "Saldo insuficiente. El mínimo para retirar es {{min}} USDT.",
-      "insufficientNtx": "Saldo NTX insuficiente. El mínimo para intercambiar es {{min}} NTX.",
-      "loadingPrices": "Obteniendo precios de mercado...",
-      "selectCoin": "Selecciona una moneda para pagar."
-    }
+    "idLabel": "ID",
+    "summary": {
+      "available": "Saldo principal",
+      "availableHelper": "Utilizado para comprar planes cuantitativos.",
+      "withdrawable": "Saldo retirable",
+      "withdrawableHelper": "Disponible para retiros inmediatos.",
+      "spins": "Giros disponibles",
+      "spinsHelper": "Se usan en la ruleta de premios."
+    },
+    "actions": {
+      "title": "Accesos rápidos",
+      "subtitle": "Gestiona tu capital en cuestión de segundos.",
+      "deposit": "Depositar",
+      "withdraw": "Retirar"
+    },
+    "security": {
+      "title": "Protección de retiros",
+      "description": "Define una contraseña que se solicitará antes de cada retiro.",
+      "button": "Guardar contraseña"
+    },
+    "wallet": {
+      "title": "Billetera de retiro",
+      "description": "Usaremos esta dirección BEP20 para enviar tus retiros en USDT.",
+      "button": "Guardar billetera"
+    },
+    "language": {
+      "title": "Idioma de la aplicación"
+    },
+    "about": {
+      "title": "Sobre Blocksphere",
+      "description": "Conoce más sobre nuestro proyecto y nuestra misión.",
+      "button": "Ver detalles"
+    },
+    "logout": "Cerrar sesión"
+  },
+  "withdrawalModal": {
+    "title": "Retirar saldo",
+    "passwordLabel": "Contraseña de retiro",
+    "passwordPlaceholder": "Introduce tu contraseña de retiro",
+    "walletLabel": "Dirección de billetera USDT (BEP20)",
+    "walletPlaceholder": "Pega tu dirección de billetera",
+    "amountLabel": "Monto a retirar",
+    "helperInsufficient": "No posees saldo suficiente para retirar. Mínimo: {{minimum}}.",
+    "helperAvailable": "Saldo disponible para retiro: {{amount}}.",
+    "confirmButton": "Confirmar retiro"
   },
   "teamPage": {
     "stats": {

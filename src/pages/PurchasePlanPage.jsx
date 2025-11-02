@@ -27,7 +27,10 @@ const useDebounce = (value, delay) => {
 const PurchasePlanPage = () => {
   const { planId } = useParams();
   const navigate = useNavigate();
-  const { user } = useUserStore();
+  const { user, updateUserBalances } = useUserStore((state) => ({
+    user: state.user,
+    updateUserBalances: state.updateUserBalances,
+  }));
 
   const [plan, setPlan] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,6 +126,9 @@ const PurchasePlanPage = () => {
 
       if (response.data.purchaseType === 'instant') {
         toast.success(response.data.message || '¡Compra realizada con éxito!');
+        if (typeof response.data.newBalance === 'number') {
+          updateUserBalances({ usdt: response.data.newBalance });
+        }
         navigate('/home');
       } else if (response.data.purchaseType === 'deposit_required') {
   const { pendingPurchaseId, requiredAmount } = response.data.data || {};

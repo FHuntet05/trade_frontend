@@ -2,15 +2,18 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import useUserStore from '@/store/userStore';
 import { IOSButton } from '../ui/IOSComponents';
 import { FiX } from 'react-icons/fi';
+import { formatters } from '@/utils/formatters';
 
 const WithdrawalComponent = ({ isVisible, onClose }) => {
   const { user, settings } = useUserStore();
   const [withdrawalPassword, setWithdrawalPassword] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [amount, setAmount] = useState('');
+  const { t } = useTranslation();
 
   const withdrawableBalance = user?.withdrawableBalance || 0;
   const minimumWithdrawal = settings?.minimumWithdrawal || 10;
@@ -21,10 +24,14 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
 
   const helperText = useMemo(() => {
     if (withdrawableBalance < minimumWithdrawal) {
-      return `No posees saldo suficiente para retirar. Mínimo: ${minimumWithdrawal} USDT.`;
+      return t('withdrawalModal.helperInsufficient', {
+        minimum: formatters.formatCurrency(minimumWithdrawal),
+      });
     }
-    return `Saldo para retiro disponible: ${withdrawableBalance.toFixed(2)} USDT`;
-  }, [withdrawableBalance, minimumWithdrawal]);
+    return t('withdrawalModal.helperAvailable', {
+      amount: formatters.formatCurrency(withdrawableBalance),
+    });
+  }, [minimumWithdrawal, t, withdrawableBalance]);
 
   const handleConfirmWithdrawal = () => {
     console.log({ withdrawalPassword, walletAddress, amount });
@@ -69,7 +76,7 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
 
             <div className="flex justify-between items-center mb-4">
               <h2 className="font-ios-display text-xl font-bold text-text-primary">
-                Retirar Saldo
+                {t('withdrawalModal.title')}
               </h2>
               <button onClick={onClose} className="p-2">
                 <FiX className="w-6 h-6 text-text-secondary" />
@@ -78,27 +85,33 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
 
             <div className="space-y-4">
               <div>
-                <label className="font-ios text-sm text-text-secondary ml-1 mb-1 block">Contraseña de Retiro</label>
+                <label className="font-ios text-sm text-text-secondary ml-1 mb-1 block">
+                  {t('withdrawalModal.passwordLabel')}
+                </label>
                 <input
                   type="password"
                   value={withdrawalPassword}
                   onChange={(e) => setWithdrawalPassword(e.target.value)}
-                  placeholder="Introduce tu contraseña de retiro"
+                  placeholder={t('withdrawalModal.passwordPlaceholder')}
                   className="w-full p-3 bg-internal-card border border-gray-300 rounded-ios focus:outline-none focus:ring-2 focus:ring-ios-green"
                 />
               </div>
               <div>
-                <label className="font-ios text-sm text-text-secondary ml-1 mb-1 block">Dirección de Billetera USDT (BEP20)</label>
+                <label className="font-ios text-sm text-text-secondary ml-1 mb-1 block">
+                  {t('withdrawalModal.walletLabel')}
+                </label>
                 <input
                   type="text"
                   value={walletAddress}
                   onChange={(e) => setWalletAddress(e.target.value)}
-                  placeholder="Pega tu dirección de billetera"
+                  placeholder={t('withdrawalModal.walletPlaceholder')}
                   className="w-full p-3 bg-internal-card border border-gray-300 rounded-ios focus:outline-none focus:ring-2 focus:ring-ios-green"
                 />
               </div>
               <div>
-                <label className="font-ios text-sm text-text-secondary ml-1 mb-1 block">Monto a Retirar</label>
+                <label className="font-ios text-sm text-text-secondary ml-1 mb-1 block">
+                  {t('withdrawalModal.amountLabel')}
+                </label>
                 <input
                   type="number"
                   value={amount}
@@ -119,7 +132,7 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
                 variant="primary"
                 className="w-full"
               >
-                Confirmar Retiro
+                {t('withdrawalModal.confirmButton')}
               </IOSButton>
             </div>
           </motion.div>

@@ -34,10 +34,89 @@
     "loading": "جار التحميل...",
     "error": "تعذر تحميل الأدوات."
   },
-    "common": { "error": "خطأ", "copied": "تم النسخ!", "continue": "متابعة", "loading": "جار التحميل...", "close": "إغلاق" },
-    "homePage": { "buttons": { "start": "بدء", "claim": "مطالبة" }, "toasts": { "startingCycle": "جارٍ بدء الدورة...", "cycleStarted": "تم بدء دورة التعدين!", "claiming": "جارٍ المطالبة..." }, "errors": { "noUser": "خطأ: تعذر استرداد معلومات المستخدم. يرجى محاولة إعادة تشغيل التطبيق." }, "taskCenter": "مركز المهام" },
-    "profilePage": { "balanceNtxLabel": "محفظة القيمة (NTX)", "balanceUsdtLabel": "محفظة الوساطة (USDT)", "toasts": { "insufficientBalance": "رصيد غير كاف. الحد الأدنى للسحب هو {{min}} USDT.", "insufficientNtx": "رصيد NTX غير كاف. الحد الأدنى للتبديل هو {{min}} NTX.", "loadingPrices": "جارٍ جلب أسعار السوق...", "selectCoin": "اختر عملة للدفع." } },
-    "teamPage": { "stats": { "members": "أعضاء الفريق", "totalCommission": "العمولة الإجمالية", "teamRecharge": "شحن الفريق", "teamWithdrawals": "سحوبات الفريق" }, "referralLink": { "copy": "نسخ", "shareOn": "مشاركة على", "shareText": "تعال وكوّن فريقك ولنكسب المال معًا!" }, "levels": { "level": "المستوى", "totalMembers": "إجمالي الأعضاء", "validMembers": "الأعضاء الصالحون", "showDetails": "عرض التفاصيل" }, "shareWithFriends": "شارك مع الأصدقاء", "detailsModal": { "errorLoading": "تعذر تحميل تفاصيل الفريق." } },
+  "common": {
+    "error": "خطأ",
+    "copied": "تم النسخ!",
+    "continue": "متابعة",
+    "loading": "جار التحميل...",
+    "close": "إغلاق"
+  },
+  "homePage": {
+    "buttons": { "start": "بدء", "claim": "مطالبة" },
+    "toasts": { "startingCycle": "جارٍ بدء الدورة...", "cycleStarted": "تم بدء دورة التعدين!", "claiming": "جارٍ المطالبة..." },
+    "errors": { "noUser": "خطأ: تعذر استرداد معلومات المستخدم. يرجى محاولة إعادة تشغيل التطبيق." },
+    "taskCenter": "مركز المهام"
+  },
+  "profilePage": {
+    "idLabel": "المعرف",
+    "summary": {
+      "available": "الرصيد الرئيسي",
+      "availableHelper": "يُستخدم لشراء الخطط الكمية.",
+      "withdrawable": "الرصيد القابل للسحب",
+      "withdrawableHelper": "متاح للسحب الفوري.",
+      "spins": "عدد اللفات",
+      "spinsHelper": "استخدمها في عجلة الجوائز."
+    },
+    "actions": {
+      "title": "إجراءات سريعة",
+      "subtitle": "أدر أموالك في ثوانٍ.",
+      "deposit": "إيداع",
+      "withdraw": "سحب"
+    },
+    "security": {
+      "title": "حماية السحب",
+      "description": "عيّن كلمة مرور تُطلب قبل كل عملية سحب.",
+      "button": "حفظ كلمة المرور"
+    },
+    "wallet": {
+      "title": "محفظة السحب",
+      "description": "سنرسل عمليات السحب USDT إلى هذا العنوان بنظام BEP20.",
+      "button": "حفظ المحفظة"
+    },
+    "language": {
+      "title": "لغة التطبيق"
+    },
+    "about": {
+      "title": "حول Blocksphere",
+      "description": "تعرّف أكثر على مشروعنا ورسالتنا.",
+      "button": "عرض التفاصيل"
+    },
+    "logout": "تسجيل الخروج"
+  },
+  "withdrawalModal": {
+    "title": "سحب الرصيد",
+    "passwordLabel": "كلمة مرور السحب",
+    "passwordPlaceholder": "أدخل كلمة مرور السحب",
+    "walletLabel": "عنوان محفظة USDT (BEP20)",
+    "walletPlaceholder": "ألصق عنوان محفظتك",
+    "amountLabel": "المبلغ المراد سحبه",
+    "helperInsufficient": "لا تملك رصيدًا كافيًا للسحب. الحد الأدنى: {{minimum}}.",
+    "helperAvailable": "الرصيد المتاح للسحب: {{amount}}.",
+    "confirmButton": "تأكيد السحب"
+  },
+  "teamPage": {
+    "stats": {
+      "members": "أعضاء الفريق",
+      "totalCommission": "إجمالي العمولة",
+      "teamRecharge": "شحن الفريق",
+      "teamWithdrawals": "سحوبات الفريق"
+    },
+    "referralLink": {
+      "copy": "نسخ",
+      "shareOn": "مشاركة على",
+      "shareText": "تعال وكوّن فريقك ولنربح المال معًا!"
+    },
+    "levels": {
+      "level": "المستوى",
+      "totalMembers": "إجمالي الأعضاء",
+      "validMembers": "الأعضاء الفعالون",
+      "showDetails": "عرض التفاصيل"
+    },
+    "shareWithFriends": "شارك مع الأصدقاء",
+    "detailsModal": {
+      "errorLoading": "تعذر تحميل تفاصيل الفريق."
+    }
+  },
     "toolsPage": { "hoursOfWork": "ساعات العمل", "miningSpeed": "سرعة التعدين", "perDay": "NTX/يوم", "tabs": { "allTools": "أدوات التعدين", "myTools": "ترقية" }, "purchaseHistory": "سجل المشتريات", "noActiveTools": "ليس لديك أدوات نشطة." },
     "rankingPage": { "tabs": { "global": "التصنيف العالمي", "team": "تصنيف الفرق" }, "loading": "جارٍ تحميل التصنيف...", "error": "تعذر تحميل التصنيف." },
     "historyPage": { "title": "سجل المعاملات", "loading": "جارٍ تحميل السجل...", "error": "تعذر تحميل السجل.", "empty": "ليس لديك معاملات بعد." },

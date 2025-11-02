@@ -95,15 +95,18 @@ const useUserStore = create(
         set((state) => {
           if (!state.user) return state;
           const updatedUser = JSON.parse(JSON.stringify(state.user));
+          updatedUser.balance = updatedUser.balance || {};
+
           if (newBalances.spins !== undefined) {
             updatedUser.balance.spins = newBalances.spins;
           }
-          if (newBalances.xp !== undefined) {
-            updatedUser.balance.ntx = newBalances.xp;
+          if (newBalances.usdt !== undefined) {
+            updatedUser.balance.usdt = newBalances.usdt;
           }
           if (newBalances.withdrawable !== undefined) {
             updatedUser.withdrawableBalance = newBalances.withdrawable;
           }
+
           return { user: updatedUser };
         });
       },

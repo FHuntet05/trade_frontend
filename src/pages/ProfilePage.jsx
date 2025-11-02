@@ -1,101 +1,72 @@
 // RUTA: frontend/src/pages/ProfilePage.jsx
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import useUserStore from '../store/userStore';
 import {
   ProfileHeader,
+  WalletSummary,
   SecuritySection,
   WalletSection,
   LanguageSection,
   AboutSection,
-  LogoutButton
+  LogoutButton,
 } from '../components/profile/ProfileComponents';
-import { IOSLayout, IOSBackButton, IOSButton } from '../components/ui/IOSComponents';
+import { IOSButton, IOSCard } from '../components/ui/IOSComponents';
 import WithdrawalComponent from '../components/profile/WithdrawalComponent';
 import api from '../api/axiosConfig';
-
-// El estado local se mantiene sin cambios.
-const ProfileState = () => {
-  const [withdrawalPassword, setWithdrawalPassword] = useState('');
-  const [wallet, setWallet] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isWithdrawalModalVisible, setIsWithdrawalModalVisible] = useState(false);
-  
-  return {
-    withdrawalPassword,
-    setWithdrawalPassword,
-    wallet,
-    setWallet,
-    loading,
-    setLoading,
-    isWithdrawalModalVisible,
-    setIsWithdrawalModalVisible
-  };
-};
+import { formatters } from '@/utils/formatters';
 
 const ProfilePage = () => {
-  const { user, logout } = useUserStore();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const {
-    withdrawalPassword,
-    setWithdrawalPassword,
-    wallet,
-    setWallet,
-    loading,
-    setLoading,
-    isWithdrawalModalVisible,
-    setIsWithdrawalModalVisible
-  } = ProfileState();
+  const { user, logout } = useUserStore((state) => ({ user: state.user, logout: state.logout }));
+
+  const [withdrawalPassword, setWithdrawalPassword] = useState('');
+  const [wallet, setWallet] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isWithdrawalModalVisible, setIsWithdrawalModalVisible] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState('');
 
   useEffect(() => {
     if (user?.wallet) {
       setWallet(user.wallet);
     }
-  }, [user]);
+  }, [user?.wallet]);
 
-  // Las funciones de manejo de eventos (handleAvatarChange, handlePasswordSave, etc.) se mantienen sin cambios.
-  const handleAvatarChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append('avatar', file);
-    try {
-      setLoading(true);
-      const response = await api.post('/user/avatar', formData);
-      useUserStore.setState(state => ({
-        user: { ...state.user, avatar: response.data.avatarUrl }
-      }));
-    } catch (error) {
-      console.error('Error al cambiar avatar:', error);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (!user?.telegramId) {
+      setPhotoUrl('');
+      return;
     }
-  };
+    const apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+    const cacheBuster = Date.now();
+    setPhotoUrl(`${apiBase}/user/photo/${user.telegramId}?v=${cacheBuster}`);
+  }, [user?.telegramId]);
 
   const handlePasswordSave = async () => {
+    if (!withdrawalPassword || isLoading) return;
     try {
-      setLoading(true);
+      setIsLoading(true);
       await api.post('/user/withdrawal-password', { password: withdrawalPassword });
       setWithdrawalPassword('');
     } catch (error) {
       console.error('Error al guardar contraseña:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const handleWalletSave = async () => {
+    if (!wallet || isLoading) return;
     try {
-      setLoading(true);
+      setIsLoading(true);
       await api.post('/user/wallet', { address: wallet });
-      useUserStore.setState(state => ({ user: { ...state.user, wallet } }));
+      useUserStore.setState((state) => ({ user: { ...state.user, wallet } }));
     } catch (error) {
       console.error('Error al guardar billetera:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -108,78 +79,105 @@ const ProfilePage = () => {
     navigate('/login');
   };
 
+  const balanceSummary = useMemo(() => {
+    const available = user?.balance?.usdt ?? 0;
+    const withdrawable = user?.withdrawableBalance ?? 0;
+    const spins = user?.balance?.spins ?? 0;
+
+    return [
+      {
+        label: t('profilePage.summary.available'),
+        value: formatters.formatCurrency(available),
+        helper: t('profilePage.summary.availableHelper'),
+      },
+      {
+        label: t('profilePage.summary.withdrawable'),
+        value: formatters.formatCurrency(withdrawable),
+        helper: t('profilePage.summary.withdrawableHelper'),
+      },
+      {
+        label: t('profilePage.summary.spins'),
+        value: spins,
+        helper: t('profilePage.summary.spinsHelper'),
+      },
+    ];
+  }, [t, user?.balance?.spins, user?.balance?.usdt, user?.withdrawableBalance]);
+
+  const languageOptions = useMemo(
+    () => [
+      { code: 'es', name: 'Español' },
+      { code: 'en', name: 'English' },
+      { code: 'ar', name: 'العربية' },
+    ],
+    []
+  );
+
   return (
     <>
-      <IOSLayout>
-        <div className="flex flex-col min-h-screen bg-system-background">
-          <div className="flex items-center p-4 bg-internal-card border-b border-gray-200">
-            <IOSBackButton onClick={() => navigate(-1)} />
-            <h1 className="flex-1 text-center font-ios text-lg font-semibold">
-              {t('profile.title')}
-            </h1>
-          </div>
+      <div className="min-h-screen bg-[#f5f7fb] px-4 pb-28 pt-6">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+          <ProfileHeader user={user} photoUrl={photoUrl} idLabel={t('profilePage.idLabel')} />
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex-1 p-4 space-y-6 pb-24"
-          >
-            <ProfileHeader
-              user={user}
-              onAvatarChange={handleAvatarChange}
-            />
+          <WalletSummary amounts={balanceSummary} />
 
-            {/* --- INICIO DE LA MODIFICACIÓN CRÍTICA (Bloque de Acciones Financieras) --- */}
-            {/*
-              - Se crea un contenedor grid con dos columnas para alinear los botones.
-              - El botón "Depositar" es nuevo y su 'onClick' navega a la página de depósito.
-              - El botón "Retirar" se mantiene, y su 'onClick' abre el modal de retiro.
-              - Se ajusta el texto de los botones para ser más conciso y encajar mejor.
-            */}
-            <div className="grid grid-cols-2 gap-4">
-              <IOSButton 
-                variant="primary" 
-                onClick={() => navigate('/deposit')}
-              >
-                Depositar
+          <IOSCard className="grid gap-4 rounded-3xl bg-white p-6 shadow-lg sm:grid-cols-2">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">{t('profilePage.actions.title')}</p>
+              <p className="text-xs text-slate-500">{t('profilePage.actions.subtitle')}</p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <IOSButton variant="primary" onClick={() => navigate('/deposit')} className="flex-1">
+                {t('profilePage.actions.deposit')}
               </IOSButton>
-              <IOSButton 
-                variant="secondary" // Usamos un variant secundario para diferenciar la acción.
+              <IOSButton
+                variant="secondary"
                 onClick={() => setIsWithdrawalModalVisible(true)}
+                className="flex-1"
               >
-                Retirar
+                {t('profilePage.actions.withdraw')}
               </IOSButton>
             </div>
-            {/* --- FIN DE LA MODIFICACIÓN CRÍTICA --- */}
+          </IOSCard>
 
-            <SecuritySection
-              withdrawalPassword={withdrawalPassword}
-              onPasswordChange={(e) => setWithdrawalPassword(e.target.value)}
-              onPasswordSave={handlePasswordSave}
-            />
+          <SecuritySection
+            title={t('profilePage.security.title')}
+            placeholder={t('profilePage.security.description')}
+            buttonLabel={t('profilePage.security.button')}
+            withdrawalPassword={withdrawalPassword}
+            onPasswordChange={(e) => setWithdrawalPassword(e.target.value)}
+            onPasswordSave={handlePasswordSave}
+            buttonDisabled={isLoading || !withdrawalPassword}
+          />
 
-            <WalletSection
-              wallet={wallet}
-              onWalletChange={(e) => setWallet(e.target.value)}
-              onWalletSave={handleWalletSave}
-            />
+          <WalletSection
+            title={t('profilePage.wallet.title')}
+            helper={t('profilePage.wallet.description')}
+            wallet={wallet}
+            onWalletChange={(e) => setWallet(e.target.value)}
+            onWalletSave={handleWalletSave}
+            buttonLabel={t('profilePage.wallet.button')}
+            buttonDisabled={isLoading || !wallet}
+          />
 
-            <LanguageSection
-              language={i18n.language}
-              onLanguageChange={handleLanguageChange}
-            />
+          <LanguageSection
+            title={t('profilePage.language.title')}
+            language={i18n.language}
+            options={languageOptions}
+            onLanguageChange={handleLanguageChange}
+          />
 
-            <AboutSection
-              onAboutPress={() => navigate('/about')}
-            />
+          <AboutSection
+            title={t('profilePage.about.title')}
+            description={t('profilePage.about.description')}
+            buttonLabel={t('profilePage.about.button')}
+            onAboutPress={() => navigate('/about')}
+          />
 
-            <LogoutButton onLogout={handleLogout} />
-          </motion.div>
+          <LogoutButton label={t('profilePage.logout')} onLogout={handleLogout} />
         </div>
-      </IOSLayout>
-      
-      {/* El componente de retiro se mantiene, su visibilidad es controlada por el estado. */}
-      <WithdrawalComponent 
+      </div>
+
+      <WithdrawalComponent
         isVisible={isWithdrawalModalVisible}
         onClose={() => setIsWithdrawalModalVisible(false)}
       />

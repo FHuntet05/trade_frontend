@@ -2,8 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useSpring, animated } from '@react-spring/web';
 
-export const IOSButton = ({ children, variant = 'primary', onClick, disabled }) => {
-  const baseClasses = 'font-ios px-4 py-2 rounded-ios-button transition-all duration-300 active:scale-95';
+export const IOSButton = ({ children, variant = 'primary', onClick, disabled, className = '', type = 'button' }) => {
+  const baseClasses = 'font-ios px-4 py-2 rounded-ios-button transition-all duration-300 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed';
   
   const variants = {
     primary: 'bg-ios-green text-white shadow-ios-button',
@@ -13,7 +13,8 @@ export const IOSButton = ({ children, variant = 'primary', onClick, disabled }) 
 
   return (
     <motion.button
-      className={`${baseClasses} ${variants[variant]}`}
+  type={type}
+  className={`${baseClasses} ${variants[variant]} ${className}`}
       whileTap={{ scale: 0.97 }}
       disabled={disabled}
       onClick={onClick}
@@ -29,13 +30,14 @@ export const IOSCard = ({ children, className }) => (
   </div>
 );
 
-export const IOSInput = ({ placeholder, value, onChange, type = 'text' }) => (
+export const IOSInput = ({ placeholder, value, onChange, type = 'text', className = '', ...rest }) => (
   <input
     type={type}
     value={value}
     onChange={onChange}
     placeholder={placeholder}
-    className="w-full px-4 py-3 rounded-ios bg-system-secondary text-text-primary placeholder-text-tertiary font-ios border-0 focus:ring-2 focus:ring-ios-green focus:outline-none"
+    className={`w-full px-4 py-3 rounded-ios bg-system-secondary text-text-primary placeholder-text-tertiary font-ios border-0 focus:ring-2 focus:ring-ios-green focus:outline-none ${className}`}
+    {...rest}
   />
 );
 

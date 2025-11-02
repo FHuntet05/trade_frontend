@@ -73,14 +73,51 @@
     "taskCenter": "Task Center"
   },
   "profilePage": {
-    "balanceNtxLabel": "Value Wallet (NTX)",
-    "balanceUsdtLabel": "Brokerage Wallet (USDT)",
-    "toasts": {
-      "insufficientBalance": "Insufficient balance. The minimum to withdraw is {{min}} USDT.",
-      "insufficientNtx": "Insufficient NTX balance. The minimum to swap is {{min}} NTX.",
-      "loadingPrices": "Fetching market prices...",
-      "selectCoin": "Select a coin to pay."
-    }
+    "idLabel": "ID",
+    "summary": {
+      "available": "Main balance",
+      "availableHelper": "Used to purchase quantitative plans.",
+      "withdrawable": "Withdrawable balance",
+      "withdrawableHelper": "Available for instant withdrawals.",
+      "spins": "Available spins",
+      "spinsHelper": "Use them on the prize wheel."
+    },
+    "actions": {
+      "title": "Quick actions",
+      "subtitle": "Manage your funds in seconds.",
+      "deposit": "Deposit",
+      "withdraw": "Withdraw"
+    },
+    "security": {
+      "title": "Withdrawal protection",
+      "description": "Set a password that will be required before every withdrawal.",
+      "button": "Save password"
+    },
+    "wallet": {
+      "title": "Withdrawal wallet",
+      "description": "We will send your USDT withdrawals to this BEP20 address.",
+      "button": "Save wallet"
+    },
+    "language": {
+      "title": "App language"
+    },
+    "about": {
+      "title": "About Blocksphere",
+      "description": "Learn more about our project and mission.",
+      "button": "View details"
+    },
+    "logout": "Log Out"
+  },
+  "withdrawalModal": {
+    "title": "Withdraw balance",
+    "passwordLabel": "Withdrawal password",
+    "passwordPlaceholder": "Enter your withdrawal password",
+    "walletLabel": "USDT wallet address (BEP20)",
+    "walletPlaceholder": "Paste your wallet address",
+    "amountLabel": "Amount to withdraw",
+    "helperInsufficient": "You do not have enough balance to withdraw. Minimum: {{minimum}}.",
+    "helperAvailable": "Withdrawable balance: {{amount}}.",
+    "confirmButton": "Confirm withdrawal"
   },
   "teamPage": {
     "stats": {
