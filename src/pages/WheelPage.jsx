@@ -83,20 +83,20 @@ const WheelPage = () => {
   useEffect(() => {
     const loadWheelConfig = async () => {
       try {
-  const { data } = await api.get("/wheel/config");
+        const { data } = await api.get("/wheel/config");
         const apiSegments = data?.data?.segments || [];
         if (apiSegments.length) {
           const normalizedSegments = apiSegments.map((segment, index) => {
-            const type = ['usdt', 'spins', 'none'].includes(segment.type) ? segment.type : 'none';
+            const type = ["usdt", "spins", "none"].includes(segment.type) ? segment.type : "none";
             const hasImage = Boolean(segment.imageUrl);
             const numericValue = Number(segment.value ?? 0);
             const normalizedValue = Number.isFinite(numericValue) ? numericValue : 0;
             const fallbackLabel = segment.text?.trim()
-              || (type === 'usdt'
+              || (type === "usdt"
                 ? `${normalizedValue.toFixed(2)} USDT`
-                : type === 'spins'
+                : type === "spins"
                 ? `${normalizedValue} giros`
-                : 'Sin premio');
+                : "Sin premio");
             const label = fallbackLabel || `Premio ${index + 1}`;
 
             return {
@@ -132,7 +132,6 @@ const WheelPage = () => {
 
     loadWheelConfig();
   }, []);
-
   useEffect(() => {
     fetchTeamStats?.();
   }, [fetchTeamStats]);
@@ -271,16 +270,6 @@ const WheelPage = () => {
               </div>
 
               <div className="relative mx-auto flex flex-col items-center">
-                <div
-                  className="absolute top-0 left-1/2 z-20 -translate-x-1/2 -translate-y-4 h-12 w-10"
-                  style={{
-                    clipPath:
-                      'path("M20 0C8.954 0 0 8.954 0 20C0 24.418 1.582 28.435 4.186 31.814L20 48L35.814 31.814C38.418 28.435 40 24.418 40 20C40 8.954 31.046 0 20 0Z")',
-                  }}
-                >
-                  <div className="h-full w-full bg-rose-500" />
-                </div>
-
                 <div className="flex h-[18rem] w-[18rem] items-center justify-center md:h-[20rem] md:w-[20rem]">
                   <Wheel
                     mustStartSpinning={mustSpin}
@@ -288,7 +277,7 @@ const WheelPage = () => {
                     data={segments}
                     onStopSpinning={handleStopSpinning}
                     perpendicularText={false}
-                    textDistance={82}
+                    textDistance={78}
                     fontSize={14}
                     backgroundColors={["#FFFFFF", "#F2F2F7"]}
                     textColors={["#1f2937"]}
@@ -299,8 +288,14 @@ const WheelPage = () => {
                     innerBorderWidth={3}
                     radiusLineColor={"transparent"}
                     radiusLineWidth={0}
-                    pointerAngle={90}
-                    pointerProps={{ style: { display: "none" } }}
+                    pointerProps={{
+                      style: {
+                        width: "18%",
+                        right: "6px",
+                        top: "12px",
+                        filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.25))",
+                      },
+                    }}
                     disableInitialAnimation={true}
                     showWinnerBorder={false}
                   />
