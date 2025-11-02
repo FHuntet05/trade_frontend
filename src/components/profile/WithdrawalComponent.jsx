@@ -104,7 +104,7 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
                   value={withdrawalPassword}
                   onChange={(e) => setWithdrawalPassword(e.target.value)}
                   placeholder={t('withdrawalModal.passwordPlaceholder')}
-                  className="w-full p-3 bg-internal-card border border-gray-300 rounded-ios focus:outline-none focus:ring-2 focus:ring-ios-green"
+                  className="w-full p-3 bg-internal-card border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-ios-green transition-all"
                 />
               </div>
               <div>
@@ -116,20 +116,29 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
                   value={walletAddress}
                   onChange={(e) => setWalletAddress(e.target.value)}
                   placeholder={t('withdrawalModal.walletPlaceholder')}
-                  className="w-full p-3 bg-internal-card border border-gray-300 rounded-ios focus:outline-none focus:ring-2 focus:ring-ios-green"
+                  className="w-full p-3 bg-internal-card border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-ios-green transition-all"
                 />
               </div>
               <div>
                 <label className="font-ios text-sm text-text-secondary ml-1 mb-1 block">
                   {t('withdrawalModal.amountLabel')}
                 </label>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full p-3 bg-internal-card border border-gray-300 rounded-ios focus:outline-none focus:ring-2 focus:ring-ios-green"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="flex-1 p-3 bg-internal-card border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-ios-green transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAmount(withdrawableBalance.toString())}
+                    className="px-4 py-3 bg-ios-green text-white font-semibold rounded-xl hover:bg-ios-green/90 transition-all"
+                  >
+                    {t('withdrawalModal.maxButton')}
+                  </button>
+                </div>
                 <p className={`font-ios text-xs mt-2 ml-1 ${isWithdrawalDisabled ? 'text-red-500' : 'text-text-tertiary'}`}>
                   {helperText}
                 </p>

@@ -67,10 +67,12 @@ const EditUserModal = ({ user, onSave, onClose, isSuperAdmin }) => {
                             <div className="col-span-2">
                                 <label className="text-sm font-medium text-white">Nueva Contraseña de Retiro (Opcional)</label>
                                 <input type="password" {...register('withdrawalPassword')} placeholder="Dejar en blanco para no cambiar" className="w-full mt-1 p-2 bg-white text-black rounded" />
+                                <p className="text-xs text-text-tertiary mt-1">Por seguridad, no se muestra la contraseña actual. Solo ingresa una nueva si deseas cambiarla.</p>
                             </div>
                             <div className="col-span-2">
                                 <label className="text-sm font-medium text-white">Dirección de Billetera para Retiros</label>
                                 <input type="text" {...register('wallet')} placeholder="Dirección de la billetera" className="w-full mt-1 p-2 bg-white text-black rounded" />
+                                {user.wallet && <p className="text-xs text-emerald-400 mt-1">✓ Billetera configurada</p>}
                             </div>
 
                             {/* --- Sección de Ajuste de Saldos --- */}

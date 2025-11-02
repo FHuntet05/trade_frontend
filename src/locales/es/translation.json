@@ -123,7 +123,10 @@
     "amountLabel": "Monto a retirar",
     "helperInsufficient": "No posees saldo suficiente para retirar. Mínimo: {{minimum}}.",
     "helperAvailable": "Saldo disponible para retiro: {{amount}}.",
-    "confirmButton": "Confirmar retiro"
+    "helperNoPassword": "Por favor configura tu contraseña de retiro en tu perfil primero.",
+    "helperNoWallet": "Por favor configura tu dirección de billetera en tu perfil primero.",
+    "confirmButton": "Confirmar retiro",
+    "maxButton": "Máximo"
   },
   "teamPage": {
     "stats": {
