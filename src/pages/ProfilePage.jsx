@@ -16,6 +16,7 @@ import { IOSButton, IOSCard } from '../components/ui/IOSComponents';
 import WithdrawalComponent from '../components/profile/WithdrawalComponent';
 import api from '../api/axiosConfig';
 import { formatters } from '@/utils/formatters';
+import { getTelegramPhotoUrl } from '@/utils/telegram';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -39,9 +40,7 @@ const ProfilePage = () => {
       setPhotoUrl('');
       return;
     }
-    const apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/$/, '');
-    const cacheBuster = Date.now();
-    setPhotoUrl(`${apiBase}/user/photo/${user.telegramId}?v=${cacheBuster}`);
+    setPhotoUrl(getTelegramPhotoUrl(user.telegramId, { bustCache: true }));
   }, [user?.telegramId]);
 
   const handlePasswordSave = async () => {
@@ -126,7 +125,7 @@ const ProfilePage = () => {
               <p className="text-xs text-slate-500">{t('profilePage.actions.subtitle')}</p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <IOSButton variant="primary" onClick={() => navigate('/deposit')} className="flex-1">
+              <IOSButton variant="primary" onClick={() => navigate('/deposit/create')} className="flex-1">
                 {t('profilePage.actions.deposit')}
               </IOSButton>
               <IOSButton

@@ -4,6 +4,7 @@
 import React from 'react';
 import toast from 'react-hot-toast';
 import { HiOutlineClipboardDocument } from 'react-icons/hi2';
+import { getTelegramPhotoUrl } from '@/utils/telegram';
 
 // --- Formateador de Fecha Localizado ---
 const formatDate = (dateString) => {
@@ -69,7 +70,11 @@ const WithdrawalsTable = ({ withdrawals, onApprove, onReject }) => {
                                 <div className="flex items-center gap-3">
                                     <img 
                                         className="w-10 h-10 rounded-full object-cover" 
-                                        src={w.user.photoUrl} 
+                                        src={
+                                            w.user.photoUrl ||
+                                            getTelegramPhotoUrl(w.user.telegramId) ||
+                                            'https://i.postimg.cc/mD21B6r7/user-avatar-placeholder.png'
+                                        } 
                                         alt={`${w.user.username} avatar`} 
                                     />
                                     <div>

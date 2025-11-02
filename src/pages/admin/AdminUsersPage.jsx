@@ -8,6 +8,7 @@ import Loader from '@/components/common/Loader';
 import Pagination from '@/components/common/Pagination';
 import PromoteAdminModal from '@/pages/admin/components/PromoteAdminModal';
 import ResetPasswordModal from '@/pages/admin/components/ResetPasswordModal';
+import { getTelegramPhotoUrl } from '@/utils/telegram';
 import {
     HiOutlineUserGroup,
     HiOutlineMagnifyingGlass,
@@ -209,7 +210,11 @@ const AdminUsersPage = () => {
                                         <tr key={user._id} className="hover:bg-dark-tertiary/50 transition-colors">
                                             <td className="p-3 font-medium">
                                                 <Link to={`/admin/users/${user._id}`} className="flex items-center gap-3 hover:text-accent-start">
-                                                    <img src={user.photoUrl} alt="avatar" className="w-8 h-8 rounded-full bg-dark-primary object-cover" />
+                                                    <img
+                                                        src={user.photoUrl || getTelegramPhotoUrl(user.telegramId) || 'https://i.postimg.cc/mD21B6r7/user-avatar-placeholder.png'}
+                                                        alt="avatar"
+                                                        className="w-8 h-8 rounded-full bg-dark-primary object-cover"
+                                                    />
                                                     <div>
                                                         <p>{user.username}</p>
                                                         <p className="text-xs text-text-secondary font-mono">{user.telegramId}</p>

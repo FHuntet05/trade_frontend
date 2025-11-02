@@ -1,6 +1,6 @@
 // RUTA: frontend/src/pages/WheelPage.jsx
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Wheel } from "react-custom-roulette";
 import { FiCopy, FiExternalLink, FiCheckCircle, FiAlertTriangle } from "react-icons/fi";
@@ -12,14 +12,14 @@ import useTeamStore from "@/store/teamStore";
 import { IOSButton, IOSCard } from "../components/ui/IOSComponents";
 
 const FALLBACK_SEGMENTS = [
-  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.42, offsetY: -10 } },
+  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.28, offsetY: -12 } },
   { option: "+1 Giro 🎁", text: "+1 Giro 🎁", type: "spins", value: 1, weight: 1, isActive: true },
-  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.42, offsetY: -10 } },
-  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.42, offsetY: -10 } },
+  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.28, offsetY: -12 } },
+  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.28, offsetY: -12 } },
   { option: "+2 Giros 🎁", text: "+2 Giros 🎁", type: "spins", value: 2, weight: 1, isActive: true },
-  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.42, offsetY: -10 } },
+  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.28, offsetY: -12 } },
   { option: "Sin premio", text: "Sin premio", type: "none", value: 0, weight: 1, isActive: true },
-  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.42, offsetY: -10 } }
+  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.28, offsetY: -12 } }
 ];
 
 const MILESTONE_TASKS = [
@@ -78,7 +78,98 @@ const WheelPage = () => {
   const [configMessage, setConfigMessage] = useState("");
   const [isWheelDisabled, setIsWheelDisabled] = useState(false);
 
+  const tickIntervalRef = useRef(null);
+  const audioContextRef = useRef(null);
+
   const availableSpins = user?.balance?.spins ?? 0;
+
+  const ensureAudioContext = () => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const ContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!ContextClass) {
+      return null;
+    }
+
+    if (!audioContextRef.current) {
+      try {
+        audioContextRef.current = new ContextClass();
+      } catch (error) {
+        return null;
+      }
+    }
+
+    return audioContextRef.current;
+  };
+
+  const clearTickFeedback = () => {
+    if (typeof window === "undefined") {
+      tickIntervalRef.current = null;
+      return;
+    }
+
+    if (tickIntervalRef.current) {
+      window.clearInterval(tickIntervalRef.current);
+      tickIntervalRef.current = null;
+    }
+  };
+
+  const triggerTickFeedback = () => {
+    if (typeof window !== "undefined" && typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate?.(18);
+      } catch (error) {
+        // ignore vibration errors (e.g., unsupported devices)
+      }
+    }
+
+    const context = ensureAudioContext();
+    if (!context) {
+      return;
+    }
+
+    if (context.state === "suspended") {
+      context.resume?.().catch(() => null);
+    }
+
+    try {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+
+      oscillator.type = "triangle";
+      oscillator.frequency.value = 880;
+      gain.gain.value = 0.06;
+
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+
+      const now = context.currentTime;
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+      oscillator.start(now);
+      oscillator.stop(now + 0.09);
+
+      oscillator.onended = () => {
+        oscillator.disconnect();
+        gain.disconnect();
+      };
+    } catch (error) {
+      // silently ignore audio errors
+    }
+  };
+
+  const startTickFeedback = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    clearTickFeedback();
+    triggerTickFeedback();
+    tickIntervalRef.current = window.setInterval(triggerTickFeedback, 120);
+  };
 
   useEffect(() => {
     const loadWheelConfig = async () => {
@@ -101,8 +192,13 @@ const WheelPage = () => {
 
             return {
               option: label,
+              text: fallbackLabel,
+              type,
+              value: normalizedValue,
+              weight: Number(segment.weight ?? 1) || 1,
+              isActive: segment.isActive !== false,
               image: hasImage
-                ? { uri: segment.imageUrl, sizeMultiplier: 0.42, offsetY: -10 }
+                ? { uri: segment.imageUrl, sizeMultiplier: 0.28, offsetY: -12 }
                 : undefined,
             };
           });
@@ -135,6 +231,20 @@ const WheelPage = () => {
   useEffect(() => {
     fetchTeamStats?.();
   }, [fetchTeamStats]);
+
+  useEffect(() => {
+    return () => {
+      clearTickFeedback();
+      if (audioContextRef.current) {
+        try {
+          audioContextRef.current.close?.();
+        } catch (error) {
+          // ignore audio context close failures
+        }
+        audioContextRef.current = null;
+      }
+    };
+  }, []);
 
   const totalReferrals = useMemo(() => {
     return teamStats?.levels?.[0]?.totalMembers ?? 0;
@@ -195,6 +305,15 @@ const WheelPage = () => {
       const resultIndex = typeof data.resultIndex === "number" ? data.resultIndex : 0;
       setPrizeNumber(Math.max(0, Math.min(resultIndex, segments.length - 1)));
       setPendingSpinResult(data);
+      const context = ensureAudioContext();
+      if (context?.state === "suspended") {
+        try {
+          await context.resume();
+        } catch (error) {
+          // ignore resume failure
+        }
+      }
+      startTickFeedback();
       setMustSpin(true);
     } catch (error) {
       const message = error.response?.data?.message || error.message || "Error al iniciar el giro.";
@@ -203,11 +322,14 @@ const WheelPage = () => {
         setConfigMessage(message);
         setIsWheelDisabled(true);
       }
+      clearTickFeedback();
     }
   };
 
   const handleStopSpinning = () => {
     setMustSpin(false);
+
+    clearTickFeedback();
 
     if (!pendingSpinResult) {
       return;
@@ -215,9 +337,19 @@ const WheelPage = () => {
 
     updateUserBalances(pendingSpinResult.newBalances || {});
 
-    const winnerText = pendingSpinResult.prize?.text || segments[prizeNumber]?.option || "tu premio";
-    toast.success(`¡Ganaste ${winnerText}! 🎉`);
-    confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+    const prizeInfo = pendingSpinResult.prize || segments[prizeNumber] || {};
+    const winnerText = prizeInfo.text || segments[prizeNumber]?.option || "tu premio";
+    const prizeType = (prizeInfo.type || segments[prizeNumber]?.type || "").toLowerCase();
+    const isNoPrize = prizeType === "none" || /sin premio/i.test(winnerText || "");
+
+    if (isNoPrize) {
+      toast(`😔 Sin premio`, {
+        icon: "😔",
+      });
+    } else {
+      toast.success(`¡Ganaste ${winnerText}! 🎉`);
+      confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+    }
 
     setPendingSpinResult(null);
   };
@@ -277,8 +409,8 @@ const WheelPage = () => {
                     data={segments}
                     onStopSpinning={handleStopSpinning}
                     perpendicularText={false}
-                    textDistance={78}
-                    fontSize={14}
+                    textDistance={62}
+                    fontSize={16}
                     backgroundColors={["#FFFFFF", "#F2F2F7"]}
                     textColors={["#1f2937"]}
                     outerBorderColor={"#e2e8f0"}
@@ -290,9 +422,9 @@ const WheelPage = () => {
                     radiusLineWidth={0}
                     pointerProps={{
                       style: {
-                        width: "18%",
+                        width: "16%",
                         right: "6px",
-                        top: "12px",
+                        top: "10px",
                         filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.25))",
                       },
                     }}

@@ -95,7 +95,7 @@ const AdminTransactionsPage = () => {
                         placeholder="Buscar por usuario..." 
                         defaultValue={searchParams.get('search') || ''}
                         onChange={(e) => handleFilterChange('search', e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-dark-primary text-white rounded-lg border border-white/10" 
+                        className="w-full pl-10 pr-4 py-2 bg-dark-primary text-black rounded-lg border border-white/10" 
                     />
                 </div>
                 <select 

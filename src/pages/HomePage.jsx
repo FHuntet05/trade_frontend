@@ -27,7 +27,7 @@ const HomePage = () => {
     fetchMarketData();
   }, [fetchMarketData]);
 
-  const handleDeposit = () => navigate('/deposit');
+  const handleDeposit = () => navigate('/deposit/create');
   const handleSupport = () => navigate('/support');
 
   // --- INICIO DE LA LÓGICA DEL BONO DIARIO ---

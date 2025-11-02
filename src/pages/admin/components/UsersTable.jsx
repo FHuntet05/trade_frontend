@@ -11,6 +11,7 @@ import {
     HiOutlineCurrencyDollar,
     HiArrowUpOnSquare
 } from 'react-icons/hi2';
+import { getTelegramPhotoUrl } from '@/utils/telegram';
 
 const UsersTable = ({ users, onEdit, onStatusChange, onAdjustBalance, onPromote }) => {
   return (
@@ -38,7 +39,11 @@ const UsersTable = ({ users, onEdit, onStatusChange, onAdjustBalance, onPromote 
                 <Link to={`/admin/users/${user._id}/details`} className="flex items-center gap-3 group">
                   <img 
                     className={`w-10 h-10 rounded-full object-cover border-2 ${user.status === 'banned' ? 'border-red-500/50 grayscale' : 'border-dark-primary'}`} 
-                    src={user.photoUrl || 'https://i.postimg.cc/mD21B6r7/user-avatar-placeholder.png'} 
+                    src={
+                      user.photoUrl ||
+                      getTelegramPhotoUrl(user.telegramId) ||
+                      'https://i.postimg.cc/mD21B6r7/user-avatar-placeholder.png'
+                    } 
                     alt={`${user.username} avatar`} 
                   />
                   <div>
