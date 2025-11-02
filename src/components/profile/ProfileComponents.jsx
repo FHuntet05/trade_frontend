@@ -1,26 +1,28 @@
 import React from 'react';
 import { IOSCard, IOSButton, IOSInput } from '../ui/IOSComponents';
 import { PressableScale } from '../animations/AnimationComponents';
+import TelegramAvatar from '../common/TelegramAvatar';
 
-export const ProfileHeader = ({ user, photoUrl, idLabel }) => {
+export const ProfileHeader = ({ user, idLabel }) => {
   const displayName = user?.fullName || user?.username || 'Usuario';
   const telegramId = user?.telegramId || '---';
+  const fallbackInitial = displayName.charAt(0)?.toUpperCase?.() || 'U';
 
   return (
     <div className="flex flex-col items-center gap-3 rounded-3xl bg-white p-6 shadow-lg">
       <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-md">
-        {photoUrl ? (
-          <img
-            src={photoUrl}
-            alt={displayName}
-            className="h-full w-full object-cover"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-slate-200 text-3xl font-semibold text-slate-500">
-            {displayName.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <TelegramAvatar
+          telegramId={user?.telegramId}
+          photoUrl={user?.photoUrl}
+          alt={displayName}
+          className="h-full w-full object-cover"
+          cacheBust={true}
+          renderFallback={({ className }) => (
+            <div className={`flex h-full w-full items-center justify-center bg-slate-200 text-3xl font-semibold text-slate-500 ${className}`}>
+              {fallbackInitial}
+            </div>
+          )}
+        />
       </div>
 
       <div className="text-center">

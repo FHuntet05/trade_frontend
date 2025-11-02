@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { HiXMark, HiUserCircle } from 'react-icons/hi2';
 import Loader from '../common/Loader';
+import TelegramAvatar from '../common/TelegramAvatar';
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -20,8 +21,16 @@ const modalVariants = {
 const UserRow = ({ user }) => (
   <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
     <div className="flex items-center gap-3">
-      {user.photoUrl ? (
-        <img src={user.photoUrl} alt={user.username} className="w-8 h-8 rounded-full object-cover" />
+      {user.photoUrl || user.telegramId ? (
+        <TelegramAvatar
+          telegramId={user.telegramId}
+          photoUrl={user.photoUrl}
+          alt={user.username}
+          className="w-8 h-8 rounded-full object-cover"
+          renderFallback={({ className }) => (
+            <HiUserCircle className={`w-8 h-8 text-text-secondary ${className}`} />
+          )}
+        />
       ) : (
         <HiUserCircle className="w-8 h-8 text-text-secondary" />
       )}

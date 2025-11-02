@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import useUserStore from '../../store/userStore';
 import GeneratedAvatar from '../common/GeneratedAvatar';
 import { HiLanguage } from "react-icons/hi2";
+import TelegramAvatar from '../common/TelegramAvatar';
 
 const truncateText = (text, maxLength = 15) => {
   if (!text) return '';
@@ -28,11 +29,20 @@ const UserInfoHeader = () => {
       
       <div className="flex items-center gap-3 overflow-hidden">
         <div className="w-12 h-12 flex-shrink-0">
-            {user.photoUrl ? (
-                <img src={user.photoUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
-            ) : (
+          {user.photoUrl || user.telegramId ? (
+            <TelegramAvatar
+              telegramId={user.telegramId}
+              photoUrl={user.photoUrl}
+              alt="Avatar"
+              className="w-full h-full rounded-full object-cover"
+              cacheBust={true}
+              renderFallback={() => (
                 <GeneratedAvatar name={displayName} size="w-full h-full" />
-            )}
+              )}
+            />
+          ) : (
+            <GeneratedAvatar name={displayName} size="w-full h-full" />
+          )}
         </div>
         
         <div className="flex flex-col min-w-0">

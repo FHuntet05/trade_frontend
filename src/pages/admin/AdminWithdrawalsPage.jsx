@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Loader from '@/components/common/Loader';
 import Pagination from '@/components/common/Pagination';
 import { HiOutlineClipboardDocument, HiOutlineClipboardDocumentCheck, HiOutlineReceiptRefund } from 'react-icons/hi2';
+import TelegramAvatar from '@/components/common/TelegramAvatar';
 
 const AmountCell = ({ withdrawal }) => {
   const { grossAmount, feeAmount, netAmount } = withdrawal;
@@ -52,7 +53,12 @@ const WithdrawalsTable = ({ withdrawals, onProcess, processingId }) => {
             <tr key={tx._id} className="hover:bg-dark-tertiary/50 transition-colors">
               <td className="p-3 align-top">
                 <div className="flex items-center gap-3">
-                  <img className="w-8 h-8 rounded-full bg-dark-primary object-cover" src={tx.user?.photoUrl} alt="avatar" />
+                  <TelegramAvatar
+                    telegramId={tx.user?.telegramId}
+                    photoUrl={tx.user?.photoUrl}
+                    alt={tx.user?.username || 'avatar'}
+                    className="w-8 h-8 rounded-full bg-dark-primary object-cover"
+                  />
                   <span className="font-medium">{tx.user?.username}</span>
                 </div>
               </td>

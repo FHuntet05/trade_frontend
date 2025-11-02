@@ -11,6 +11,42 @@ import useUserStore from "@/store/userStore";
 import useTeamStore from "@/store/teamStore";
 import { IOSButton, IOSCard } from "../components/ui/IOSComponents";
 
+const SPIN_TOTAL_DURATION_MS = 2600 + 750 + 8000; // match library's timing phases
+const TICK_COUNT = 48;
+const MIN_TICK_INTERVAL_MS = 70;
+const MAX_TICK_INTERVAL_MS = 220;
+
+const createTickSchedule = (
+  durationMs,
+  tickCount = TICK_COUNT,
+  minInterval = MIN_TICK_INTERVAL_MS,
+  maxInterval = MAX_TICK_INTERVAL_MS
+) => {
+    if (!tickCount || tickCount <= 0 || durationMs <= 0) {
+      return [];
+    }
+
+    const intervals = [];
+    for (let index = 0; index < tickCount; index += 1) {
+      const progress = tickCount === 1 ? 0 : index / (tickCount - 1);
+      const eased = Math.cos(progress * Math.PI);
+      const weight = eased * eased;
+      const interval = minInterval + (maxInterval - minInterval) * weight;
+      intervals.push(Math.max(12, interval));
+    }
+
+    const totalRaw = intervals.reduce((sum, value) => sum + value, 0);
+    const scale = totalRaw > 0 ? durationMs / totalRaw : 1;
+    const timeline = [];
+    let elapsed = 0;
+    for (const interval of intervals) {
+      elapsed += interval * scale;
+      timeline.push(Math.round(elapsed));
+    }
+
+    return timeline;
+  };
+
 const FALLBACK_SEGMENTS = [
   { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.28, offsetY: -12 } },
   { option: "+1 Giro 🎁", text: "+1 Giro 🎁", type: "spins", value: 1, weight: 1, isActive: true },
@@ -78,7 +114,7 @@ const WheelPage = () => {
   const [configMessage, setConfigMessage] = useState("");
   const [isWheelDisabled, setIsWheelDisabled] = useState(false);
 
-  const tickIntervalRef = useRef(null);
+  const tickTimeoutsRef = useRef([]);
   const audioContextRef = useRef(null);
 
   const availableSpins = user?.balance?.spins ?? 0;
@@ -105,15 +141,15 @@ const WheelPage = () => {
   };
 
   const clearTickFeedback = () => {
-    if (typeof window === "undefined") {
-      tickIntervalRef.current = null;
+    if (!tickTimeoutsRef.current?.length) {
       return;
     }
 
-    if (tickIntervalRef.current) {
-      window.clearInterval(tickIntervalRef.current);
-      tickIntervalRef.current = null;
+    if (typeof window !== "undefined") {
+      tickTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
     }
+
+    tickTimeoutsRef.current = [];
   };
 
   const triggerTickFeedback = () => {
@@ -161,14 +197,69 @@ const WheelPage = () => {
     }
   };
 
-  const startTickFeedback = () => {
+  const startTickFeedback = (durationMs = SPIN_TOTAL_DURATION_MS) => {
     if (typeof window === "undefined") {
       return;
     }
 
     clearTickFeedback();
     triggerTickFeedback();
-    tickIntervalRef.current = window.setInterval(triggerTickFeedback, 120);
+    const schedule = createTickSchedule(durationMs);
+    if (!schedule.length) {
+      return;
+    }
+
+    tickTimeoutsRef.current = schedule.map((delay) =>
+      window.setTimeout(() => {
+        triggerTickFeedback();
+      }, delay)
+    );
+  };
+
+  const playWinSound = () => {
+    const context = ensureAudioContext();
+    if (!context) {
+      return;
+    }
+
+    if (context.state === "suspended") {
+      context.resume?.().catch(() => null);
+    }
+
+    try {
+      const now = context.currentTime;
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.22, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
+      gain.connect(context.destination);
+
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, now);
+        oscillator.connect(gain);
+
+        const startTime = now + index * 0.05;
+        const stopTime = startTime + 0.6;
+
+        oscillator.start(startTime);
+        oscillator.stop(stopTime);
+        oscillator.onended = () => {
+          oscillator.disconnect();
+        };
+      });
+
+      if (typeof window !== "undefined") {
+        const cleanupDelay = Math.ceil((notes.length * 0.05 + 0.7) * 1000);
+        window.setTimeout(() => {
+          gain.disconnect();
+        }, cleanupDelay);
+      }
+    } catch (error) {
+      // ignore win sound errors
+    }
   };
 
   useEffect(() => {
@@ -297,7 +388,7 @@ const WheelPage = () => {
     }
 
     try {
-  const { data } = await api.post("/wheel/spin");
+      const { data } = await api.post("/wheel/spin");
       if (!data?.success) {
         throw new Error(data?.message || "No se pudo iniciar el giro");
       }
@@ -313,7 +404,7 @@ const WheelPage = () => {
           // ignore resume failure
         }
       }
-      startTickFeedback();
+  startTickFeedback(SPIN_TOTAL_DURATION_MS);
       setMustSpin(true);
     } catch (error) {
       const message = error.response?.data?.message || error.message || "Error al iniciar el giro.";
@@ -343,10 +434,28 @@ const WheelPage = () => {
     const isNoPrize = prizeType === "none" || /sin premio/i.test(winnerText || "");
 
     if (isNoPrize) {
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        try {
+          navigator.vibrate?.([30, 40, 30]);
+        } catch (error) {
+          // ignore vibration errors
+        }
+      }
+
       toast(`😔 Sin premio`, {
         icon: "😔",
       });
     } else {
+      playWinSound();
+
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        try {
+          navigator.vibrate?.([80, 120, 60]);
+        } catch (error) {
+          // ignore vibration errors
+        }
+      }
+
       toast.success(`¡Ganaste ${winnerText}! 🎉`);
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
     }

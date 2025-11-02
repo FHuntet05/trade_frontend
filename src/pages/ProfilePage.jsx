@@ -16,7 +16,6 @@ import { IOSButton, IOSCard } from '../components/ui/IOSComponents';
 import WithdrawalComponent from '../components/profile/WithdrawalComponent';
 import api from '../api/axiosConfig';
 import { formatters } from '@/utils/formatters';
-import { getTelegramPhotoUrl } from '@/utils/telegram';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -27,7 +26,6 @@ const ProfilePage = () => {
   const [wallet, setWallet] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isWithdrawalModalVisible, setIsWithdrawalModalVisible] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState('');
 
   useEffect(() => {
     if (user?.wallet) {
@@ -36,13 +34,6 @@ const ProfilePage = () => {
   }, [user?.wallet]);
 
   useEffect(() => {
-    if (!user?.telegramId) {
-      setPhotoUrl('');
-      return;
-    }
-    setPhotoUrl(getTelegramPhotoUrl(user.telegramId, { bustCache: true }));
-  }, [user?.telegramId]);
-
   const handlePasswordSave = async () => {
     if (!withdrawalPassword || isLoading) return;
     try {
@@ -115,7 +106,7 @@ const ProfilePage = () => {
     <>
       <div className="min-h-screen bg-[#f5f7fb] px-4 pb-28 pt-6">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-          <ProfileHeader user={user} photoUrl={photoUrl} idLabel={t('profilePage.idLabel')} />
+          <ProfileHeader user={user} idLabel={t('profilePage.idLabel')} />
 
           <WalletSummary amounts={balanceSummary} />
 

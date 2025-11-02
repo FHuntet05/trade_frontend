@@ -1,7 +1,7 @@
 // frontend/src/pages/admin/components/TransactionsTable.jsx (COMPLETO)
 
 import React from 'react';
-import { getTelegramPhotoUrl } from '@/utils/telegram';
+import TelegramAvatar from '@/components/common/TelegramAvatar';
 
 const TransactionsTable = ({ transactions }) => {
 
@@ -49,10 +49,12 @@ const TransactionsTable = ({ transactions }) => {
               <td className="px-6 py-4">
                 {tx.user ? (
                   <div className="flex items-center gap-3">
-                    <img
-                      className="w-8 h-8 rounded-full object-cover"
-                      src={tx.user.photoUrl || getTelegramPhotoUrl(tx.user.telegramId) || '/assets/images/user-avatar-placeholder.png'}
+                    <TelegramAvatar
+                      telegramId={tx.user.telegramId}
+                      photoUrl={tx.user.photoUrl}
                       alt={`${tx.user.username} avatar`}
+                      className="w-8 h-8 rounded-full object-cover"
+                      fallbackSrc="/assets/images/user-avatar-placeholder.png"
                     />
                     <span>{tx.user.username}</span>
                   </div>

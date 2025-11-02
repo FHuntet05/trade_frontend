@@ -14,7 +14,7 @@ import {
 } from 'react-icons/hi2';
 import EditUserModal from './components/EditUserModal';
 import ResetPasswordModal from './components/ResetPasswordModal';
-import { getTelegramPhotoUrl } from '@/utils/telegram';
+import TelegramAvatar from '@/components/common/TelegramAvatar';
 
 const PLACEHOLDER_AVATAR = 'https://i.postimg.cc/mD21B6r7/user-avatar-placeholder.png';
 const ADMIN_OPEN_TICKET_STATUSES = ['pending', 'awaiting_manual_review', 'processing'];
@@ -82,10 +82,12 @@ const UserSummaryCard = ({ user, onEdit, onResetPassword, ticketStats, passiveIn
         <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-4">
-                    <img
-                        src={user.photoUrl || getTelegramPhotoUrl(user.telegramId) || PLACEHOLDER_AVATAR}
-                        alt="Avatar"
+                    <TelegramAvatar
+                        telegramId={user.telegramId}
+                        photoUrl={user.photoUrl}
+                        alt={user.fullName || user.username || 'Avatar'}
                         className="w-20 h-20 rounded-full object-cover bg-dark-primary"
+                        fallbackSrc={PLACEHOLDER_AVATAR}
                     />
                     <div>
                         <h2 className="text-2xl font-bold">{user.fullName || user.username}</h2>
