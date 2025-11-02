@@ -29,10 +29,9 @@ const UserInfoHeader = () => {
       
       <div className="flex items-center gap-3 overflow-hidden">
         <div className="w-12 h-12 flex-shrink-0">
-          {user.photoUrl || user.telegramId ? (
+          {user.telegramId ? (
             <TelegramAvatar
               telegramId={user.telegramId}
-              photoUrl={user.photoUrl}
               alt="Avatar"
               className="w-full h-full rounded-full object-cover"
               cacheBust={true}

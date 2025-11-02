@@ -21,10 +21,9 @@ const modalVariants = {
 const UserRow = ({ user }) => (
   <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
     <div className="flex items-center gap-3">
-      {user.photoUrl || user.telegramId ? (
+      {user.telegramId ? (
         <TelegramAvatar
           telegramId={user.telegramId}
-          photoUrl={user.photoUrl}
           alt={user.username}
           className="w-8 h-8 rounded-full object-cover"
           renderFallback={({ className }) => (

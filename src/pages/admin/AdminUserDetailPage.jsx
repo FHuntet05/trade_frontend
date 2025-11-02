@@ -84,7 +84,6 @@ const UserSummaryCard = ({ user, onEdit, onResetPassword, ticketStats, passiveIn
                 <div className="flex items-center gap-4">
                     <TelegramAvatar
                         telegramId={user.telegramId}
-                        photoUrl={user.photoUrl}
                         alt={user.fullName || user.username || 'Avatar'}
                         className="w-20 h-20 rounded-full object-cover bg-dark-primary"
                         fallbackSrc={PLACEHOLDER_AVATAR}

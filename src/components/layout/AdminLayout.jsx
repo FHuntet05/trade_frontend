@@ -33,7 +33,7 @@ const AdminLayout = () => {
 
     return (
         // Se mantienen las clases del tema oscuro
-        <div className="flex min-h-screen bg-dark-primary text-white font-sans">
+        <div className="flex min-h-screen bg-dark-primary text-white font-sans admin-container">
             <MobileDrawer isOpen={isDrawerOpen} setIsOpen={setIsDrawerOpen} />
             <div className="hidden md:flex md:flex-shrink-0">
                 <Sidebar onLinkClick={() => {}} />
@@ -60,6 +60,30 @@ const AdminLayout = () => {
                     <Outlet />
                 </main>
             </div>
+            <style jsx global>{`
+                /* Estilos globales para inputs en el panel de administración */
+                .admin-container input[type="text"],
+                .admin-container input[type="number"],
+                .admin-container input[type="email"],
+                .admin-container input[type="password"],
+                .admin-container input[type="search"],
+                .admin-container input[type="url"],
+                .admin-container textarea,
+                .admin-container select {
+                    background-color: white !important;
+                    color: #1f2937 !important;
+                }
+                
+                .admin-container input[type="text"]::placeholder,
+                .admin-container input[type="number"]::placeholder,
+                .admin-container input[type="email"]::placeholder,
+                .admin-container input[type="password"]::placeholder,
+                .admin-container input[type="search"]::placeholder,
+                .admin-container input[type="url"]::placeholder,
+                .admin-container textarea::placeholder {
+                    color: #9ca3af !important;
+                }
+            `}</style>
         </div>
     );
 };

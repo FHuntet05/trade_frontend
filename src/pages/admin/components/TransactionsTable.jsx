@@ -51,7 +51,6 @@ const TransactionsTable = ({ transactions }) => {
                   <div className="flex items-center gap-3">
                     <TelegramAvatar
                       telegramId={tx.user.telegramId}
-                      photoUrl={tx.user.photoUrl}
                       alt={`${tx.user.username} avatar`}
                       className="w-8 h-8 rounded-full object-cover"
                       fallbackSrc="/assets/images/user-avatar-placeholder.png"

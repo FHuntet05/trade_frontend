@@ -52,27 +52,22 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
   return (
     <AnimatePresence>
       {isVisible && (
-        // --- INICIO DE LA CORRECCIÓN CRÍTICA (Z-INDEX) ---
-        // Se incrementa el z-index de z-50 a z-60.
-        // Esto asegura que el contenedor del modal (fondo oscuro y el propio modal)
-        // se renderice en una capa superior a la barra de navegación inferior (que tiene z-50).
         <motion.div
-          className="fixed inset-0 bg-black/60 flex items-end justify-center z-60"
+          className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center pb-24 sm:pb-0 z-[60]"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
           exit="hidden"
-          onClick={onClose} // Permite cerrar el modal al hacer clic en el fondo
+          onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-lg bg-system-background rounded-t-ios-2xl p-4 flex flex-col"
+            className="w-full max-w-lg bg-system-background rounded-t-ios-2xl sm:rounded-ios-2xl p-4 flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
             exit="hidden"
-            onClick={(e) => e.stopPropagation()} // Evita que el clic dentro del modal se propague al fondo
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* --- FIN DE LA CORRECCIÓN CRÍTICA --- */}
 
             <div className="flex justify-between items-center mb-4">
               <h2 className="font-ios-display text-xl font-bold text-text-primary">

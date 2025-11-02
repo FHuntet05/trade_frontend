@@ -13,8 +13,8 @@ import { IOSButton, IOSCard } from "../components/ui/IOSComponents";
 
 const SPIN_TOTAL_DURATION_MS = 2600 + 750 + 8000; // match library's timing phases
 const TICK_COUNT = 48;
-const MIN_TICK_INTERVAL_MS = 70;
-const MAX_TICK_INTERVAL_MS = 220;
+const MIN_TICK_INTERVAL_MS = 50;
+const MAX_TICK_INTERVAL_MS = 400;
 
 const createTickSchedule = (
   durationMs,

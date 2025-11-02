@@ -13,7 +13,6 @@ export const ProfileHeader = ({ user, idLabel }) => {
       <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-md">
         <TelegramAvatar
           telegramId={user?.telegramId}
-          photoUrl={user?.photoUrl}
           alt={displayName}
           className="h-full w-full object-cover"
           cacheBust={true}

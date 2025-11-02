@@ -212,7 +212,6 @@ const AdminUsersPage = () => {
                                                 <Link to={`/admin/users/${user._id}`} className="flex items-center gap-3 hover:text-accent-start">
                                                     <TelegramAvatar
                                                         telegramId={user.telegramId}
-                                                        photoUrl={user.photoUrl}
                                                         alt={`${user.username} avatar`}
                                                         className="w-8 h-8 rounded-full bg-dark-primary object-cover"
                                                     />

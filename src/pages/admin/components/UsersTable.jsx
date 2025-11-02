@@ -39,7 +39,6 @@ const UsersTable = ({ users, onEdit, onStatusChange, onAdjustBalance, onPromote 
                 <Link to={`/admin/users/${user._id}/details`} className="flex items-center gap-3 group">
                   <TelegramAvatar
                     telegramId={user.telegramId}
-                    photoUrl={user.photoUrl}
                     alt={`${user.username} avatar`}
                     className={`w-10 h-10 rounded-full object-cover border-2 ${user.status === 'banned' ? 'border-red-500/50 grayscale' : 'border-dark-primary'}`}
                   />

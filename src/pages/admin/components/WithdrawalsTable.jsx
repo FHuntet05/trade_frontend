@@ -70,7 +70,6 @@ const WithdrawalsTable = ({ withdrawals, onApprove, onReject }) => {
                                 <div className="flex items-center gap-3">
                                     <TelegramAvatar
                                         telegramId={w.user.telegramId}
-                                        photoUrl={w.user.photoUrl}
                                         alt={`${w.user.username} avatar`}
                                         className="w-10 h-10 rounded-full object-cover"
                                     />
