@@ -78,7 +78,7 @@ const PendingDepositPage = () => {
   const handleManualConfirmation = () => {
     if (!ticket) return;
     if (ticket.methodType === 'manual') {
-      toast('Nuestro equipo revisará tu comprobante y acreditará el depósito manualmente.', {
+      toast('Nuestro equipo revisará tu comprobante y acreditará el depósito automáticamente.', {
         icon: '🧾'
       });
     } else {

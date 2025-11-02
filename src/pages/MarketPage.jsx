@@ -1,6 +1,6 @@
 // RUTA: frontend/src/pages/MarketPage.jsx (VERSIÓN CORREGIDA CON IMAGEN DIRECTA)
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import useInvestmentStore from '@/store/investmentStore';
 import useUserStore from '@/store/userStore';
@@ -15,9 +15,27 @@ import { formatters } from '@/utils/formatters';
 const fetcher = (url) => api.get(url).then(res => res.data);
 
 // --- COMPONENTE DE TARJETA CON LA CORRECCIÓN DE IMAGEN ---
-const MarketItemCard = ({ item, onPurchaseClick }) => {
-    const { data: cryptoData } = useSWR(`/prices/${item.linkedCryptoSymbol}`, fetcher, { refreshInterval: 30000 });
-    const priceChange = cryptoData?.data?.percent_change_24h || 0;
+const MarketItemCard = ({ item, onPurchaseClick, marketSnapshot }) => {
+    const priceRaw = marketSnapshot?.price ?? item.marketPrice ?? null;
+    const priceChangeRaw = typeof marketSnapshot?.change === 'number'
+        ? marketSnapshot.change
+        : typeof item.marketChange24h === 'number'
+          ? item.marketChange24h
+          : null;
+
+    const formattedPrice = useMemo(() => {
+        if (typeof priceRaw === 'number' && !Number.isNaN(priceRaw)) {
+            return `$${priceRaw.toFixed(2)}`;
+        }
+        return '—';
+    }, [priceRaw]);
+
+    const priceChange = useMemo(() => {
+        if (typeof priceChangeRaw === 'number' && !Number.isNaN(priceChangeRaw)) {
+            return priceChangeRaw;
+        }
+        return 0;
+    }, [priceChangeRaw]);
 
     return (
         <motion.div
@@ -51,7 +69,7 @@ const MarketItemCard = ({ item, onPurchaseClick }) => {
                 <div className="flex items-end justify-between mb-4">
                     <div>
                         <p className="font-ios-display font-bold text-2xl text-text-primary">
-                            {cryptoData ? `$${parseFloat(cryptoData.data.price).toFixed(2)}` : 'Cargando...'}
+                            {formattedPrice}
                         </p>
                         <div className={`flex items-center gap-1 text-sm font-semibold ${priceChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             <FiTrendingUp />
@@ -122,6 +140,7 @@ const MarketPage = () => {
     const [selectedItem, setSelectedItem] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const { data: marketData } = useSWR('/market/prices', fetcher, { refreshInterval: 60000 });
 
     useEffect(() => {
         fetchInvestmentPackages();
@@ -155,13 +174,20 @@ const MarketPage = () => {
     
         return (
             <div className="space-y-4">
-                {investmentPackages.map((item) => (
+                {investmentPackages.map((item) => {
+                    const symbolKey = typeof item.linkedCryptoSymbol === 'string'
+                        ? item.linkedCryptoSymbol.toUpperCase()
+                        : item.linkedCryptoSymbol;
+
+                    return (
                     <MarketItemCard
                         key={item._id}
                         item={item}
+                        marketSnapshot={marketData?.[symbolKey]}
                         onPurchaseClick={handlePurchaseClick}
                     />
-                ))}
+                    );
+                })}
             </div>
         );
     };
