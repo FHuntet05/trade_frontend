@@ -12,12 +12,18 @@ const SYMBOL_ASSET_MAP = {
   SOL: '/assets/images/SOL.png',
   USDT: '/assets/images/USDT.png',
   TON: '/assets/images/TON.png',
+  TONCOIN: '/assets/images/TON.png',
   LTC: '/assets/images/litecoin.png',
   TRX: '/assets/images/TRON.png',
   DOGE: '/assets/images/DOG.png',
 };
 
 const DEFAULT_ASSET = '/assets/images/USDT.png';
+
+const NAME_KEYWORD_MAP = [
+  { keyword: 'TON', asset: '/assets/images/TON.png' },
+  { keyword: 'TONCOIN', asset: '/assets/images/TON.png' },
+];
 
 const resolveIconSource = (crypto) => {
   if (!crypto) {
@@ -32,6 +38,14 @@ const resolveIconSource = (crypto) => {
   const imageValue = crypto.image;
   if (typeof imageValue === 'string' && imageValue.trim() !== '') {
     return imageValue;
+  }
+
+  if (typeof crypto.name === 'string' && crypto.name.trim() !== '') {
+    const normalizedName = crypto.name.trim().toUpperCase();
+    const matchByName = NAME_KEYWORD_MAP.find((entry) => normalizedName.includes(entry.keyword));
+    if (matchByName) {
+      return matchByName.asset;
+    }
   }
 
   return DEFAULT_ASSET;
