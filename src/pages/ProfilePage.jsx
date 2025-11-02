@@ -33,7 +33,6 @@ const ProfilePage = () => {
     }
   }, [user?.wallet]);
 
-  useEffect(() => {
   const handlePasswordSave = async () => {
     if (!withdrawalPassword || isLoading) return;
     try {
