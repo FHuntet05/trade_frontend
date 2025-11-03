@@ -40,12 +40,12 @@ export const ProfileHeader = ({ user, idLabel }) => {
 
 export const WalletSummary = ({ amounts }) => {
   return (
-    <div className="grid gap-4 rounded-3xl bg-white p-6 shadow-lg sm:grid-cols-3">
+    <div className="grid grid-cols-3 gap-3 rounded-3xl bg-white p-4 shadow-lg sm:gap-4 sm:p-6">
       {amounts.map((item) => (
-        <div key={item.label} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{item.label}</p>
-          <p className="text-2xl font-bold text-slate-900">{item.value}</p>
-          {item.helper && <p className="mt-1 text-xs text-slate-500">{item.helper}</p>}
+        <div key={item.label} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-3 sm:p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 sm:text-xs">{item.label}</p>
+          <p className="text-xl font-bold text-slate-900 sm:text-2xl">{item.value}</p>
+          {item.helper && <p className="mt-1 text-[10px] text-slate-500 sm:text-xs">{item.helper}</p>}
         </div>
       ))}
     </div>
