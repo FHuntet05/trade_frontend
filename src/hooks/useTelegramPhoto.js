@@ -28,7 +28,8 @@ const registerCacheCleanup = () => {
 };
 
 export const useTelegramPhoto = (telegramId, options = {}) => {
-  const { cacheBust = false, refreshKey } = options;
+  // Activamos cacheBust por defecto para evitar caché de CDN cuando cambiamos headers en backend
+  const { cacheBust = true, refreshKey } = options;
   const [state, setState] = useState({
     src: null,
     loading: Boolean(telegramId),
@@ -57,12 +58,12 @@ export const useTelegramPhoto = (telegramId, options = {}) => {
       try {
         setState((prev) => ({ ...prev, loading: true, error: null }));
         
-        // Construir la URL completa para la foto
-        const baseUrl = `/user/photo/${telegramId}`;
-        const url = cacheBust ? `${baseUrl}?v=${Date.now()}` : baseUrl;
-        
-        // La URL completa debe incluir el baseURL de la API
-        const fullUrl = `${api.defaults.baseURL}${url}`;
+  // Construir la URL completa para la foto con versión fija + bust opcional
+  const baseUrl = `/user/photo/${telegramId}`;
+  const VERSION = '2'; // incrementar si cambiamos headers/comportamiento del endpoint
+  const params = [`v=${VERSION}`];
+  if (cacheBust) params.push(`t=${Date.now()}`);
+  const fullUrl = `${api.defaults.baseURL}${baseUrl}?${params.join('&')}`;
         
         console.log(`[useTelegramPhoto] Intentando cargar foto desde: ${fullUrl}`);
 
