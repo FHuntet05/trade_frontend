@@ -124,20 +124,21 @@ const WheelPage = () => {
     return (segments || []).map((s) => ({
       // Mostrar SOLO el texto configurado por el admin
       option: s.text || "",
-      // Conservamos metadatos por si se usan en toasts/logic
-      text: s.text || "",
-      type: s.type,
-      value: s.value,
-      weight: s.weight,
-      isActive: s.isActive,
+      // NO incluir metadatos que puedan generar texto duplicado
     }));
   }, [segments]);
 
-  // Capa inferior sin texto (evita duplicados)
+  // Capa inferior sin texto (evita duplicados) - SOLO imágenes y colores
   const segmentsNoText = useMemo(() => {
     return (segments || []).map((s) => ({
-      ...s,
-      option: "",
+      option: "", // SIN texto
+      // Ajustar imagen: offsetY más negativo = más lejos del centro (hacia el borde)
+      image: s.image ? {
+        uri: s.image.uri,
+        sizeMultiplier: s.image.sizeMultiplier || 0.15,
+        offsetY: -75, // Mover imagen hacia el borde exterior
+        offsetX: 0
+      } : undefined,
     }));
   }, [segments]);
 
@@ -576,7 +577,7 @@ const WheelPage = () => {
                       onStopSpinning={() => { /* no-op: manejado por la capa superior */ }}
                       perpendicularText={false}
                       fontSize={0}
-                      textDistance={55}
+                      textDistance={0}
                       backgroundColors={["#FFFFFF", "#F2F2F7"]}
                       outerBorderColor={"#e2e8f0"}
                       outerBorderWidth={5}
@@ -606,7 +607,7 @@ const WheelPage = () => {
                       data={segmentsTextOnly}
                       onStopSpinning={handleStopSpinning}
                       perpendicularText={false}
-                      textDistance={55}
+                      textDistance={70}
                       fontSize={14}
                       backgroundColors={["rgba(0,0,0,0)", "rgba(0,0,0,0)"]}
                       textColors={["#1f2937"]}
