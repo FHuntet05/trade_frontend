@@ -47,10 +47,16 @@ const createTickSchedule = (
     return timeline;
   };
 
-// Nota: Eliminamos el uso de segmentos de respaldo. La ruleta solo mostrará
-// lo que venga configurado desde el panel de administración. Si no hay
-// configuración, se dejará deshabilitada.
-const FALLBACK_SEGMENTS = [];
+const FALLBACK_SEGMENTS = [
+  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 } },
+  { option: "+1 Giro 🎁", text: "+1 Giro 🎁", type: "spins", value: 1, weight: 1, isActive: true },
+  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 } },
+  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 } },
+  { option: "+2 Giros 🎁", text: "+2 Giros 🎁", type: "spins", value: 2, weight: 1, isActive: true },
+  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 } },
+  { option: "Sin premio", text: "Sin premio", type: "none", value: 0, weight: 1, isActive: true },
+  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 } }
+];
 
 const MILESTONE_TASKS = [
   {
@@ -100,7 +106,6 @@ const WheelPage = () => {
     fetchTeamStats: state.fetchTeamStats,
   }));
 
-  // Solo mostraremos segmentos provenientes del backend (panel admin)
   const [segments, setSegments] = useState(FALLBACK_SEGMENTS);
   const [mustSpin, setMustSpin] = useState(false);
   const [prizeNumber, setPrizeNumber] = useState(0);
@@ -114,8 +119,18 @@ const WheelPage = () => {
 
   const availableSpins = user?.balance?.spins ?? 0;
 
-  // No generamos capas separadas. Trabajamos con un único arreglo de segmentos
-  // que contiene SOLO el texto del panel y, si existen, imágenes.
+  // Derivado: segmentos solo texto para dibujar por encima (evita que la imagen tape el texto)
+  const segmentsTextOnly = useMemo(() => {
+    return (segments || []).map((s) => ({
+      option: s.option,
+      text: s.text,
+      type: s.type,
+      value: s.value,
+      weight: s.weight,
+      isActive: s.isActive,
+      // sin imagen para que la capa superior solo dibuje texto
+    }));
+  }, [segments]);
 
   const ensureAudioContext = () => {
     if (typeof window === "undefined") {
@@ -266,25 +281,28 @@ const WheelPage = () => {
         const { data } = await api.get("/wheel/config");
         const apiSegments = data?.data?.segments || [];
         if (apiSegments.length) {
-          const normalizedSegments = apiSegments.map((segment) => {
+          const normalizedSegments = apiSegments.map((segment, index) => {
             const type = ["usdt", "spins", "none"].includes(segment.type) ? segment.type : "none";
+            const hasImage = Boolean(segment.imageUrl);
             const numericValue = Number(segment.value ?? 0);
             const normalizedValue = Number.isFinite(numericValue) ? numericValue : 0;
-            const configuredText = (segment.text || "").trim();
-            const hasImage = !!segment.imageUrl;
-
-            // Mostrar únicamente el texto configurado por el admin, sin fallback
-            const label = configuredText; // puede ser ""
+            const fallbackLabel = segment.text?.trim()
+              || (type === "usdt"
+                ? `${normalizedValue.toFixed(2)} USDT`
+                : type === "spins"
+                ? `${normalizedValue} giros`
+                : "Sin premio");
+            const label = fallbackLabel || `Premio ${index + 1}`;
 
             return {
               option: label,
-              text: label,
+              text: fallbackLabel,
               type,
               value: normalizedValue,
               weight: Number(segment.weight ?? 1) || 1,
               isActive: segment.isActive !== false,
               image: hasImage
-                ? { uri: segment.imageUrl, sizeMultiplier: 0.15, offsetY: -90, offsetX: 0 }
+                ? { uri: segment.imageUrl, sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 }
                 : undefined,
             };
           });
@@ -293,15 +311,13 @@ const WheelPage = () => {
           setIsWheelDisabled(false);
           setConfigMessage("");
         } else {
-          // No hay configuración: ruleta deshabilitada y sin segmentos
-          setSegments([]);
+          setSegments(FALLBACK_SEGMENTS);
           setConfigMessage("La ruleta aún no tiene premios activos. Comunícate con soporte para configurarla.");
           setIsWheelDisabled(true);
         }
       } catch (error) {
         console.error("wheel/config", error);
-        // Error al cargar: no mostramos contenidos de ejemplo
-        setSegments([]);
+        setSegments(FALLBACK_SEGMENTS);
         const backendMessage = error.response?.data?.message;
         if (error.response?.status === 404) {
           setConfigMessage(backendMessage || "La ruleta aún no ha sido configurada por el administrador.");
@@ -476,7 +492,6 @@ const WheelPage = () => {
         }
         // Persistimos el flag de reclamado en el estado local
         updateUser({
-          ...user,
           claimedTasks: {
             ...(user?.claimedTasks || {}),
             [task.claimKey]: true,
@@ -488,14 +503,6 @@ const WheelPage = () => {
       // Si ya estaba reclamado, backend responde 200 con claimed=true o 200 con mensaje; si lanza error lo ignoramos suavemente
       const msg = error?.response?.data?.message;
       if (msg && /ya/i.test(msg)) {
-        // Si el backend confirma que ya estaba reclamado, lo marcamos en el frontend por si no estaba sincronizado
-        updateUser({
-          ...user,
-          claimedTasks: {
-            ...(user?.claimedTasks || {}),
-            [task.claimKey]: true,
-          }
-        });
         toast('Ya reclamado anteriormente');
       }
     } finally {
@@ -544,29 +551,27 @@ const WheelPage = () => {
               </div>
 
               <div className="relative mx-auto flex flex-col items-center">
-                {segments?.length > 0 ? (
-                  <div className="relative flex h-[18rem] w-[18rem] items-center justify-center md:h-[20rem] md:w-[20rem]">
+                <div className="relative flex h-[18rem] w-[18rem] items-center justify-center md:h-[20rem] md:w-[20rem]">
+                  {/* Capa inferior: imágenes + tablero */}
+                  <div className="absolute inset-0">
                     <Wheel
                       mustStartSpinning={mustSpin}
                       prizeNumber={prizeNumber}
                       data={segments}
-                      onStopSpinning={handleStopSpinning}
-                      // Texto radial hacia el centro
-                      perpendicularText={true}
-                      textDistance={80}
-                      fontSize={16}
-                      textColors={["#ffffff"]}
-                      // Colores alternados para los segmentos
-                      backgroundColors={["#ffb703", "#fb8500", "#8ecae6", "#219ebc"]}
-                      // Estilos de borde
+                      onStopSpinning={() => { /* no-op: manejado por la capa superior */ }}
+                      perpendicularText={false}
+                      // Ocultar texto en capa inferior (solo imágenes y tablero)
+                      textColors={["rgba(0,0,0,0)"]}
+                      fontSize={1}
+                      textDistance={70}
+                      backgroundColors={["#FFFFFF", "#F2F2F7"]}
                       outerBorderColor={"#e2e8f0"}
                       outerBorderWidth={5}
                       innerRadius={15}
                       innerBorderColor={"#e2e8f0"}
                       innerBorderWidth={3}
-                      radiusLineColor={"#ffffff55"}
-                      radiusLineWidth={1}
-                      // Puntero
+                      radiusLineColor={"transparent"}
+                      radiusLineWidth={0}
                       pointerProps={{
                         style: {
                           width: "16%",
@@ -579,12 +584,35 @@ const WheelPage = () => {
                       showWinnerBorder={false}
                     />
                   </div>
-                ) : (
-                  <div className="flex h-[18rem] w-[18rem] items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 md:h-[20rem] md:w-[20rem]">
-                    <span className="text-sm text-center px-6">La ruleta aún no tiene premios activos.</span>
+
+                  {/* Capa superior: solo texto (transparente el tablero) */}
+                  <div className="absolute inset-0">
+                    <Wheel
+                      mustStartSpinning={mustSpin}
+                      prizeNumber={prizeNumber}
+                      data={segmentsTextOnly}
+                      onStopSpinning={handleStopSpinning}
+                      perpendicularText={false}
+                      textDistance={56}
+                      fontSize={13}
+                      // Tablero transparente para que se vea la capa inferior
+                      backgroundColors={["rgba(0,0,0,0)", "rgba(0,0,0,0)"]}
+                      textColors={["#1f2937"]}
+                      outerBorderColor={"rgba(0,0,0,0)"}
+                      outerBorderWidth={0}
+                      innerRadius={15}
+                      innerBorderColor={"rgba(0,0,0,0)"}
+                      innerBorderWidth={0}
+                      radiusLineColor={"transparent"}
+                      radiusLineWidth={0}
+                      // Ocultar el puntero en la capa superior
+                      pointerProps={{ style: { display: 'none' } }}
+                      disableInitialAnimation={true}
+                      showWinnerBorder={false}
+                    />
                   </div>
-                )}
-              </div>
+                </div>
+
                 <div className="mt-6 flex justify-center">
                   <IOSButton
                     variant="primary"
@@ -605,6 +633,7 @@ const WheelPage = () => {
                   <p className="mt-3 text-xs text-slate-500">Gana más giros completando las misiones de invitación o las tareas especiales.</p>
                 )}
               </div>
+            </div>
           </IOSCard>
 
           <div className="flex flex-col gap-6">
