@@ -119,6 +119,19 @@ const WheelPage = () => {
 
   const availableSpins = user?.balance?.spins ?? 0;
 
+  // Derivado: segmentos solo texto para dibujar por encima (evita que la imagen tape el texto)
+  const segmentsTextOnly = useMemo(() => {
+    return (segments || []).map((s) => ({
+      option: s.option,
+      text: s.text,
+      type: s.type,
+      value: s.value,
+      weight: s.weight,
+      isActive: s.isActive,
+      // sin imagen para que la capa superior solo dibuje texto
+    }));
+  }, [segments]);
+
   const ensureAudioContext = () => {
     if (typeof window === "undefined") {
       return null;
@@ -538,36 +551,66 @@ const WheelPage = () => {
               </div>
 
               <div className="relative mx-auto flex flex-col items-center">
-                <div className="flex h-[18rem] w-[18rem] items-center justify-center md:h-[20rem] md:w-[20rem]">
-                  <Wheel
-                    mustStartSpinning={mustSpin}
-                    prizeNumber={prizeNumber}
-                    data={segments}
-                    onStopSpinning={handleStopSpinning}
-                    // Mantener texto perpendicular al eje central (tangente al círculo)
-                    perpendicularText={false}
-                    textDistance={56}
-                    fontSize={13}
-                    backgroundColors={["#FFFFFF", "#F2F2F7"]}
-                    textColors={["#1f2937"]}
-                    outerBorderColor={"#e2e8f0"}
-                    outerBorderWidth={5}
-                    innerRadius={15}
-                    innerBorderColor={"#e2e8f0"}
-                    innerBorderWidth={3}
-                    radiusLineColor={"transparent"}
-                    radiusLineWidth={0}
-                    pointerProps={{
-                      style: {
-                        width: "16%",
-                        right: "6px",
-                        top: "10px",
-                        filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.25))",
-                      },
-                    }}
-                    disableInitialAnimation={true}
-                    showWinnerBorder={false}
-                  />
+                <div className="relative flex h-[18rem] w-[18rem] items-center justify-center md:h-[20rem] md:w-[20rem]">
+                  {/* Capa inferior: imágenes + tablero */}
+                  <div className="absolute inset-0">
+                    <Wheel
+                      mustStartSpinning={mustSpin}
+                      prizeNumber={prizeNumber}
+                      data={segments}
+                      onStopSpinning={() => { /* no-op: manejado por la capa superior */ }}
+                      perpendicularText={false}
+                      // Ocultar texto en capa inferior (solo imágenes y tablero)
+                      textColors={["rgba(0,0,0,0)"]}
+                      fontSize={1}
+                      textDistance={70}
+                      backgroundColors={["#FFFFFF", "#F2F2F7"]}
+                      outerBorderColor={"#e2e8f0"}
+                      outerBorderWidth={5}
+                      innerRadius={15}
+                      innerBorderColor={"#e2e8f0"}
+                      innerBorderWidth={3}
+                      radiusLineColor={"transparent"}
+                      radiusLineWidth={0}
+                      pointerProps={{
+                        style: {
+                          width: "16%",
+                          right: "6px",
+                          top: "10px",
+                          filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.25))",
+                        },
+                      }}
+                      disableInitialAnimation={true}
+                      showWinnerBorder={false}
+                    />
+                  </div>
+
+                  {/* Capa superior: solo texto (transparente el tablero) */}
+                  <div className="absolute inset-0">
+                    <Wheel
+                      mustStartSpinning={mustSpin}
+                      prizeNumber={prizeNumber}
+                      data={segmentsTextOnly}
+                      onStopSpinning={handleStopSpinning}
+                      perpendicularText={false}
+                      textDistance={56}
+                      fontSize={13}
+                      // Tablero transparente para que se vea la capa inferior
+                      backgroundColors={["rgba(0,0,0,0)", "rgba(0,0,0,0)"]}
+                      textColors={["#1f2937"]}
+                      outerBorderColor={"rgba(0,0,0,0)"}
+                      outerBorderWidth={0}
+                      innerRadius={15}
+                      innerBorderColor={"rgba(0,0,0,0)"}
+                      innerBorderWidth={0}
+                      radiusLineColor={"transparent"}
+                      radiusLineWidth={0}
+                      // Ocultar el puntero en la capa superior
+                      pointerProps={{ style: { display: 'none' } }}
+                      disableInitialAnimation={true}
+                      showWinnerBorder={false}
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-6 flex justify-center">
