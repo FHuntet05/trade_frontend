@@ -587,31 +587,53 @@ const WheelPage = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                    {[{
-                    label: t('wheelPage.cards.stats.totalReferrals'),
-                    value: totalReferrals,
-                    helper: t('wheelPage.cards.stats.totalReferralsHelper'),
-                  }, {
-                    label: t('wheelPage.cards.stats.validReferrals'),
-                    value: validReferrals,
-                    helper: t('wheelPage.cards.stats.validReferralsHelper'),
-                  }, {
-                    label: t('wheelPage.cards.stats.generatedSpins'),
-                    value: validReferrals,
-                    helper: t('wheelPage.cards.stats.generatedSpinsHelper'),
-                  }].map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">{item.label}</p>
-                        <p className="text-xs text-slate-500">{item.helper}</p>
-                      </div>
-                      <span className="text-2xl font-bold text-slate-900">{item.value}</span>
-                    </div>
-                  ))}
+                {/* Resumen general */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5">
+                    <p className="text-xs text-slate-500">{t('wheelPage.cards.stats.totalReferrals')}</p>
+                    <p className="text-xl font-bold text-slate-900">{totalReferrals}</p>
+                  </div>
+                  <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2.5">
+                    <p className="text-xs text-emerald-700">{t('wheelPage.cards.stats.totalCommissions')}</p>
+                    <p className="text-xl font-bold text-emerald-600">{(teamStats?.totalCommission ?? 0).toFixed(2)} USDT</p>
+                  </div>
+                </div>
+
+                {/* Tabla de niveles */}
+                <div className="overflow-hidden rounded-xl border border-slate-200">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-100">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">{t('wheelPage.cards.stats.level')}</th>
+                        <th className="px-3 py-2 text-center text-xs font-semibold text-slate-700">{t('wheelPage.cards.stats.total')}</th>
+                        <th className="px-3 py-2 text-center text-xs font-semibold text-emerald-700">{t('wheelPage.cards.stats.valid')}</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold text-blue-700">{t('wheelPage.cards.stats.earned')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {(teamStats?.levels || []).map((level) => (
+                        <tr key={level.level} className="hover:bg-slate-50">
+                          <td className="px-3 py-2.5 font-medium text-slate-900">Nivel {level.level}</td>
+                          <td className="px-3 py-2.5 text-center text-slate-700">{level.totalMembers}</td>
+                          <td className="px-3 py-2.5 text-center">
+                            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                              {level.validMembers}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-blue-600">
+                            {(level.commissionsEarned ?? 0).toFixed(2)} USDT
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Nota informativa */}
+                <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
+                  <p className="text-xs text-blue-700">
+                    💡 {t('wheelPage.cards.stats.validNote')}
+                  </p>
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">

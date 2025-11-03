@@ -310,7 +310,13 @@
         "validReferrals": "Referidos válidos",
         "validReferralsHelper": "Solo los que ya depositaron.",
         "generatedSpins": "Giros generados",
-        "generatedSpinsHelper": "1 giro por cada referido válido."
+        "generatedSpinsHelper": "1 giro por cada referido válido.",
+        "totalCommissions": "Comisiones totales",
+        "level": "Nivel",
+        "total": "Total",
+        "valid": "Válidos",
+        "earned": "Ganado",
+        "validNote": "Los referidos válidos son aquellos que han depositado USDT BEP20"
       }
     },
     "actions": { "copyReferral": "Copiar enlace de referido", "shareTelegram": "Compartir en Telegram" },

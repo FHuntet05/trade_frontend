@@ -353,7 +353,13 @@
         "validReferrals": "Valid referrals",
         "validReferralsHelper": "Only those who have deposited.",
         "generatedSpins": "Generated spins",
-        "generatedSpinsHelper": "1 spin per valid referral."
+        "generatedSpinsHelper": "1 spin per valid referral.",
+        "totalCommissions": "Total commissions",
+        "level": "Level",
+        "total": "Total",
+        "valid": "Valid",
+        "earned": "Earned",
+        "validNote": "Valid referrals are those who have deposited USDT BEP20"
       }
     },
     "actions": { "copyReferral": "Copy referral link", "shareTelegram": "Share on Telegram" },

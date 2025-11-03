@@ -287,7 +287,13 @@
           "validReferrals": "الإحالات الصالحة",
           "validReferralsHelper": "فقط من قاموا بالإيداع.",
           "generatedSpins": "لفات مولدة",
-          "generatedSpinsHelper": "لفة واحدة لكل إحالة صالحة."
+          "generatedSpinsHelper": "لفة واحدة لكل إحالة صالحة.",
+          "totalCommissions": "إجمالي العمولات",
+          "level": "المستوى",
+          "total": "المجموع",
+          "valid": "الصالحة",
+          "earned": "المكتسبة",
+          "validNote": "الإحالات الصالحة هي تلك التي أودعت USDT BEP20"
         }
       },
       "actions": { "copyReferral": "نسخ رابط الإحالة", "shareTelegram": "المشاركة على تيليجرام" },
