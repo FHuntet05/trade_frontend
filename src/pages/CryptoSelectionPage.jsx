@@ -9,13 +9,13 @@ import { HiChevronRight } from 'react-icons/hi2';
 import StaticPageLayout from '../components/layout/StaticPageLayout';
 
 const cryptoLogos = {
-    'BEP20-USDT': '/assets/images/networks/bep20-usdt.png',
-    'TRC20-USDT': '/assets/images/networks/trc20-usdt.png',
-    'BNB': '/assets/images/networks/bnb.png',
-    'TRX': '/assets/images/networks/tron.png',
-    'LTC': '/assets/images/networks/litecoin.png',
+    'BEP20-USDT': '/assets/images/bep20-usdt.png',
+    'TRC20-USDT': '/assets/images/USDT.png',
+    'BNB': '/assets/images/BNB.png',
+    'TRX': '/assets/images/TRONTRX.png',
+    'LTC': '/assets/images/litecoin.png',
   'TON': '/assets/images/TON.png',
-  'DOGE': '/assets/images/DOG.png',
+  'DOGE': '/assets/images/DOGE.png',
 };
 
 const getCryptoLogo = (name) => {

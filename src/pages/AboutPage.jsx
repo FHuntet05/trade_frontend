@@ -12,20 +12,20 @@ const AboutPage = () => {
           {/* Hero */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
             <div className="space-y-4">
-              <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-pink-500/15 text-pink-400 border border-pink-400/30">
+              <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-pink-500/15 text-pink-600 border border-pink-400/30">
                 {t('aboutDetailed.badge')}
               </span>
-              <h2 className="text-2xl md:text-3xl font-extrabold text-white leading-tight">
+              <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight">
                 {t('aboutDetailed.heroTitle')}
               </h2>
-              <p className="text-text-secondary">{t('aboutDetailed.heroP1')}</p>
-              <p className="text-text-secondary">{t('aboutDetailed.heroP2')}</p>
+              <p className="text-gray-700">{t('aboutDetailed.heroP1')}</p>
+              <p className="text-gray-700">{t('aboutDetailed.heroP2')}</p>
             </div>
             <div>
               <img
                 src="/assets/images/img1personas.jpg"
                 alt={t('aboutDetailed.alt1')}
-                className="w-full h-56 md:h-72 rounded-2xl object-cover shadow-xl shadow-black/20 border border-white/10"
+                className="w-full h-56 md:h-72 rounded-2xl object-cover shadow-xl shadow-black/20 border border-gray-200"
                 loading="lazy"
               />
             </div>
@@ -52,13 +52,13 @@ const AboutPage = () => {
                 title: t('aboutDetailed.how.steps.4.title'),
                 body: t('aboutDetailed.how.steps.4.body')
               }].map((step) => (
-                <div key={step.n} className="relative overflow-hidden rounded-xl bg-white/5 border border-white/10 p-5">
-                  <div className="absolute -top-3 -left-3 w-14 h-14 rounded-full bg-pink-500/20 border border-pink-400/30 flex items-center justify-center">
-                    <span className="text-pink-300 font-extrabold text-lg">{step.n}</span>
+                <div key={step.n} className="relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 p-5 shadow-sm">
+                  <div className="absolute -top-3 -left-3 w-14 h-14 rounded-full bg-pink-500 border border-pink-400 flex items-center justify-center shadow-md">
+                    <span className="text-white font-extrabold text-lg">{step.n}</span>
                   </div>
                   <div className="pl-10">
-                    <h4 className="text-white font-semibold mb-1">{step.title}</h4>
-                    <p className="text-sm text-text-secondary">{step.body}</p>
+                    <h4 className="text-gray-900 font-semibold mb-1">{step.title}</h4>
+                    <p className="text-sm text-gray-700">{step.body}</p>
                   </div>
                 </div>
               ))}
@@ -67,7 +67,7 @@ const AboutPage = () => {
 
           {/* Por qué invertir */}
           <section className="space-y-4">
-            <h3 className="text-xl font-bold text-white">{t('aboutDetailed.why.title')}</h3>
+            <h3 className="text-xl font-bold text-gray-900">{t('aboutDetailed.why.title')}</h3>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[ 
                 t('aboutDetailed.why.items.0'),
@@ -77,9 +77,9 @@ const AboutPage = () => {
                 t('aboutDetailed.why.items.4'),
                 t('aboutDetailed.why.items.5')
               ].map((item, idx) => (
-                <li key={idx} className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-xl p-4">
+                <li key={idx} className="flex items-start gap-3 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-4 shadow-sm">
                   <span aria-hidden className="mt-0.5">✅</span>
-                  <span className="text-text-secondary">{item}</span>
+                  <span className="text-gray-700">{item}</span>
                 </li>
               ))}
             </ul>
@@ -87,16 +87,16 @@ const AboutPage = () => {
 
           {/* Cómo se generan las ganancias */}
           <section className="space-y-4">
-            <h3 className="text-xl font-bold text-white">{t('aboutDetailed.earnings.title')}</h3>
-            <p className="text-text-secondary">{t('aboutDetailed.earnings.p')}</p>
+            <h3 className="text-xl font-bold text-gray-900">{t('aboutDetailed.earnings.title')}</h3>
+            <p className="text-gray-700">{t('aboutDetailed.earnings.p')}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-white/10 p-5">
-                <p className="text-white font-semibold">{t('aboutDetailed.earnings.example1.title')}</p>
-                <p className="text-text-secondary text-sm">{t('aboutDetailed.earnings.example1.subtitle')}</p>
+              <div className="rounded-xl bg-gradient-to-br from-pink-100 to-purple-100 border border-pink-300 p-5 shadow-sm">
+                <p className="text-gray-900 font-semibold">{t('aboutDetailed.earnings.example1.title')}</p>
+                <p className="text-gray-700 text-sm">{t('aboutDetailed.earnings.example1.subtitle')}</p>
               </div>
-              <div className="rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/10 p-5">
-                <p className="text-white font-semibold">{t('aboutDetailed.earnings.example2.title')}</p>
-                <p className="text-text-secondary text-sm">{t('aboutDetailed.earnings.example2.subtitle')}</p>
+              <div className="rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 border border-purple-300 p-5 shadow-sm">
+                <p className="text-gray-900 font-semibold">{t('aboutDetailed.earnings.example2.title')}</p>
+                <p className="text-gray-700 text-sm">{t('aboutDetailed.earnings.example2.subtitle')}</p>
               </div>
             </div>
           </section>
@@ -104,14 +104,14 @@ const AboutPage = () => {
           {/* Misión */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
             <div className="order-2 md:order-1 space-y-3">
-              <h3 className="text-xl font-bold text-white">{t('aboutDetailed.mission.title')}</h3>
-              <p className="text-text-secondary">{t('aboutDetailed.mission.body')}</p>
+              <h3 className="text-xl font-bold text-gray-900">{t('aboutDetailed.mission.title')}</h3>
+              <p className="text-gray-700">{t('aboutDetailed.mission.body')}</p>
             </div>
             <div className="order-1 md:order-2">
               <img
                 src="/assets/images/img2cunno.jpg"
                 alt={t('aboutDetailed.alt2')}
-                className="w-full h-56 md:h-72 rounded-2xl object-cover shadow-xl shadow-black/20 border border-white/10"
+                className="w-full rounded-2xl object-contain shadow-xl shadow-black/20 border border-gray-200"
                 loading="lazy"
               />
             </div>
