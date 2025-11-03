@@ -544,9 +544,9 @@ const WheelPage = () => {
                     prizeNumber={prizeNumber}
                     data={segments}
                     onStopSpinning={handleStopSpinning}
-                    // Mostrar el texto aunque haya imagen y orientarlo de forma perpendicular al círculo
-                    perpendicularText={true}
-                    textDistance={64}
+                    // Mantener texto perpendicular al eje central (tangente al círculo)
+                    perpendicularText={false}
+                    textDistance={68}
                     fontSize={14}
                     backgroundColors={["#FFFFFF", "#F2F2F7"]}
                     textColors={["#1f2937"]}
