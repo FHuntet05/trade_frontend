@@ -195,6 +195,147 @@
     "p1": "Somos un equipo apasionado por la tecnología blockchain y las finanzas descentralizadas. Nuestra misión con Ai Brok Trade Pro es crear una puerta de entrada accesible y divertida al mundo de las criptomonedas.",
     "p2": "Creemos que el aprendizaje debe ser una experiencia atractiva, y hemos diseñado esta plataforma para simular los conceptos de minería y recompensas de una manera sencilla y visual."
   },
+  "aboutDetailed": {
+    "badge": "AIBrokTrade",
+    "heroTitle": "Trading automatizado con IA para resultados reales",
+    "heroP1": "AIBrokTrade es un sistema de trading automatizado basado en inteligencia artificial, diseñado para generar operaciones rentables en los mercados financieros de forma totalmente automática. Utiliza algoritmos avanzados de análisis predictivo para identificar oportunidades y ejecutar operaciones con alta precisión.",
+    "heroP2": "Su tecnología combina inteligencia artificial y estrategias desarrolladas por traders profesionales con experiencia, logrando un equilibrio entre seguridad, eficiencia y rentabilidad.",
+    "alt1": "Personas colaborando sobre finanzas y tecnología",
+    "alt2": "Tecnología y análisis de datos con IA",
+    "how": {
+      "title": "¿Cómo funciona?",
+      "steps": {
+        "1": { "title": "Análisis Inteligente", "body": "El bot analiza constantemente los mercados, estudiando indicadores técnicos, tendencias y patrones históricos para detectar oportunidades." },
+        "2": { "title": "Ejecución Automática", "body": "Cuando el sistema detecta una operación con alta probabilidad de éxito, ejecuta la orden automáticamente, sin intervención humana." },
+        "3": { "title": "Gestión de Riesgo", "body": "Ajusta tamaños de posición y aplica estrategias de control para proteger el capital y optimizar la relación riesgo/beneficio." },
+        "4": { "title": "Ganancias Reales", "body": "Las ganancias se reflejan directamente en tu cuenta. Puedes retirar capital o beneficios en cualquier momento." }
+      }
+    },
+    "why": {
+      "title": "¿Por qué invertir con AIBrokTradePro?",
+      "items": [
+        "Automatización total: no necesitas experiencia; el sistema trabaja por ti.",
+        "Alta precisión: efectividad estimada del 85% al 95% gracias a la IA.",
+        "Retiro libre: fondos no bloqueados; retira cuando quieras.",
+        "Transparencia total: resultados y movimientos en tiempo real.",
+        "Aprendizaje constante: la IA mejora con cada operación.",
+        "Soporte técnico 24/7 para todos los usuarios."
+      ]
+    },
+    "earnings": {
+      "title": "¿Cómo se generan las ganancias?",
+      "p": "Cuando depositas fondos, estos son usados por el sistema para realizar operaciones automáticas en los mercados de criptomonedas, forex y commodities. Las ganancias diarias dependen del monto invertido y las condiciones del mercado, siempre dentro de rangos sostenibles.",
+      "example1": { "title": "Inversión de $100", "subtitle": "Ganancias diarias entre 1.5% y 3%" },
+      "example2": { "title": "Inversión de $500", "subtitle": "Ganancias diarias entre 3% y 5%" }
+    },
+    "mission": {
+      "title": "Misión de AIBrokTradePro",
+      "body": "Nuestra misión es permitir que cualquier persona, sin importar su nivel de experiencia, pueda generar ingresos pasivos mediante el trading automatizado. Combinamos inteligencia artificial, estrategia humana y tecnología avanzada para ofrecer una plataforma confiable, rentable y accesible para todos los usuarios."
+    }
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "description": "Lo sentimos, la página que buscas no existe o ha sido movida.",
+    "actions": {
+      "home": "Volver al inicio",
+      "support": "Ir a soporte",
+      "about": "Conocer AIBrokTrade"
+    }
+  },
+  "ticketDrawer": {
+    "header": { "panel": "Panel financiero", "title": "Historial de inversiones" },
+    "tabs": { "tickets": "Depósitos", "market": "Mercado", "quantitative": "Cuantitativo" },
+    "status": {
+      "pending": "Pendiente",
+      "awaiting_manual_review": "En revisión manual",
+      "processing": "En proceso",
+      "completed": "Completado",
+      "expired": "Expirado",
+      "cancelled": "Cancelado",
+      "rejected": "Rechazado"
+    },
+    "stats": { "pending": "Pendientes", "completed": "Acreditados", "totalTickets": "Total de tickets" },
+    "loaders": { "tickets": "Cargando tickets...", "market": "Cargando inversiones...", "quantitative": "Cargando planes..." },
+    "empty": {
+      "tickets": { "title": "Aún no tienes tickets de depósito.", "subtitle": "Tus depósitos aparecerán aquí." }
+    },
+    "labels": {
+      "manual": "Manual",
+      "automatic": "Automático",
+      "destination": "Destino",
+      "expires": "Expira",
+      "investment": "Inversión",
+      "daily": "Diario",
+      "purchaseDate": "Fecha de compra",
+      "duration": "Duración",
+      "days": "días",
+      "endsAt": "Finaliza"
+    },
+    "buttons": { "viewDetails": "Ver detalle", "cancel": "Cancelar ticket", "cancelling": "Cancelando..." },
+    "toasts": { "cancelSuccess": "Ticket cancelado", "cancelError": "No se pudo cancelar el ticket." },
+    "market": {
+      "totalInvested": "Total invertido",
+      "assets": "activos",
+      "dailyProfit": "Ganancia diaria",
+      "activeYield": "Rendimiento activo",
+      "emptyTitle": "Sin inversiones de mercado",
+      "emptySubtitle": "Tus compras aparecerán aquí",
+      "expectedReturn": "Retorno esperado"
+    },
+    "quant": {
+      "totalCapital": "Capital total",
+      "plans": "planes",
+      "dailyProfit": "Ganancia diaria",
+      "toWithdrawable": "A saldo retirable",
+      "emptyTitle": "Sin planes cuantitativos",
+      "emptySubtitle": "Tus inversiones aparecerán aquí",
+      "planLabel": "Plan cuantitativo",
+      "accruedProfit": "Ganancia acumulada"
+    }
+  },
+  "wheelPage": {
+    "title": "Ruleta de Premios",
+    "subtitle": { "1": "Consigue giros diarios, invita a tu equipo y convierte los premios en", "highlight": "saldo retirable USDT" },
+    "availableSpins": "Giros disponibles",
+    "remember": "Recuerda",
+    "rememberDetail": "cada premio en USDT se carga automáticamente a tu saldo retirable",
+    "status": { "syncing": "Sincronizando premios...", "waitingConfig": "En espera de configuración", "ready": "Premios listos" },
+    "cta": { "spinning": "Girando...", "configuring": "Ruleta en configuración", "spin": "Girar ruleta", "noSpins": "Sin giros disponibles" },
+    "hint": { "moreSpins": "Gana más giros completando las misiones de invitación o las tareas especiales." },
+    "cards": {
+      "multiply": { "title": "Multiplica tus giros", "validReferral": "Cada referido válido", "detail": "(con depósito confirmado) suma un giro automático a tu saldo." },
+      "stats": {
+        "totalReferrals": "Referidos totales",
+        "totalReferralsHelper": "Invitaciones directas registradas.",
+        "validReferrals": "Referidos válidos",
+        "validReferralsHelper": "Solo los que ya depositaron.",
+        "generatedSpins": "Giros generados",
+        "generatedSpinsHelper": "1 giro por cada referido válido."
+      }
+    },
+    "actions": { "copyReferral": "Copiar enlace de referido", "shareTelegram": "Compartir en Telegram" },
+    "missions": { "title": "Misiones para giros extra", "subtitle": "Completa hitos y misiones especiales para desbloquear paquetes de giros al instante." },
+    "milestones": { "title": "Hitos de invitación", "completed": "Completado" },
+    "special": { "title": "Misiones especiales", "claimed": "Reclamado", "goNow": "Ir ahora", "comingSoon": "Próximamente" },
+    "config": {
+      "noActivePrizes": "La ruleta aún no tiene premios activos. Comunícate con soporte para configurarla.",
+      "notConfigured": "La ruleta aún no ha sido configurada por el administrador.",
+      "loadError": "No pudimos cargar los premios de la ruleta. Inténtalo de nuevo en unos minutos."
+    },
+    "toasts": {
+      "noReferralLink": "No pudimos generar tu enlace de referido.",
+      "linkCopied": "Enlace de referido copiado ✅",
+      "noPrize": "Sin premio",
+      "win": "¡Ganaste {{prize}}! 🎉",
+      "comingSoon": "Muy pronto disponible",
+      "rewardClaimed": "Recompensa reclamada ✅",
+      "alreadyClaimed": "Ya reclamado anteriormente",
+      "rewardAppliedLocally": "Recompensa aplicada localmente",
+      "rewardClaimError": "No se pudo reclamar la recompensa"
+    },
+    "errors": { "spinStart": "No se pudo iniciar el giro", "spinGeneric": "Error al iniciar el giro." },
+    "shareText": "Únete y obtén beneficios con mi enlace de AiBrokTradePro"
+  },
   "supportPage": {
     "title": "Atención al Cliente",
     "p1": "Si tienes algún problema, duda o sugerencia, no dudes en contactarnos. Nuestro equipo de soporte está aquí para ayudarte.",

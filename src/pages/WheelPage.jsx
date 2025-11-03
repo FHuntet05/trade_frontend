@@ -10,6 +10,7 @@ import api from "@/api/axiosConfig";
 import useUserStore from "@/store/userStore";
 import useTeamStore from "@/store/teamStore";
 import { IOSButton, IOSCard } from "../components/ui/IOSComponents";
+import { useTranslation } from 'react-i18next';
 
 const SPIN_TOTAL_DURATION_MS = 2600 + 750 + 8000; // match library's timing phases
 const TICK_COUNT = 48;
@@ -100,6 +101,7 @@ const SPECIAL_TASKS = [
 ];
 
 const WheelPage = () => {
+  const { t, i18n } = useTranslation();
   const { user, updateUserBalances, updateUser } = useUserStore();
   const { stats: teamStats, fetchTeamStats } = useTeamStore((state) => ({
     stats: state.stats,
@@ -299,7 +301,7 @@ const WheelPage = () => {
           setConfigMessage("");
         } else {
           setSegments(FALLBACK_SEGMENTS);
-          setConfigMessage("La ruleta aún no tiene premios activos. Comunícate con soporte para configurarla.");
+          setConfigMessage(t('wheelPage.config.noActivePrizes'));
           setIsWheelDisabled(true);
         }
       } catch (error) {
@@ -307,9 +309,9 @@ const WheelPage = () => {
         setSegments(FALLBACK_SEGMENTS);
         const backendMessage = error.response?.data?.message;
         if (error.response?.status === 404) {
-          setConfigMessage(backendMessage || "La ruleta aún no ha sido configurada por el administrador.");
+          setConfigMessage(backendMessage || t('wheelPage.config.notConfigured'));
         } else {
-          setConfigMessage("No pudimos cargar los premios de la ruleta. Inténtalo de nuevo en unos minutos.");
+          setConfigMessage(t('wheelPage.config.loadError'));
         }
         setIsWheelDisabled(true);
       } finally {
@@ -371,17 +373,17 @@ const WheelPage = () => {
 
   const shareReferralOnTelegram = () => {
     const encodedLink = encodeURIComponent(referralLink);
-    const shareText = encodeURIComponent("Únete y obtén beneficios con mi enlace de AiBrokTradePro");
+  const shareText = encodeURIComponent(t('wheelPage.shareText'));
     window.open(`https://t.me/share/url?url=${encodedLink}&text=${shareText}`, "_blank", "noopener,noreferrer");
   };
 
   const copyLink = () => {
     if (!referralLink) {
-      toast.error("No pudimos generar tu enlace de referido.");
+      toast.error(t('wheelPage.toasts.noReferralLink'));
       return;
     }
     navigator.clipboard.writeText(referralLink);
-    toast.success("Enlace de referido copiado ✅");
+    toast.success(t('wheelPage.toasts.linkCopied'));
   };
 
   const handleSpinClick = async () => {
@@ -392,7 +394,7 @@ const WheelPage = () => {
     try {
       const { data } = await api.post("/wheel/spin");
       if (!data?.success) {
-        throw new Error(data?.message || "No se pudo iniciar el giro");
+  throw new Error(data?.message || t('wheelPage.errors.spinStart'));
       }
 
       const resultIndex = typeof data.resultIndex === "number" ? data.resultIndex : 0;
@@ -409,7 +411,7 @@ const WheelPage = () => {
   startTickFeedback(SPIN_TOTAL_DURATION_MS);
       setMustSpin(true);
     } catch (error) {
-      const message = error.response?.data?.message || error.message || "Error al iniciar el giro.";
+      const message = error.response?.data?.message || error.message || t('wheelPage.errors.spinGeneric');
       toast.error(message);
       if (message?.toLowerCase().includes("no está configurada")) {
         setConfigMessage(message);
@@ -444,7 +446,7 @@ const WheelPage = () => {
         }
       }
 
-      toast(`😔 Sin premio`, {
+      toast(t('wheelPage.toasts.noPrize'), {
         icon: "😔",
       });
     } else {
@@ -458,7 +460,7 @@ const WheelPage = () => {
         }
       }
 
-      toast.success(`¡Ganaste ${winnerText}! 🎉`);
+      toast.success(t('wheelPage.toasts.win', { prize: winnerText }));
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
     }
 
@@ -467,7 +469,7 @@ const WheelPage = () => {
 
   const handleSpecialTask = async (task) => {
     if (!task?.link) {
-      toast("Muy pronto disponible", { icon: "⏳" });
+      toast(t('wheelPage.toasts.comingSoon'), { icon: "⏳" });
       return;
     }
     try {
@@ -499,7 +501,7 @@ const WheelPage = () => {
           },
         });
 
-        toast.success('Recompensa reclamada ✅');
+  toast.success(t('wheelPage.toasts.rewardClaimed'));
       }
     } catch (error) {
       const msg = error?.response?.data?.message || '';
@@ -512,7 +514,7 @@ const WheelPage = () => {
             [task.claimKey]: true,
           },
         });
-        toast('Ya reclamado anteriormente');
+  toast(t('wheelPage.toasts.alreadyClaimed'));
       } else if (/misi\u00f3n inv\u00e1lida|mision invalida|invalid/i.test(msg)) {
         // Fallback optimista: acreditamos localmente para no romper UX y marcamos como reclamada
         const currentBalances = user?.balance || {};
@@ -526,9 +528,9 @@ const WheelPage = () => {
             [task.claimKey]: true,
           },
         });
-        toast('Recompensa aplicada localmente');
+  toast(t('wheelPage.toasts.rewardAppliedLocally'));
       } else {
-        toast.error('No se pudo reclamar la recompensa');
+  toast.error(t('wheelPage.toasts.rewardClaimError'));
       }
     } finally {
       // 4) Abrir el enlace solicitado
@@ -540,9 +542,9 @@ const WheelPage = () => {
     <div className="min-h-screen w-full bg-[#f5f7fb] px-4 py-6 md:px-8">
       <div className="mx-auto w-full max-w-5xl space-y-6">
         <header className="space-y-2">
-          <h1 className="text-3xl font-ios-display font-bold text-slate-900">Ruleta de Premios</h1>
+          <h1 className="text-3xl font-ios-display font-bold text-slate-900">{t('wheelPage.title')}</h1>
           <p className="text-sm md:text-base text-slate-600">
-            Consigue giros diarios, invita a tu equipo y convierte los premios en <span className="font-semibold text-slate-800">saldo retirable USDT</span>.
+            {t('wheelPage.subtitle.1')} <span className="font-semibold text-slate-800">{t('wheelPage.subtitle.highlight')}</span>.
           </p>
         </header>
 
@@ -562,16 +564,16 @@ const WheelPage = () => {
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Giros disponibles</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{t('wheelPage.availableSpins')}</p>
                     <p className="text-4xl font-bold text-emerald-500">{availableSpins}</p>
                   </div>
                   <div className="hidden h-12 w-px bg-slate-200 md:block" />
                   <div className="max-w-xs text-xs md:text-sm text-slate-600">
-                    <span className="font-semibold text-slate-800">Recuerda:</span> cada premio en USDT se carga automáticamente a tu saldo retirable.
+                    <span className="font-semibold text-slate-800">{t('wheelPage.remember')}:</span> {t('wheelPage.rememberDetail')}
                   </div>
                 </div>
                 <div className="text-xs text-right text-slate-500">
-                  {isLoadingConfig ? "Sincronizando premios..." : isWheelDisabled ? "En espera de configuración" : "Premios listos"}
+                  {isLoadingConfig ? t('wheelPage.status.syncing') : isWheelDisabled ? t('wheelPage.status.waitingConfig') : t('wheelPage.status.ready')}
                 </div>
               </div>
 
@@ -615,17 +617,17 @@ const WheelPage = () => {
                     disabled={mustSpin || availableSpins <= 0 || isLoadingConfig || !!pendingSpinResult || isWheelDisabled}
                   >
                     {mustSpin
-                      ? "Girando..."
+                      ? t('wheelPage.cta.spinning')
                       : isWheelDisabled
-                      ? "Ruleta en configuración"
+                      ? t('wheelPage.cta.configuring')
                       : availableSpins > 0
-                      ? "Girar ruleta"
-                      : "Sin giros disponibles"}
+                      ? t('wheelPage.cta.spin')
+                      : t('wheelPage.cta.noSpins')}
                   </IOSButton>
                 </div>
 
                 {availableSpins <= 0 && !isWheelDisabled && (
-                  <p className="mt-3 text-xs text-slate-500">Gana más giros completando las misiones de invitación o las tareas especiales.</p>
+                  <p className="mt-3 text-xs text-slate-500">{t('wheelPage.hint.moreSpins')}</p>
                 )}
               </div>
             </div>
@@ -636,26 +638,26 @@ const WheelPage = () => {
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900">Multiplica tus giros</h3>
+                    <h3 className="text-lg font-semibold text-slate-900">{t('wheelPage.cards.multiply.title')}</h3>
                     <p className="text-sm text-slate-600">
-                      <span className="font-semibold text-slate-800">Cada referido válido</span> (con depósito confirmado) suma un giro automático a tu saldo.
+                      <span className="font-semibold text-slate-800">{t('wheelPage.cards.multiply.validReferral')}</span> {t('wheelPage.cards.multiply.detail')}
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  {[{
-                    label: "Referidos totales",
+                    {[{
+                    label: t('wheelPage.cards.stats.totalReferrals'),
                     value: totalReferrals,
-                    helper: "Invitaciones directas registradas.",
+                    helper: t('wheelPage.cards.stats.totalReferralsHelper'),
                   }, {
-                    label: "Referidos válidos",
+                    label: t('wheelPage.cards.stats.validReferrals'),
                     value: validReferrals,
-                    helper: "Solo los que ya depositaron.",
+                    helper: t('wheelPage.cards.stats.validReferralsHelper'),
                   }, {
-                    label: "Giros generados",
+                    label: t('wheelPage.cards.stats.generatedSpins'),
                     value: validReferrals,
-                    helper: "1 giro por cada referido válido.",
+                    helper: t('wheelPage.cards.stats.generatedSpinsHelper'),
                   }].map((item) => (
                     <div
                       key={item.label}
@@ -678,7 +680,7 @@ const WheelPage = () => {
                   >
                     <div className="flex items-center justify-center gap-2">
                       <FiCopy />
-                      Copiar enlace de referido
+                      {t('wheelPage.actions.copyReferral')}
                     </div>
                   </motion.button>
                   <motion.button
@@ -688,7 +690,7 @@ const WheelPage = () => {
                   >
                     <div className="flex items-center justify-center gap-2">
                       <FiExternalLink />
-                      Compartir en Telegram
+                      {t('wheelPage.actions.shareTelegram')}
                     </div>
                   </motion.button>
                 </div>
@@ -698,12 +700,12 @@ const WheelPage = () => {
             <IOSCard className="bg-white p-6 shadow-lg">
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Misiones para giros extra</h3>
-                  <p className="text-sm text-slate-600">Completa hitos y misiones especiales para desbloquear paquetes de giros al instante.</p>
+                  <h3 className="text-lg font-semibold text-slate-900">{t('wheelPage.missions.title')}</h3>
+                  <p className="text-sm text-slate-600">{t('wheelPage.missions.subtitle')}</p>
                 </div>
 
                 <section className="space-y-3">
-                  <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Hitos de invitación</h4>
+                  <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t('wheelPage.milestones.title')}</h4>
                   <div className="space-y-3">
                     {milestoneData.map((task) => (
                       <div
@@ -727,7 +729,7 @@ const WheelPage = () => {
                           <span className="text-xs font-semibold text-slate-700">{task.progress}/{task.target}</span>
                           {task.completed && (
                             <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
-                              <FiCheckCircle /> Completado
+                              <FiCheckCircle /> {t('wheelPage.milestones.completed')}
                             </span>
                           )}
                         </div>
@@ -737,7 +739,7 @@ const WheelPage = () => {
                 </section>
 
                 <section className="space-y-3">
-                  <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Misiones especiales</h4>
+                  <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t('wheelPage.special.title')}</h4>
                   <div className="space-y-3">
                     {specialTasks.map((task) => (
                       <div
@@ -761,7 +763,7 @@ const WheelPage = () => {
                               : "bg-slate-200 text-slate-500 cursor-not-allowed"
                           }`}
                         >
-                          {task.claimed ? "Reclamado" : task.link ? "Ir ahora" : "Próximamente"}
+                          {task.claimed ? t('wheelPage.special.claimed') : task.link ? t('wheelPage.special.goNow') : t('wheelPage.special.comingSoon')}
                         </motion.button>
                       </div>
                     ))}

@@ -1,11 +1,64 @@
 {
   "nav": {
     "home": "Home",
+    "market": "Market",
+    "quantitative": "Quantitative",
+    "wheel": "Wheel",
     "ranking": "Ranking",
     "upgrade": "Upgrade",
     "team": "Team",
     "profile": "Me"
   },
+  "home": {
+    "claimBonus": "Claim Bonus",
+    "support": "Support",
+    "availableWithdrawal": "Available to Withdraw",
+    "nextProfitIn": "Next profit in:",
+    "marketWidgetTitle": "Live Market"
+  },
+  "deposit": {
+    "title": "Deposit",
+    "amount": "Amount",
+    "selectCurrency": "Select Currency",
+    "depositAddress": "Deposit Address",
+    "copyAddress": "Copy Address",
+    "addressCopied": "Address copied to clipboard"
+  },
+  "market": {
+    "title": "Market",
+    "investNow": "Invest Now",
+    "dailyProfit": "Daily Profit",
+    "duration": "Duration",
+    "minInvestment": "Minimum Investment"
+  },
+  "quantitative": {
+    "title": "Quantitative",
+    "stakeNow": "Stake Now",
+    "return": "Return",
+    "period": "Period",
+    "lockedAmount": "Locked Amount"
+  },
+  "wheel": {
+    "title": "Prize Wheel",
+    "spin": "Spin",
+    "spinsLeft": "Spins left",
+    "yourPrizes": "Your Prizes",
+    "xpBalance": "XP Balance",
+    "claimXP": "Claim XP"
+  },
+  "auth": {
+    "authError": "Authentication Error",
+    "authErrorDescription": "We couldn't verify your session. Please restart the app from Telegram."
+  },
+  "toasts": {
+    "startingCycle": "Starting cycle...",
+    "cycleStarted": "Mining cycle started!",
+    "claiming": "Claiming..."
+  },
+  "errors": {
+    "noUser": "Error: Could not retrieve user information. Please try restarting the app."
+  },
+  "taskCenter": "Task Center",
   "tasks": {
     "title": "Task Center",
     "noTasks": "No tasks available at the moment.",
@@ -117,7 +170,10 @@
     "amountLabel": "Amount to withdraw",
     "helperInsufficient": "You do not have enough balance to withdraw. Minimum: {{minimum}}.",
     "helperAvailable": "Withdrawable balance: {{amount}}.",
-    "confirmButton": "Confirm withdrawal"
+    "helperNoPassword": "Please set your withdrawal password in your profile first.",
+    "helperNoWallet": "Please set your wallet address in your profile first.",
+    "confirmButton": "Confirm withdrawal",
+    "maxButton": "MAX"
   },
   "teamPage": {
     "stats": {
@@ -187,6 +243,141 @@
     "title": "About Us",
     "p1": "We are a passionate team dedicated to blockchain technology and decentralized finance. Our mission with Ai Brok Trade Pro is to create an accessible and fun gateway to the world of cryptocurrencies.",
     "p2": "We believe that learning should be an engaging experience, and we have designed this platform to simulate the concepts of mining and rewards in a simple and visual way."
+  },
+  "aboutDetailed": {
+    "badge": "AIBrokTrade",
+    "heroTitle": "AI-powered automated trading for real results",
+    "heroP1": "AIBrokTrade is an AI-based automated trading system designed to generate profitable trades in financial markets fully automatically. It uses advanced predictive analytics to identify opportunities and execute trades with high precision.",
+    "heroP2": "Its technology combines artificial intelligence with strategies developed by experienced professional traders, achieving a balance between safety, efficiency, and profitability.",
+    "alt1": "People collaborating on finance and technology",
+    "alt2": "Technology and AI data analysis",
+    "how": {
+      "title": "How does it work?",
+      "steps": {
+        "1": { "title": "Intelligent Analysis", "body": "The bot constantly analyzes markets, studying technical indicators, trends, and historical patterns to detect opportunities." },
+        "2": { "title": "Automatic Execution", "body": "When the system detects a high-probability trade, it executes the order automatically with no human intervention." },
+        "3": { "title": "Risk Management", "body": "It adjusts position sizes and applies control strategies to protect capital and optimize risk/reward." },
+        "4": { "title": "Real Earnings", "body": "Earnings are reflected directly in your account. You can withdraw capital or profits at any time." }
+      }
+    },
+    "why": {
+      "title": "Why invest with AIBrokTradePro?",
+      "items": [
+        "Full automation: no trading experience needed; the system works for you.",
+        "High accuracy: estimated effectiveness between 85% and 95% thanks to AI.",
+        "Free withdrawal: funds aren’t locked; withdraw anytime.",
+        "Full transparency: see results and activity in real time.",
+        "Continuous learning: the AI improves with every trade.",
+        "24/7 technical support for all users."
+      ]
+    },
+    "earnings": {
+      "title": "How are earnings generated?",
+      "p": "When you deposit funds, the system uses them to perform automated trades in crypto, forex, and commodities. Daily gains depend on the invested amount and market conditions, always within sustainable ranges.",
+      "example1": { "title": "$100 investment", "subtitle": "Daily gains between 1.5% and 3%" },
+      "example2": { "title": "$500 investment", "subtitle": "Daily gains between 3% and 5%" }
+    },
+    "mission": {
+      "title": "AIBrokTradePro Mission",
+      "body": "Our mission is to enable anyone, regardless of experience, to generate passive income through automated trading. We combine AI, human strategy, and advanced technology to deliver a reliable, profitable, and accessible platform for everyone."
+    }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "Sorry, the page you’re looking for doesn’t exist or was moved.",
+    "actions": { "home": "Back to Home", "support": "Go to Support", "about": "Learn about AIBrokTrade" }
+  },
+  "ticketDrawer": {
+    "header": { "panel": "Financial panel", "title": "Investment history" },
+    "tabs": { "tickets": "Deposits", "market": "Market", "quantitative": "Quantitative" },
+    "status": {
+      "pending": "Pending",
+      "awaiting_manual_review": "Awaiting manual review",
+      "processing": "Processing",
+      "completed": "Completed",
+      "expired": "Expired",
+      "cancelled": "Cancelled",
+      "rejected": "Rejected"
+    },
+    "stats": { "pending": "Pending", "completed": "Credited", "totalTickets": "Total tickets" },
+    "loaders": { "tickets": "Loading tickets...", "market": "Loading investments...", "quantitative": "Loading plans..." },
+    "empty": { "tickets": { "title": "You don’t have deposit tickets yet.", "subtitle": "Your deposits will appear here." } },
+    "labels": {
+      "manual": "Manual",
+      "automatic": "Automatic",
+      "destination": "Destination",
+      "expires": "Expires",
+      "investment": "Investment",
+      "daily": "Daily",
+      "purchaseDate": "Purchase date",
+      "duration": "Duration",
+      "days": "days",
+      "endsAt": "Ends"
+    },
+    "buttons": { "viewDetails": "View details", "cancel": "Cancel ticket", "cancelling": "Cancelling..." },
+    "toasts": { "cancelSuccess": "Ticket cancelled", "cancelError": "Could not cancel ticket." },
+    "market": {
+      "totalInvested": "Total invested",
+      "assets": "assets",
+      "dailyProfit": "Daily profit",
+      "activeYield": "Active yield",
+      "emptyTitle": "No market investments",
+      "emptySubtitle": "Your purchases will appear here",
+      "expectedReturn": "Expected return"
+    },
+    "quant": {
+      "totalCapital": "Total capital",
+      "plans": "plans",
+      "dailyProfit": "Daily profit",
+      "toWithdrawable": "To withdrawable balance",
+      "emptyTitle": "No quantitative plans",
+      "emptySubtitle": "Your investments will appear here",
+      "planLabel": "Quantitative plan",
+      "accruedProfit": "Accrued profit"
+    }
+  },
+  "wheelPage": {
+    "title": "Prize Wheel",
+    "subtitle": { "1": "Get daily spins, invite your team, and turn prizes into", "highlight": "withdrawable USDT balance" },
+    "availableSpins": "Available spins",
+    "remember": "Remember",
+    "rememberDetail": "each USDT prize is automatically added to your withdrawable balance",
+    "status": { "syncing": "Syncing prizes...", "waitingConfig": "Waiting for configuration", "ready": "Prizes ready" },
+    "cta": { "spinning": "Spinning...", "configuring": "Wheel configuring", "spin": "Spin wheel", "noSpins": "No spins available" },
+    "hint": { "moreSpins": "Earn more spins by completing invite milestones or special tasks." },
+    "cards": {
+      "multiply": { "title": "Multiply your spins", "validReferral": "Each valid referral", "detail": "(with confirmed deposit) adds one spin to your balance." },
+      "stats": {
+        "totalReferrals": "Total referrals",
+        "totalReferralsHelper": "Direct invitations recorded.",
+        "validReferrals": "Valid referrals",
+        "validReferralsHelper": "Only those who have deposited.",
+        "generatedSpins": "Generated spins",
+        "generatedSpinsHelper": "1 spin per valid referral."
+      }
+    },
+    "actions": { "copyReferral": "Copy referral link", "shareTelegram": "Share on Telegram" },
+    "missions": { "title": "Missions for extra spins", "subtitle": "Complete milestones and special missions to unlock spin packs instantly." },
+    "milestones": { "title": "Invitation milestones", "completed": "Completed" },
+    "special": { "title": "Special missions", "claimed": "Claimed", "goNow": "Go now", "comingSoon": "Coming soon" },
+    "config": {
+      "noActivePrizes": "The wheel has no active prizes yet. Contact support to configure it.",
+      "notConfigured": "The wheel has not been configured by the administrator yet.",
+      "loadError": "We couldn't load the wheel prizes. Please try again in a few minutes."
+    },
+    "toasts": {
+      "noReferralLink": "We couldn't generate your referral link.",
+      "linkCopied": "Referral link copied ✅",
+      "noPrize": "No prize",
+      "win": "You won {{prize}}! 🎉",
+      "comingSoon": "Coming soon",
+      "rewardClaimed": "Reward claimed ✅",
+      "alreadyClaimed": "Already claimed",
+      "rewardAppliedLocally": "Reward applied locally",
+      "rewardClaimError": "Could not claim reward"
+    },
+    "errors": { "spinStart": "Could not start spin", "spinGeneric": "Error starting the spin." },
+    "shareText": "Join and earn with my AIBrokTradePro link"
   },
   "supportPage": {
     "title": "Customer Support",
