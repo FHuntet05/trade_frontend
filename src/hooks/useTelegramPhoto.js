@@ -64,22 +64,38 @@ export const useTelegramPhoto = (telegramId, options = {}) => {
         // La URL completa debe incluir el baseURL de la API
         const fullUrl = `${api.defaults.baseURL}${url}`;
         
-        console.log(`[useTelegramPhoto] Cargando foto desde: ${fullUrl}`);
+        console.log(`[useTelegramPhoto] Intentando cargar foto desde: ${fullUrl}`);
 
         if (cancelled) {
           return;
         }
 
-        // No hacemos fetch aquí, simplemente usamos la URL directamente
-        // El backend se encarga de servir la imagen o hacer redirect
-        if (!cacheBust) {
-          photoCache.set(cacheKey, fullUrl);
-          registerCacheCleanup();
-        }
+        // Verificar que la imagen sea accesible creando un elemento Image
+        const img = new Image();
+        // No usar crossOrigin ya que el backend ya maneja CORS
+        
+        img.onload = () => {
+          if (!cancelled) {
+            console.log(`[useTelegramPhoto] ✅ Foto cargada exitosamente:`, fullUrl);
+            if (!cacheBust) {
+              photoCache.set(cacheKey, fullUrl);
+              registerCacheCleanup();
+            }
+            setState({ src: fullUrl, loading: false, error: null });
+          }
+        };
 
-        setState({ src: fullUrl, loading: false, error: null });
+        img.onerror = (error) => {
+          if (!cancelled) {
+            console.error(`[useTelegramPhoto] ❌ Error cargando imagen:`, fullUrl, error);
+            setState({ src: null, loading: false, error: new Error('Failed to load image') });
+          }
+        };
+
+        img.src = fullUrl;
+
       } catch (error) {
-        console.error('[useTelegramPhoto] Error:', error);
+        console.error('[useTelegramPhoto] Error en fetchPhoto:', error);
         if (!cancelled) {
           setState({ src: null, loading: false, error });
         }
