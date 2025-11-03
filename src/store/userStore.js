@@ -76,6 +76,29 @@ const useUserStore = create(
       },
       // --- FIN DE LA MODIFICACIÓN (Bono Diario) ---
 
+      /**
+       * Refresca el perfil completo del usuario desde el backend
+       * Incluye photoUrl y hasWithdrawalPassword
+       */
+      refreshUserProfile: async () => {
+        try {
+          const response = await api.get('/user/profile');
+          const updatedUser = response.data;
+          
+          set((state) => ({
+            user: {
+              ...state.user,
+              ...updatedUser
+            }
+          }));
+          
+          return updatedUser;
+        } catch (error) {
+          console.error('Error al refrescar perfil:', error);
+          throw error;
+        }
+      },
+
       updateUser: (partialUser) => {
         set((state) => {
           if (!state.user) return state;

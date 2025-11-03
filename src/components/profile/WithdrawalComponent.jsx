@@ -25,7 +25,7 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
     }
   }, [isVisible, user?.wallet]);
 
-  const hasWithdrawalPassword = user?.withdrawalPassword !== undefined;
+  const hasWithdrawalPassword = user?.hasWithdrawalPassword || false;
   const hasWallet = Boolean(user?.wallet);
 
   const isWithdrawalDisabled = useMemo(() => {

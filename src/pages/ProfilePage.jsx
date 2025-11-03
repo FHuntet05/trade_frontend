@@ -21,12 +21,28 @@ import { formatters } from '@/utils/formatters';
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const { user, logout } = useUserStore((state) => ({ user: state.user, logout: state.logout }));
+  const { user, logout, refreshUserProfile } = useUserStore((state) => ({ 
+    user: state.user, 
+    logout: state.logout,
+    refreshUserProfile: state.refreshUserProfile
+  }));
 
   const [withdrawalPassword, setWithdrawalPassword] = useState('');
   const [wallet, setWallet] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isWithdrawalModalVisible, setIsWithdrawalModalVisible] = useState(false);
+
+  // Cargar el perfil completo al montar el componente
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        await refreshUserProfile();
+      } catch (error) {
+        console.error('Error al cargar perfil:', error);
+      }
+    };
+    loadProfile();
+  }, [refreshUserProfile]);
 
   useEffect(() => {
     if (user?.wallet) {
@@ -41,6 +57,8 @@ const ProfilePage = () => {
       const response = await api.post('/user/withdrawal-password', { password: withdrawalPassword });
       toast.success(response.data.message || 'Contraseña de retiro guardada correctamente');
       setWithdrawalPassword('');
+      // Refrescar el perfil para actualizar hasWithdrawalPassword
+      await refreshUserProfile();
     } catch (error) {
       console.error('Error al guardar contraseña:', error);
       toast.error(error.response?.data?.message || 'Error al guardar la contraseña de retiro');
@@ -54,8 +72,9 @@ const ProfilePage = () => {
     try {
       setIsLoading(true);
       const response = await api.post('/user/wallet', { address: wallet });
-      useUserStore.setState((state) => ({ user: { ...state.user, wallet } }));
       toast.success(response.data.message || 'Dirección de billetera guardada correctamente');
+      // Refrescar el perfil para obtener la billetera actualizada
+      await refreshUserProfile();
     } catch (error) {
       console.error('Error al guardar billetera:', error);
       toast.error(error.response?.data?.message || 'Error al guardar la dirección de billetera');
