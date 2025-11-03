@@ -339,7 +339,10 @@
   "supportPage": {
     "title": "Atención al Cliente",
     "p1": "Si tienes algún problema, duda o sugerencia, no dudes en contactarnos. Nuestro equipo de soporte está aquí para ayudarte.",
-    "supportLink": "Soporte"
+    "supportLink": "Soporte",
+    "assistantTitle": "Asistente",
+    "assistantP1": "Habla con nuestro asistente para resolver dudas frecuentes, guías rápidas y ayuda 24/7.",
+    "assistantLink": "Ir al Asistente"
   },
   "taskLogic": {
     "markingVisited": "Marcando como visitado...",

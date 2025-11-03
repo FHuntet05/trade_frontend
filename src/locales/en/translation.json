@@ -382,7 +382,10 @@
   "supportPage": {
     "title": "Customer Support",
     "p1": "If you have any problems, questions, or suggestions, please do not hesitate to contact us. Our support team is here to help you.",
-    "supportLink": "Support"
+    "supportLink": "Support",
+    "assistantTitle": "Assistant",
+    "assistantP1": "Chat with our assistant for quick answers, step‑by‑step guides, and 24/7 help.",
+    "assistantLink": "Open Assistant"
   },
   "taskLogic": {
     "markingVisited": "Marking as visited...",
