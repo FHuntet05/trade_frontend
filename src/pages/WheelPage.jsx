@@ -48,14 +48,14 @@ const createTickSchedule = (
   };
 
 const FALLBACK_SEGMENTS = [
-  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 } },
+  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.26, offsetY: -6, offsetX: 0 } },
   { option: "+1 Giro 🎁", text: "+1 Giro 🎁", type: "spins", value: 1, weight: 1, isActive: true },
-  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 } },
-  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 } },
+  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.26, offsetY: -6, offsetX: 0 } },
+  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.26, offsetY: -6, offsetX: 0 } },
   { option: "+2 Giros 🎁", text: "+2 Giros 🎁", type: "spins", value: 2, weight: 1, isActive: true },
-  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 } },
+  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.26, offsetY: -6, offsetX: 0 } },
   { option: "Sin premio", text: "Sin premio", type: "none", value: 0, weight: 1, isActive: true },
-  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 } }
+  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.26, offsetY: -6, offsetX: 0 } }
 ];
 
 const MILESTONE_TASKS = [
@@ -118,19 +118,6 @@ const WheelPage = () => {
   const audioContextRef = useRef(null);
 
   const availableSpins = user?.balance?.spins ?? 0;
-
-  // Derivado: segmentos solo texto para dibujar por encima (evita que la imagen tape el texto)
-  const segmentsTextOnly = useMemo(() => {
-    return (segments || []).map((s) => ({
-      option: s.option,
-      text: s.text,
-      type: s.type,
-      value: s.value,
-      weight: s.weight,
-      isActive: s.isActive,
-      // sin imagen para que la capa superior solo dibuje texto
-    }));
-  }, [segments]);
 
   const ensureAudioContext = () => {
     if (typeof window === "undefined") {
@@ -302,7 +289,7 @@ const WheelPage = () => {
               weight: Number(segment.weight ?? 1) || 1,
               isActive: segment.isActive !== false,
               image: hasImage
-                ? { uri: segment.imageUrl, sizeMultiplier: 0.18, offsetY: -28, offsetX: 0 }
+                ? { uri: segment.imageUrl, sizeMultiplier: 0.26, offsetY: -6, offsetX: 0 }
                 : undefined,
             };
           });
@@ -551,66 +538,36 @@ const WheelPage = () => {
               </div>
 
               <div className="relative mx-auto flex flex-col items-center">
-                <div className="relative flex h-[18rem] w-[18rem] items-center justify-center md:h-[20rem] md:w-[20rem]">
-                  {/* Capa inferior: imágenes + tablero */}
-                  <div className="absolute inset-0">
-                    <Wheel
-                      mustStartSpinning={mustSpin}
-                      prizeNumber={prizeNumber}
-                      data={segments}
-                      onStopSpinning={() => { /* no-op: manejado por la capa superior */ }}
-                      perpendicularText={false}
-                      // Ocultar texto en capa inferior (solo imágenes y tablero)
-                      textColors={["rgba(0,0,0,0)"]}
-                      fontSize={1}
-                      textDistance={70}
-                      backgroundColors={["#FFFFFF", "#F2F2F7"]}
-                      outerBorderColor={"#e2e8f0"}
-                      outerBorderWidth={5}
-                      innerRadius={15}
-                      innerBorderColor={"#e2e8f0"}
-                      innerBorderWidth={3}
-                      radiusLineColor={"transparent"}
-                      radiusLineWidth={0}
-                      pointerProps={{
-                        style: {
-                          width: "16%",
-                          right: "6px",
-                          top: "10px",
-                          filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.25))",
-                        },
-                      }}
-                      disableInitialAnimation={true}
-                      showWinnerBorder={false}
-                    />
-                  </div>
-
-                  {/* Capa superior: solo texto (transparente el tablero) */}
-                  <div className="absolute inset-0">
-                    <Wheel
-                      mustStartSpinning={mustSpin}
-                      prizeNumber={prizeNumber}
-                      data={segmentsTextOnly}
-                      onStopSpinning={handleStopSpinning}
-                      perpendicularText={false}
-                      textDistance={56}
-                      fontSize={13}
-                      // Tablero transparente para que se vea la capa inferior
-                      backgroundColors={["rgba(0,0,0,0)", "rgba(0,0,0,0)"]}
-                      textColors={["#1f2937"]}
-                      outerBorderColor={"rgba(0,0,0,0)"}
-                      outerBorderWidth={0}
-                      innerRadius={15}
-                      innerBorderColor={"rgba(0,0,0,0)"}
-                      innerBorderWidth={0}
-                      radiusLineColor={"transparent"}
-                      radiusLineWidth={0}
-                      // Ocultar el puntero en la capa superior
-                      pointerProps={{ style: { display: 'none' } }}
-                      disableInitialAnimation={true}
-                      showWinnerBorder={false}
-                    />
-                  </div>
+                <div className="flex h-[18rem] w-[18rem] items-center justify-center md:h-[20rem] md:w-[20rem]">
+                  <Wheel
+                    mustStartSpinning={mustSpin}
+                    prizeNumber={prizeNumber}
+                    data={segments}
+                    onStopSpinning={handleStopSpinning}
+                    // Mantener texto perpendicular al eje central (tangente al círculo)
+                    perpendicularText={false}
+                    textDistance={68}
+                    fontSize={14}
+                    backgroundColors={["#FFFFFF", "#F2F2F7"]}
+                    textColors={["#1f2937"]}
+                    outerBorderColor={"#e2e8f0"}
+                    outerBorderWidth={5}
+                    innerRadius={15}
+                    innerBorderColor={"#e2e8f0"}
+                    innerBorderWidth={3}
+                    radiusLineColor={"transparent"}
+                    radiusLineWidth={0}
+                    pointerProps={{
+                      style: {
+                        width: "16%",
+                        right: "6px",
+                        top: "10px",
+                        filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.25))",
+                      },
+                    }}
+                    disableInitialAnimation={true}
+                    showWinnerBorder={false}
+                  />
                 </div>
 
                 <div className="mt-6 flex justify-center">
