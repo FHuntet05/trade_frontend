@@ -472,11 +472,19 @@ const WheelPage = () => {
       toast(t('wheelPage.toasts.comingSoon'), { icon: "⏳" });
       return;
     }
+    
+    // Validar que tenemos un task.id válido
+    if (!task?.id) {
+      console.error('Task object missing id:', task);
+      toast.error('Error: Tarea sin identificador');
+      return;
+    }
+    
     try {
-      // 1) Reclamar en backend
-      const taskId = (task?.id === 'telegram_group' || task?.id === 'telegram_channel')
-        ? task.id
-        : (task?.title?.toLowerCase()?.includes('canal') ? 'telegram_channel' : 'telegram_group');
+      // 1) Reclamar en backend - siempre usar task.id directamente
+      const taskId = task.id;
+      
+      console.log('Claiming special task:', taskId);
 
       const { data } = await api.post('/wheel/claim-special', { taskId });
 
@@ -528,17 +536,16 @@ const WheelPage = () => {
             [task.claimKey]: true,
           },
         });
-  toast(t('wheelPage.toasts.rewardAppliedLocally'));
+        toast(t('wheelPage.toasts.rewardAppliedLocally'));
       } else {
-  toast.error(t('wheelPage.toasts.rewardClaimError'));
+        toast.error(t('wheelPage.toasts.rewardClaimError'));
+        console.error('Claim special task error:', error?.response?.data || error.message);
       }
     } finally {
       // 4) Abrir el enlace solicitado
       window.open(task.link, "_blank", "noopener,noreferrer");
     }
-  };
-
-  return (
+  };  return (
     <div className="min-h-screen w-full bg-[#f5f7fb] px-4 py-6 md:px-8">
       <div className="mx-auto w-full max-w-5xl space-y-6">
         <header className="space-y-2">
