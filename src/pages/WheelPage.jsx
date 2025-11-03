@@ -48,14 +48,14 @@ const createTickSchedule = (
   };
 
 const FALLBACK_SEGMENTS = [
-  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 } },
+  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.15, offsetY: -52, offsetX: 0 } },
   { option: "+1 Giro 🎁", text: "+1 Giro 🎁", type: "spins", value: 1, weight: 1, isActive: true },
-  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 } },
-  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 } },
+  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.15, offsetY: -52, offsetX: 0 } },
+  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.15, offsetY: -52, offsetX: 0 } },
   { option: "+2 Giros 🎁", text: "+2 Giros 🎁", type: "spins", value: 2, weight: 1, isActive: true },
-  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 } },
+  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.15, offsetY: -52, offsetX: 0 } },
   { option: "Sin premio", text: "Sin premio", type: "none", value: 0, weight: 1, isActive: true },
-  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 } }
+  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.15, offsetY: -52, offsetX: 0 } }
 ];
 
 const MILESTONE_TASKS = [
@@ -122,13 +122,22 @@ const WheelPage = () => {
   // Derivado: segmentos solo texto para dibujar por encima (evita que la imagen tape el texto)
   const segmentsTextOnly = useMemo(() => {
     return (segments || []).map((s) => ({
-      option: s.option,
-      text: s.text,
+      // Mostrar SOLO el texto configurado por el admin
+      option: s.text || "",
+      // Conservamos metadatos por si se usan en toasts/logic
+      text: s.text || "",
       type: s.type,
       value: s.value,
       weight: s.weight,
       isActive: s.isActive,
-      // sin imagen para que la capa superior solo dibuje texto
+    }));
+  }, [segments]);
+
+  // Capa inferior sin texto (evita duplicados)
+  const segmentsNoText = useMemo(() => {
+    return (segments || []).map((s) => ({
+      ...s,
+      option: "",
     }));
   }, [segments]);
 
@@ -286,7 +295,8 @@ const WheelPage = () => {
             const hasImage = Boolean(segment.imageUrl);
             const numericValue = Number(segment.value ?? 0);
             const normalizedValue = Number.isFinite(numericValue) ? numericValue : 0;
-            const fallbackLabel = segment.text?.trim()
+            const configuredText = (segment.text ?? "").trim();
+            const fallbackLabel = configuredText
               || (type === "usdt"
                 ? `${normalizedValue.toFixed(2)} USDT`
                 : type === "spins"
@@ -295,14 +305,16 @@ const WheelPage = () => {
             const label = fallbackLabel || `Premio ${index + 1}`;
 
             return {
+              // option se usa en la capa inferior (no visible) y como respaldo general
               option: label,
-              text: fallbackLabel,
+              // Guardamos SOLO el texto configurado para la capa superior visible
+              text: configuredText,
               type,
               value: normalizedValue,
               weight: Number(segment.weight ?? 1) || 1,
               isActive: segment.isActive !== false,
               image: hasImage
-                ? { uri: segment.imageUrl, sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 }
+                ? { uri: segment.imageUrl, sizeMultiplier: 0.15, offsetY: -52, offsetX: 0 }
                 : undefined,
             };
           });
@@ -557,13 +569,13 @@ const WheelPage = () => {
                     <Wheel
                       mustStartSpinning={mustSpin}
                       prizeNumber={prizeNumber}
-                      data={segments}
+                      data={segmentsNoText}
                       onStopSpinning={() => { /* no-op: manejado por la capa superior */ }}
                       perpendicularText={false}
                       // Ocultar texto en capa inferior (solo imágenes y tablero)
                       textColors={["rgba(0,0,0,0)"]}
                       fontSize={1}
-                      textDistance={78}
+                      textDistance={82}
                       backgroundColors={["#FFFFFF", "#F2F2F7"]}
                       outerBorderColor={"#e2e8f0"}
                       outerBorderWidth={5}
@@ -593,8 +605,8 @@ const WheelPage = () => {
                       data={segmentsTextOnly}
                       onStopSpinning={handleStopSpinning}
                       perpendicularText={false}
-                      textDistance={42}
-                      fontSize={12}
+                      textDistance={50}
+                      fontSize={14}
                       // Tablero transparente para que se vea la capa inferior
                       backgroundColors={["rgba(0,0,0,0)", "rgba(0,0,0,0)"]}
                       textColors={["#1f2937"]}
