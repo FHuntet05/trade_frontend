@@ -10,7 +10,7 @@ import Loader from '@/components/common/Loader';
 import { 
     HiArrowLeft, HiOutlinePencil, HiOutlineKey, HiOutlineCurrencyDollar,
     HiOutlineShoppingCart, HiOutlineGift, HiOutlineUsers, HiOutlineReceiptRefund,
-    HiOutlineTicket, HiOutlineChartBar, HiOutlineXCircle
+    HiOutlineTicket, HiOutlineChartBar, HiOutlineXCircle, HiOutlinePhotograph
 } from 'react-icons/hi2';
 import EditUserModal from './components/EditUserModal';
 import ResetPasswordModal from './components/ResetPasswordModal';
@@ -67,7 +67,7 @@ const computeTicketStatsClient = (tickets = []) => {
     });
 };
 
-const UserSummaryCard = ({ user, onEdit, onResetPassword, ticketStats, passiveIncome, investmentSummary }) => {
+const UserSummaryCard = ({ user, onEdit, onResetPassword, onRefreshPhoto, ticketStats, passiveIncome, investmentSummary }) => {
     const totalStock = (user.activeInvestments || []).reduce((sum, inv) => sum + (inv.amount || 0), 0);
     const openTickets = ticketStats?.open ?? 0;
     const completedTickets = ticketStats?.completed ?? 0;
@@ -82,12 +82,21 @@ const UserSummaryCard = ({ user, onEdit, onResetPassword, ticketStats, passiveIn
         <div className="bg-dark-secondary p-6 rounded-lg border border-white/10">
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-4">
-                    <TelegramAvatar
-                        telegramId={user.telegramId}
-                        alt={user.fullName || user.username || 'Avatar'}
-                        className="w-20 h-20 rounded-full object-cover bg-dark-primary"
-                        fallbackSrc={PLACEHOLDER_AVATAR}
-                    />
+                    <div className="relative">
+                        <TelegramAvatar
+                            telegramId={user.telegramId}
+                            alt={user.fullName || user.username || 'Avatar'}
+                            className="w-20 h-20 rounded-full object-cover bg-dark-primary"
+                            fallbackSrc={PLACEHOLDER_AVATAR}
+                        />
+                        <button
+                            onClick={onRefreshPhoto}
+                            className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors shadow-lg"
+                            title="Refrescar foto de perfil"
+                        >
+                            <HiOutlinePhotograph className="w-4 h-4 text-white" />
+                        </button>
+                    </div>
                     <div>
                         <h2 className="text-2xl font-bold">{user.fullName || user.username}</h2>
                         <p className="text-sm text-text-secondary">@{user.username} (ID: {user.telegramId})</p>
@@ -492,6 +501,23 @@ const AdminUserDetailPage = () => {
         } finally {
             setCancellingTicketId(null);
         }
+    };
+
+    const handleRefreshPhoto = async () => {
+        if (!userData?.user?._id) {
+            return;
+        }
+
+        const promise = adminApi.post(`/admin/users/${userData.user._id}/refresh-photo`);
+        
+        toast.promise(promise, {
+            loading: 'Marcando foto para actualización...',
+            success: (res) => {
+                fetchAllDetails(); // Recargar datos del usuario
+                return res.data.message || 'Foto marcada para actualización. El usuario debe ejecutar /start en el bot.';
+            },
+            error: (err) => err.response?.data?.message || 'Error al refrescar la foto.',
+        });
     };
 
     const filteredTransactions = useMemo(() => {
