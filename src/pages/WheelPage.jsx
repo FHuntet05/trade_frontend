@@ -48,14 +48,14 @@ const createTickSchedule = (
   };
 
 const FALLBACK_SEGMENTS = [
-  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.17, offsetY: -36, offsetX: 0 } },
+  { option: "$1.00", text: "$1.00", type: "usdt", value: 1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 } },
   { option: "+1 Giro 🎁", text: "+1 Giro 🎁", type: "spins", value: 1, weight: 1, isActive: true },
-  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.17, offsetY: -36, offsetX: 0 } },
-  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.17, offsetY: -36, offsetX: 0 } },
+  { option: "$0.10", text: "$0.10", type: "usdt", value: 0.1, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 } },
+  { option: "$5.00", text: "$5.00", type: "usdt", value: 5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 } },
   { option: "+2 Giros 🎁", text: "+2 Giros 🎁", type: "spins", value: 2, weight: 1, isActive: true },
-  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.17, offsetY: -36, offsetX: 0 } },
+  { option: "$0.50", text: "$0.50", type: "usdt", value: 0.5, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 } },
   { option: "Sin premio", text: "Sin premio", type: "none", value: 0, weight: 1, isActive: true },
-  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.17, offsetY: -36, offsetX: 0 } }
+  { option: "$10.00", text: "$10.00", type: "usdt", value: 10, weight: 1, isActive: true, image: { uri: "/assets/images/USDT.png", sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 } }
 ];
 
 const MILESTONE_TASKS = [
@@ -302,7 +302,7 @@ const WheelPage = () => {
               weight: Number(segment.weight ?? 1) || 1,
               isActive: segment.isActive !== false,
               image: hasImage
-                ? { uri: segment.imageUrl, sizeMultiplier: 0.17, offsetY: -36, offsetX: 0 }
+                ? { uri: segment.imageUrl, sizeMultiplier: 0.16, offsetY: -44, offsetX: 0 }
                 : undefined,
             };
           });
@@ -563,7 +563,7 @@ const WheelPage = () => {
                       // Ocultar texto en capa inferior (solo imágenes y tablero)
                       textColors={["rgba(0,0,0,0)"]}
                       fontSize={1}
-                      textDistance={72}
+                      textDistance={78}
                       backgroundColors={["#FFFFFF", "#F2F2F7"]}
                       outerBorderColor={"#e2e8f0"}
                       outerBorderWidth={5}
@@ -593,8 +593,8 @@ const WheelPage = () => {
                       data={segmentsTextOnly}
                       onStopSpinning={handleStopSpinning}
                       perpendicularText={false}
-                      textDistance={48}
-                      fontSize={13}
+                      textDistance={42}
+                      fontSize={12}
                       // Tablero transparente para que se vea la capa inferior
                       backgroundColors={["rgba(0,0,0,0)", "rgba(0,0,0,0)"]}
                       textColors={["#1f2937"]}
