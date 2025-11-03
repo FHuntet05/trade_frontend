@@ -7,10 +7,10 @@ import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import useAdminStore from '@/store/adminStore';
 import Loader from '@/components/common/Loader';
-import { 
+import {
     HiArrowLeft, HiOutlinePencil, HiOutlineKey, HiOutlineCurrencyDollar,
     HiOutlineShoppingCart, HiOutlineGift, HiOutlineUsers, HiOutlineReceiptRefund,
-    HiOutlineTicket, HiOutlineChartBar, HiOutlineXCircle, HiOutlinePhotograph
+    HiOutlineTicket, HiOutlineChartBar, HiOutlineXCircle, HiOutlinePhoto
 } from 'react-icons/hi2';
 import EditUserModal from './components/EditUserModal';
 import ResetPasswordModal from './components/ResetPasswordModal';
@@ -94,7 +94,7 @@ const UserSummaryCard = ({ user, onEdit, onResetPassword, onRefreshPhoto, ticket
                             className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors shadow-lg"
                             title="Refrescar foto de perfil"
                         >
-                            <HiOutlinePhotograph className="w-4 h-4 text-white" />
+                            <HiOutlinePhoto className="w-4 h-4 text-white" />
                         </button>
                     </div>
                     <div>
