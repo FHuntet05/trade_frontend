@@ -18,7 +18,7 @@ const AuthLoadingPage = () => {
         <motion.img 
             // Se actualiza la URL a la proporcionada.
             src="https://i.postimg.cc/XqqqFR0C/photo-2025-09-20-02-42-29.jpg" 
-            alt="BlockSphere Logo" 
+            alt="AiBrokTradePro Logo" 
             // Se añaden clases para la forma circular y el ajuste de la imagen.
             className="w-24 h-24 rounded-full object-cover border-2 border-white/10"
             initial={{ scale: 0.5, opacity: 0 }}
@@ -29,7 +29,7 @@ const AuthLoadingPage = () => {
 
         <div>
           <h1 className="text-2xl font-bold text-center text-white">
-            BlockSphere
+            AiBrokTradePro
           </h1>
           <p className="text-sm text-text-secondary text-center mt-2 animate-pulse">
             Sincronizando datos...

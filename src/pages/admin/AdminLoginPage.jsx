@@ -54,7 +54,7 @@ const AdminLoginPage = () => {
     <div className="flex items-center justify-center min-h-screen bg-dark-primary text-white p-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-dark-secondary rounded-2xl shadow-lg border border-white/10">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-accent-start">BLOCKSPHERE</h1>
+          <h1 className="text-3xl font-bold text-accent-start">AiBrokTradePro</h1>
           <p className="text-lg text-text-secondary">Panel de Administración</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">

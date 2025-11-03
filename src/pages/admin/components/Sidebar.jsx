@@ -44,7 +44,7 @@ const Sidebar = ({ onLinkClick = () => {} }) => {
     return (
       <aside className="w-64 bg-dark-secondary p-4 flex flex-col border-r border-white/10 h-full">
         <div className="text-center py-4 mb-4 border-b border-white/10">
-          <h1 className="text-2xl font-bold text-accent-start tracking-wider">BLOCKSPHERE</h1>
+          <h1 className="text-2xl font-bold text-accent-start tracking-wider">AiBrokTradePro</h1>
           <p className="text-sm text-text-secondary">Admin Panel</p>
         </div>
         <nav className="flex flex-col gap-2 overflow-y-auto">

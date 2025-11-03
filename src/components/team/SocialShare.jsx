@@ -11,7 +11,7 @@ const SocialShare = ({ referralLink }) => {
     { name: 'X', icon: FaXTwitter, url: `https://twitter.com/intent/tweet?url=${referralLink}&text=${shareText}`, color: 'hover:text-[#000000] hover:bg-white' },
     { name: 'Facebook', icon: FaFacebookF, url: `https://www.facebook.com/sharer/sharer.php?u=${referralLink}`, color: 'hover:text-white hover:bg-[#1877F2]' },
     { name: 'Telegram', icon: FaTelegram, url: `https://t.me/share/url?url=${referralLink}&text=${shareText}`, color: 'hover:text-white hover:bg-[#26A5E4]' },
-    { name: 'LinkedIn', icon: FaLinkedinIn, url: `https://www.linkedin.com/shareArticle?mini=true&url=${referralLink}&title=Únete a Block Sphere`, color: 'hover:text-white hover:bg-[#0A66C2]' },
+    { name: 'LinkedIn', icon: FaLinkedinIn, url: `https://www.linkedin.com/shareArticle?mini=true&url=${referralLink}&title=Únete a Ai Brok Trade Pro`, color: 'hover:text-white hover:bg-[#0A66C2]' },
     { name: 'WhatsApp', icon: FaWhatsapp, url: `https://api.whatsapp.com/send?text=${shareText} ${referralLink}`, color: 'hover:text-white hover:bg-[#25D366]' },
     { name: 'Instagram', icon: FaInstagram, url: `https://www.instagram.com`, color: 'hover:text-white hover:bg-gradient-to-r from-purple-500 to-pink-500' },
     { name: 'TikTok', icon: FaTiktok, url: `https://www.tiktok.com`, color: 'hover:text-white hover:bg-[#000000]' },

@@ -1,4 +1,4 @@
-// RUTA: admin-frontend/src/pages/admin/PendingWithdrawalsPage.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
+// RUTA: admin-frontend/src/pages/admin/PendingWithdrawalsPage.jsx (v50.0 - VERSIÓN "AiBrokTradePro" FINAL)
 // ARQUITECTURA: Componente nuevo, diseñado para consumir el endpoint de agregación del backend.
 
 import React, { useState, useEffect, useCallback } from 'react';

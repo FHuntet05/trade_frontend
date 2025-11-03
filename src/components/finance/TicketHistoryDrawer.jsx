@@ -166,6 +166,10 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
         const daily = parseFloat(tx.metadata.dailyProfitAmount || 0);
         const duration = parseInt(tx.metadata.durationDays || 0, 10);
         const expectedReturn = daily * duration;
+        const originalPrice = parseFloat(tx.metadata.originalPrice || 0);
+        const metaRoi = parseFloat(tx.metadata.profitPercentage || 0);
+        const computedRoi = originalPrice > 0 ? (expectedReturn / originalPrice) * 100 : 0;
+        const roiPercentage = Number.isFinite(metaRoi) && metaRoi > 0 ? metaRoi : computedRoi;
         marketPurchases.push({
           id: tx._id,
           name: tx.metadata.itemName || 'Compra de mercado',
@@ -175,18 +179,20 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
           expectedReturn,
           createdAt: tx.createdAt,
           duration,
-          profitPercentage: parseFloat(tx.metadata.profitPercentage || 0),
+          profitPercentage: roiPercentage,
         });
       }
       if (tx.type === 'purchase' && tx.metadata) {
         const invested = Math.abs(parseFloat(tx.metadata.investedAmount || tx.amount || 0));
+        const duration = parseInt(tx.metadata.durationDays || 0, 10);
+        const metaRoi = parseFloat(tx.metadata.profitPercentage || 0);
         quantitativePurchases.push({
           id: tx._id,
           name: tx.metadata.planName || 'Plan cuantitativo',
           invested,
           createdAt: tx.createdAt,
-          duration: parseInt(tx.metadata.durationDays || 0, 10),
-          profitPercentage: parseFloat(tx.metadata.profitPercentage || 0),
+          duration,
+          profitPercentage: Number.isFinite(metaRoi) && metaRoi > 0 ? metaRoi : 0,
         });
       }
     });

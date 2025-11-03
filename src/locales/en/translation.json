@@ -102,7 +102,7 @@
       "title": "App language"
     },
     "about": {
-      "title": "About Blocksphere",
+      "title": "About AiBrokTradePro",
       "description": "Learn more about our project and mission.",
       "button": "View details"
     },
@@ -174,18 +174,18 @@
   },
   "faqPage": {
     "title": "Frequently Asked Questions (FAQ)",
-    "q1": "What is Block Sphere?",
-    "a1": "Block Sphere is a gamified mining simulation platform that allows you to earn NTX tokens by purchasing and managing virtual tools.",
+    "q1": "What is Ai Brok Trade Pro?",
+    "a1": "Ai Brok Trade Pro is a gamified mining simulation platform that allows you to earn NTX tokens by purchasing and managing virtual tools.",
     "q2": "How can I increase my earnings?",
     "a2": "You can increase your mining rate by purchasing more powerful tools in the 'Upgrade' section. You can also earn bonuses by inviting friends to join your team.",
     "q3": "What is the NTX token?",
-    "a3": "NTX is the native token of the Block Sphere platform. You accumulate it through mining and can use it within the app's ecosystem.",
+    "a3": "NTX is the native token of the Ai Brok Trade Pro platform. You accumulate it through mining and can use it within the app's ecosystem.",
     "q4": "How does the referral system work?",
     "a4": "When someone signs up using your invitation code, they join your team. You earn a percentage of your team members' mining activity, spread across several levels."
   },
   "aboutPage": {
     "title": "About Us",
-    "p1": "We are a passionate team dedicated to blockchain technology and decentralized finance. Our mission with Block Sphere is to create an accessible and fun gateway to the world of cryptocurrencies.",
+    "p1": "We are a passionate team dedicated to blockchain technology and decentralized finance. Our mission with Ai Brok Trade Pro is to create an accessible and fun gateway to the world of cryptocurrencies.",
     "p2": "We believe that learning should be an engaging experience, and we have designed this platform to simulate the concepts of mining and rewards in a simple and visual way."
   },
   "supportPage": {

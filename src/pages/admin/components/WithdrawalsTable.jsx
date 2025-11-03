@@ -1,4 +1,4 @@
-// RUTA: admin-frontend/src/pages/admin/components/WithdrawalsTable.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
+// RUTA: admin-frontend/src/pages/admin/components/WithdrawalsTable.jsx (v50.0 - VERSIÓN "AiBrokTradePro" FINAL)
 // ARQUITECTURA: Componente nuevo, diseñado para mostrar los datos del pipeline de agregación de retiros.
 
 import React from 'react';

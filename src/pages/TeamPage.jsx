@@ -32,7 +32,7 @@ const TeamPage = () => {
   const [levelUsers, setLevelUsers] = useState([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
-  const referralLink = `https://t.me/blocksphere_bot?start=${user?.telegramId}`;
+  const referralLink = `https://t.me/AiBrokTradePro_bot?start=${user?.telegramId}`;
   const shareText = t('teamPage.referralLink.shareText');
 
   useEffect(() => { fetchTeamStats(); }, [fetchTeamStats]);

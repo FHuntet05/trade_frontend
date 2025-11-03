@@ -1,4 +1,4 @@
-// RUTA: admin-frontend/src/pages/admin/components/SweepReportModal.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
+// RUTA: admin-frontend/src/pages/admin/components/SweepReportModal.jsx (v50.0 - VERSIÓN "AiBrokTradePro" FINAL)
 // ARQUITECTURA: Componente de UI para mostrar los resultados de una operación de barrido.
 
 import React from 'react';

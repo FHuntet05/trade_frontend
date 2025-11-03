@@ -1,4 +1,4 @@
-// RUTA: admin-frontend/src/pages/admin/components/ProcessWithdrawalModal.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
+// RUTA: admin-frontend/src/pages/admin/components/ProcessWithdrawalModal.jsx (v50.0 - VERSIÓN "AiBrokTradePro" FINAL)
 // ARQUITECTURA: Componente nuevo, diseñado para confirmar y procesar aprobaciones o rechazos.
 
 import React, { useState } from 'react';

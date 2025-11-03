@@ -1,4 +1,4 @@
-// RUTA: admin-frontend/src/pages/admin/components/UsersTable.jsx (v50.0 - VERSIÓN "BLOCKSPHERE" FINAL)
+// RUTA: admin-frontend/src/pages/admin/components/UsersTable.jsx (v50.0 - VERSIÓN "AiBrokTradePro" FINAL)
 // ARQUITECTURA: Componente de UI pura, basado en el Modelo.
 
 import React from 'react';

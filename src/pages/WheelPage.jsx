@@ -100,7 +100,7 @@ const SPECIAL_TASKS = [
 ];
 
 const WheelPage = () => {
-  const { user, updateUserBalances } = useUserStore();
+  const { user, updateUserBalances, updateUser } = useUserStore();
   const { stats: teamStats, fetchTeamStats } = useTeamStore((state) => ({
     stats: state.stats,
     fetchTeamStats: state.fetchTeamStats,
@@ -358,18 +358,20 @@ const WheelPage = () => {
     return SPECIAL_TASKS.map((task) => ({
       ...task,
       link: import.meta.env?.[task.envKey] || "",
+      claimKey: `wheel:special:${task.id}`,
+      claimed: Boolean(user?.claimedTasks?.[`wheel:special:${task.id}`])
     }));
-  }, []);
+  }, [user]);
 
   const referralLink = useMemo(() => {
-    const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || "blocksphere_bot";
+    const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || "AiBrokTradePro_bot";
     const referralCode = user?.referralCode || user?.telegramId || user?._id || "";
     return `https://t.me/${botUsername}?start=${referralCode}`;
   }, [user]);
 
   const shareReferralOnTelegram = () => {
     const encodedLink = encodeURIComponent(referralLink);
-    const shareText = encodeURIComponent("Únete y obtén beneficios con mi enlace de Blocksphere");
+    const shareText = encodeURIComponent("Únete y obtén beneficios con mi enlace de AiBrokTradePro");
     window.open(`https://t.me/share/url?url=${encodedLink}&text=${shareText}`, "_blank", "noopener,noreferrer");
   };
 
@@ -463,12 +465,37 @@ const WheelPage = () => {
     setPendingSpinResult(null);
   };
 
-  const handleSpecialTask = (link) => {
-    if (!link) {
+  const handleSpecialTask = async (task) => {
+    if (!task?.link) {
       toast("Muy pronto disponible", { icon: "⏳" });
       return;
     }
-    window.open(link, "_blank", "noopener,noreferrer");
+    try {
+      // Reclamar primero y luego abrir el enlace
+      const { data } = await api.post('/wheel/claim-special', { taskId: task.id });
+      if (data?.success) {
+        if (data?.newBalances) {
+          updateUserBalances(data.newBalances);
+        }
+        // Persistimos el flag de reclamado en el estado local
+        updateUser({
+          claimedTasks: {
+            ...(user?.claimedTasks || {}),
+            [task.claimKey]: true,
+          }
+        });
+        toast.success('Recompensa reclamada ✅');
+      }
+    } catch (error) {
+      // Si ya estaba reclamado, backend responde 200 con claimed=true o 200 con mensaje; si lanza error lo ignoramos suavemente
+      const msg = error?.response?.data?.message;
+      if (msg && /ya/i.test(msg)) {
+        toast('Ya reclamado anteriormente');
+      }
+    } finally {
+      // Abrimos el enlace igualmente para simplificar UX como pidió el usuario
+      window.open(task.link, "_blank", "noopener,noreferrer");
+    }
   };
 
   return (
@@ -517,8 +544,9 @@ const WheelPage = () => {
                     prizeNumber={prizeNumber}
                     data={segments}
                     onStopSpinning={handleStopSpinning}
-                    perpendicularText={false}
-                    textDistance={68}
+                    // Mostrar el texto aunque haya imagen y orientarlo de forma perpendicular al círculo
+                    perpendicularText={true}
+                    textDistance={64}
                     fontSize={14}
                     backgroundColors={["#FFFFFF", "#F2F2F7"]}
                     textColors={["#1f2937"]}
@@ -684,16 +712,18 @@ const WheelPage = () => {
                           <span className="mt-2 inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600">+{task.rewardSpins} giros</span>
                         </div>
                         <motion.button
-                          whileTap={{ scale: task.link ? 0.97 : 1 }}
-                          onClick={() => handleSpecialTask(task.link)}
-                          disabled={!task.link}
+                          whileTap={{ scale: task.link && !task.claimed ? 0.97 : 1 }}
+                          onClick={() => handleSpecialTask(task)}
+                          disabled={!task.link || task.claimed}
                           className={`w-full rounded-xl px-4 py-2 text-sm font-semibold transition-colors sm:w-auto ${
-                            task.link
+                            task.claimed
+                              ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                              : task.link
                               ? "bg-blue-500 text-white shadow-md hover:bg-blue-600"
                               : "bg-slate-200 text-slate-500 cursor-not-allowed"
                           }`}
                         >
-                          {task.link ? "Ir ahora" : "Próximamente"}
+                          {task.claimed ? "Reclamado" : task.link ? "Ir ahora" : "Próximamente"}
                         </motion.button>
                       </div>
                     ))}
