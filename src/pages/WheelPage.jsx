@@ -471,29 +471,49 @@ const WheelPage = () => {
       return;
     }
     try {
-      // Reclamar primero y luego abrir el enlace
+      // 1) Reclamar en backend
       const { data } = await api.post('/wheel/claim-special', { taskId: task.id });
+
       if (data?.success) {
+        // 2) Actualizar saldo de giros
         if (data?.newBalances) {
           updateUserBalances(data.newBalances);
+        } else {
+          // Si el backend no devuelve newBalances, aplicamos suma local optimista
+          const currentBalances = user?.balance || {};
+          const currentSpins = Number(currentBalances.spins || 0);
+          const added = Number(task?.rewardSpins || 0);
+          updateUserBalances({ ...currentBalances, spins: currentSpins + added });
         }
-        // Persistimos el flag de reclamado en el estado local
+
+        // 3) Marcar la misión como reclamada
         updateUser({
+          ...user,
           claimedTasks: {
             ...(user?.claimedTasks || {}),
             [task.claimKey]: true,
-          }
+          },
         });
+
         toast.success('Recompensa reclamada ✅');
       }
     } catch (error) {
-      // Si ya estaba reclamado, backend responde 200 con claimed=true o 200 con mensaje; si lanza error lo ignoramos suavemente
-      const msg = error?.response?.data?.message;
-      if (msg && /ya/i.test(msg)) {
+      const msg = error?.response?.data?.message || '';
+      // Si el backend reporta que ya estaba reclamada, sincronizamos el flag local igualmente
+      if (/ya|reclamad/i.test(msg)) {
+        updateUser({
+          ...user,
+          claimedTasks: {
+            ...(user?.claimedTasks || {}),
+            [task.claimKey]: true,
+          },
+        });
         toast('Ya reclamado anteriormente');
+      } else {
+        toast.error('No se pudo reclamar la recompensa');
       }
     } finally {
-      // Abrimos el enlace igualmente para simplificar UX como pidió el usuario
+      // 4) Abrir el enlace solicitado
       window.open(task.link, "_blank", "noopener,noreferrer");
     }
   };
