@@ -574,11 +574,9 @@ const WheelPage = () => {
                       prizeNumber={prizeNumber}
                       data={segmentsNoText}
                       onStopSpinning={() => { /* no-op: manejado por la capa superior */ }}
-                      perpendicularText={true}
-                      // Ocultar texto en capa inferior (solo imágenes y tablero)
-                      textColors={["rgba(0,0,0,0)"]}
-                      fontSize={1}
-                      textDistance={82}
+                      perpendicularText={false}
+                      fontSize={0}
+                      textDistance={55}
                       backgroundColors={["#FFFFFF", "#F2F2F7"]}
                       outerBorderColor={"#e2e8f0"}
                       outerBorderWidth={5}
@@ -600,17 +598,16 @@ const WheelPage = () => {
                     />
                   </div>
 
-                  {/* Capa superior: solo texto (transparente el tablero) */}
+                  {/* Capa superior: solo texto en orientación radial */}
                   <div className="absolute inset-0">
                     <Wheel
                       mustStartSpinning={mustSpin}
                       prizeNumber={prizeNumber}
                       data={segmentsTextOnly}
                       onStopSpinning={handleStopSpinning}
-                      perpendicularText={true}
-                      textDistance={60}
+                      perpendicularText={false}
+                      textDistance={55}
                       fontSize={14}
-                      // Tablero transparente para que se vea la capa inferior
                       backgroundColors={["rgba(0,0,0,0)", "rgba(0,0,0,0)"]}
                       textColors={["#1f2937"]}
                       outerBorderColor={"rgba(0,0,0,0)"}
@@ -620,7 +617,6 @@ const WheelPage = () => {
                       innerBorderWidth={0}
                       radiusLineColor={"transparent"}
                       radiusLineWidth={0}
-                      // Ocultar el puntero en la capa superior
                       pointerProps={{ style: { display: 'none' } }}
                       disableInitialAnimation={true}
                       showWinnerBorder={false}
