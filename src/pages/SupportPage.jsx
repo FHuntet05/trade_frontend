@@ -5,7 +5,7 @@ import { FiLifeBuoy, FiMessageCircle, FiExternalLink } from 'react-icons/fi';
 import StaticPageLayout from '../components/layout/StaticPageLayout';
 
 const SupportPage = () => {
-  const { t } = useTranslation();
+ // const { t } = useTranslation();
   // Enlaces hardcodeados solicitados por el usuario
   const assistantUrl = 'https://t.me/HonyAsistent';
   const supportUrl = 'https://t.me/AlBrokTradePro';
