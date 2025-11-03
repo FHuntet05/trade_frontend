@@ -7,7 +7,7 @@ import useUserStore from '@/store/userStore';
 import { IOSButton } from '../ui/IOSComponents';
 import { FiX } from 'react-icons/fi';
 import { formatters } from '@/utils/formatters';
-import axiosInstance from '@/api/axiosInstance';
+import api from '@/api/axiosConfig';
 import toast from 'react-hot-toast';
 
 const WithdrawalComponent = ({ isVisible, onClose }) => {
@@ -81,7 +81,7 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      const response = await axiosInstance.post('/user/withdrawal', {
+      const response = await api.post('/user/withdrawal', {
         amount: withdrawalAmount,
         walletAddress,
         password: withdrawalPassword
