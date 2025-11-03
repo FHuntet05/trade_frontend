@@ -87,7 +87,8 @@ export const useTelegramPhoto = (telegramId, options = {}) => {
 
         img.onerror = (error) => {
           if (!cancelled) {
-            console.error(`[useTelegramPhoto] ❌ Error cargando imagen:`, fullUrl, error);
+            console.error(`[useTelegramPhoto] ❌ Error cargando imagen (404 o red error):`, fullUrl);
+            // La imagen no existe o el servidor devolvió 404
             setState({ src: null, loading: false, error: new Error('Failed to load image') });
           }
         };
