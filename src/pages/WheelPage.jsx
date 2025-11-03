@@ -544,41 +544,47 @@ const WheelPage = () => {
               </div>
 
               <div className="relative mx-auto flex flex-col items-center">
-                <div className="relative flex h-[18rem] w-[18rem] items-center justify-center md:h-[20rem] md:w-[20rem]">
-                  <Wheel
-                    mustStartSpinning={mustSpin}
-                    prizeNumber={prizeNumber}
-                    data={segments}
-                    onStopSpinning={handleStopSpinning}
-                    // Texto radial hacia el centro
-                    perpendicularText={true}
-                    textDistance={80}
-                    fontSize={16}
-                    textColors={["#ffffff"]}
-                    // Colores alternados para los segmentos
-                    backgroundColors={["#ffb703", "#fb8500", "#8ecae6", "#219ebc"]}
-                    // Estilos de borde
-                    outerBorderColor={"#e2e8f0"}
-                    outerBorderWidth={5}
-                    innerRadius={15}
-                    innerBorderColor={"#e2e8f0"}
-                    innerBorderWidth={3}
-                    radiusLineColor={"#ffffff55"}
-                    radiusLineWidth={1}
-                    // Puntero
-                    pointerProps={{
-                      style: {
-                        width: "16%",
-                        right: "6px",
-                        top: "10px",
-                        filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.25))",
-                      },
-                    }}
-                    disableInitialAnimation={true}
-                    showWinnerBorder={false}
-                  />
-                </div>
-
+                {segments?.length > 0 ? (
+                  <div className="relative flex h-[18rem] w-[18rem] items-center justify-center md:h-[20rem] md:w-[20rem]">
+                    <Wheel
+                      mustStartSpinning={mustSpin}
+                      prizeNumber={prizeNumber}
+                      data={segments}
+                      onStopSpinning={handleStopSpinning}
+                      // Texto radial hacia el centro
+                      perpendicularText={true}
+                      textDistance={80}
+                      fontSize={16}
+                      textColors={["#ffffff"]}
+                      // Colores alternados para los segmentos
+                      backgroundColors={["#ffb703", "#fb8500", "#8ecae6", "#219ebc"]}
+                      // Estilos de borde
+                      outerBorderColor={"#e2e8f0"}
+                      outerBorderWidth={5}
+                      innerRadius={15}
+                      innerBorderColor={"#e2e8f0"}
+                      innerBorderWidth={3}
+                      radiusLineColor={"#ffffff55"}
+                      radiusLineWidth={1}
+                      // Puntero
+                      pointerProps={{
+                        style: {
+                          width: "16%",
+                          right: "6px",
+                          top: "10px",
+                          filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.25))",
+                        },
+                      }}
+                      disableInitialAnimation={true}
+                      showWinnerBorder={false}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-[18rem] w-[18rem] items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 md:h-[20rem] md:w-[20rem]">
+                    <span className="text-sm text-center px-6">La ruleta aún no tiene premios activos.</span>
+                  </div>
+                )}
+              </div>
                 <div className="mt-6 flex justify-center">
                   <IOSButton
                     variant="primary"
@@ -599,7 +605,6 @@ const WheelPage = () => {
                   <p className="mt-3 text-xs text-slate-500">Gana más giros completando las misiones de invitación o las tareas especiales.</p>
                 )}
               </div>
-            </div>
           </IOSCard>
 
           <div className="flex flex-col gap-6">
