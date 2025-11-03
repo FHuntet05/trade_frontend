@@ -121,96 +121,109 @@ const WheelPage = () => {
 
   const availableSpins = user?.balance?.spins ?? 0;
 
+  const handleSpecialTask = async (task) => {
+    // 0) Validaciones mínimas
+    if (!task?.link) {
+      toast(t('wheelPage.toasts.comingSoon'), { icon: "⏳" });
+      return;
+    }
+    if (!task?.id) {
+      console.error('Task object missing id:', task);
+      toast.error('Error: Tarea sin identificador');
+      window.open(task.link, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (task.claimed) {
+      toast(t('wheelPage.toasts.alreadyClaimed'));
+      return;
+    }
+
+    // 1) Marcar como reclamada inmediatamente para bloquear múltiples clics
+    updateUser({
+      ...user,
+      claimedTasks: {
+        ...(user?.claimedTasks || {}),
+        [task.claimKey]: true,
+      },
+    });
+
+    // 2) Abrir el enlace inmediatamente (no esperar a la API)
+    window.open(task.link, "_blank", "noopener,noreferrer");
+
+    // 3) Llamada a la API para validar y, si procede, acreditar los giros una sola vez
+    try {
+      const taskId = task.id;
+      console.log('Claiming special task (server):', taskId);
+      const { data } = await api.post('/wheel/claim-special', { taskId });
+
+      // Solo acreditamos si el backend devuelve newBalances (indica crédito real)
+      if (data?.newBalances) {
+        updateUserBalances(data.newBalances);
+        toast.success(t('wheelPage.toasts.rewardClaimed'));
+      } else {
+        // Ya estaba reclamada anteriormente -> no sumar giros otra vez
+        toast(t('wheelPage.toasts.alreadyClaimed'));
+      }
+    } catch (error) {
+      console.error('Claim special task error:', error?.response?.data || error.message);
+      // Mantenemos la tarea como reclamada para evitar abuso; no sumamos giros
+      toast.error(t('wheelPage.toasts.rewardClaimError'));
+    }
+  };
+
+  // Audio helpers for ticks and win sound
   const ensureAudioContext = () => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    const ContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!ContextClass) {
-      return null;
-    }
-
+    if (typeof window === 'undefined') return null;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
     if (!audioContextRef.current) {
       try {
-        audioContextRef.current = new ContextClass();
-      } catch (error) {
+        audioContextRef.current = new Ctx();
+      } catch (e) {
         return null;
       }
     }
-
     return audioContextRef.current;
   };
 
+  const triggerTickFeedback = () => {
+    const ctx = ensureAudioContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.2, now + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+      osc.onended = () => {
+        try { osc.disconnect(); gain.disconnect(); } catch {}
+      };
+    } catch (e) {
+      // ignore tick errors
+    }
+  };
+
   const clearTickFeedback = () => {
-    if (!tickTimeoutsRef.current?.length) {
-      return;
-    }
-
-    if (typeof window !== "undefined") {
-      tickTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
-    }
-
+    const timeouts = tickTimeoutsRef.current || [];
+    timeouts.forEach((id) => {
+      try { clearTimeout(id); } catch {}
+    });
     tickTimeoutsRef.current = [];
   };
 
-  const triggerTickFeedback = () => {
-    if (typeof window !== "undefined" && typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try {
-        navigator.vibrate?.(18);
-      } catch (error) {
-        // ignore vibration errors (e.g., unsupported devices)
-      }
-    }
-
-    const context = ensureAudioContext();
-    if (!context) {
-      return;
-    }
-
-    if (context.state === "suspended") {
-      context.resume?.().catch(() => null);
-    }
-
-    try {
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-
-      oscillator.type = "triangle";
-      oscillator.frequency.value = 880;
-      gain.gain.value = 0.06;
-
-      oscillator.connect(gain);
-      gain.connect(context.destination);
-
-      const now = context.currentTime;
-      gain.gain.setValueAtTime(0.06, now);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
-
-      oscillator.start(now);
-      oscillator.stop(now + 0.09);
-
-      oscillator.onended = () => {
-        oscillator.disconnect();
-        gain.disconnect();
-      };
-    } catch (error) {
-      // silently ignore audio errors
-    }
-  };
-
-  const startTickFeedback = (durationMs = SPIN_TOTAL_DURATION_MS) => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
+  const startTickFeedback = (durationMs) => {
+    if (typeof window === 'undefined') return;
     clearTickFeedback();
     triggerTickFeedback();
     const schedule = createTickSchedule(durationMs);
-    if (!schedule.length) {
-      return;
-    }
-
+    if (!schedule.length) return;
     tickTimeoutsRef.current = schedule.map((delay) =>
       window.setTimeout(() => {
         triggerTickFeedback();
@@ -467,85 +480,7 @@ const WheelPage = () => {
     setPendingSpinResult(null);
   };
 
-  const handleSpecialTask = async (task) => {
-    if (!task?.link) {
-      toast(t('wheelPage.toasts.comingSoon'), { icon: "⏳" });
-      return;
-    }
-    
-    // Validar que tenemos un task.id válido
-    if (!task?.id) {
-      console.error('Task object missing id:', task);
-      toast.error('Error: Tarea sin identificador');
-      return;
-    }
-    
-    try {
-      // 1) Reclamar en backend - siempre usar task.id directamente
-      const taskId = task.id;
-      
-      console.log('Claiming special task:', taskId);
-
-      const { data } = await api.post('/wheel/claim-special', { taskId });
-
-      if (data?.success) {
-        // 2) Actualizar saldo de giros
-        if (data?.newBalances) {
-          updateUserBalances(data.newBalances);
-        } else {
-          // Si el backend no devuelve newBalances, aplicamos suma local optimista
-          const currentBalances = user?.balance || {};
-          const currentSpins = Number(currentBalances.spins || 0);
-          const added = Number(task?.rewardSpins || 0);
-          updateUserBalances({ ...currentBalances, spins: currentSpins + added });
-        }
-
-        // 3) Marcar la misión como reclamada
-        updateUser({
-          ...user,
-          claimedTasks: {
-            ...(user?.claimedTasks || {}),
-            [task.claimKey]: true,
-          },
-        });
-
-  toast.success(t('wheelPage.toasts.rewardClaimed'));
-      }
-    } catch (error) {
-      const msg = error?.response?.data?.message || '';
-      // Si el backend reporta que ya estaba reclamada, sincronizamos el flag local igualmente
-      if (/ya|reclamad/i.test(msg)) {
-        updateUser({
-          ...user,
-          claimedTasks: {
-            ...(user?.claimedTasks || {}),
-            [task.claimKey]: true,
-          },
-        });
-  toast(t('wheelPage.toasts.alreadyClaimed'));
-      } else if (/misi\u00f3n inv\u00e1lida|mision invalida|invalid/i.test(msg)) {
-        // Fallback optimista: acreditamos localmente para no romper UX y marcamos como reclamada
-        const currentBalances = user?.balance || {};
-        const currentSpins = Number(currentBalances.spins || 0);
-        const added = Number(task?.rewardSpins || 0);
-        updateUserBalances({ ...currentBalances, spins: currentSpins + added });
-        updateUser({
-          ...user,
-          claimedTasks: {
-            ...(user?.claimedTasks || {}),
-            [task.claimKey]: true,
-          },
-        });
-        toast(t('wheelPage.toasts.rewardAppliedLocally'));
-      } else {
-        toast.error(t('wheelPage.toasts.rewardClaimError'));
-        console.error('Claim special task error:', error?.response?.data || error.message);
-      }
-    } finally {
-      // 4) Abrir el enlace solicitado
-      window.open(task.link, "_blank", "noopener,noreferrer");
-    }
-  };  return (
+  return (
     <div className="min-h-screen w-full bg-[#f5f7fb] px-4 py-6 md:px-8">
       <div className="mx-auto w-full max-w-5xl space-y-6">
         <header className="space-y-2">
