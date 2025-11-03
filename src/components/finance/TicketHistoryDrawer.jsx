@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FiX, FiClock, FiCheckCircle, FiAlertTriangle, FiInfo, FiArrowRightCircle, FiZap, FiXCircle } from 'react-icons/fi';
+import { FiX, FiClock, FiCheckCircle, FiAlertTriangle, FiInfo, FiArrowRightCircle, FiZap, FiXCircle, FiTrendingUp, FiDollarSign } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '@/api/axiosConfig';
 import Loader from '@/components/common/Loader';
@@ -19,8 +19,9 @@ const statusConfig = {
 };
 
 const tabs = [
-  { key: 'tickets', label: 'Tickets de depósito' },
-  { key: 'investments', label: 'Ganancias esperadas' },
+  { key: 'tickets', label: 'Depósitos', icon: <FiDollarSign /> },
+  { key: 'market', label: 'Mercado', icon: <FiTrendingUp /> },
+  { key: 'quantitative', label: 'Cuantitativo', icon: <FiZap /> },
 ];
 
 const TicketHistoryDrawer = ({ isOpen, onClose }) => {
@@ -168,11 +169,13 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
         marketPurchases.push({
           id: tx._id,
           name: tx.metadata.itemName || 'Compra de mercado',
+          symbol: tx.metadata.symbol || 'N/A',
           invested: Math.abs(parseFloat(tx.amount || 0)),
           daily,
           expectedReturn,
           createdAt: tx.createdAt,
           duration,
+          profitPercentage: parseFloat(tx.metadata.profitPercentage || 0),
         });
       }
       if (tx.type === 'purchase' && tx.metadata) {
@@ -182,6 +185,8 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
           name: tx.metadata.planName || 'Plan cuantitativo',
           invested,
           createdAt: tx.createdAt,
+          duration: parseInt(tx.metadata.durationDays || 0, 10),
+          profitPercentage: parseFloat(tx.metadata.profitPercentage || 0),
         });
       }
     });
@@ -193,265 +198,450 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex"
+          className="fixed inset-0 z-50 flex font-ios"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <div className="flex-1 bg-black/50" onClick={onClose} />
           <motion.aside
-            className="w-full max-w-md bg-system-background h-full shadow-2xl border-l border-white/10 flex flex-col"
+            className="w-full max-w-md bg-system-background h-full shadow-2xl border-l border-white/10 flex flex-col font-ios"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           >
-            <header className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+            {/* Header */}
+            <header className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-white">
               <div>
-                <p className="text-xs uppercase tracking-wide text-text-tertiary">Panel financiero</p>
-                <h2 className="text-lg font-bold text-text-primary">Historial y tickets</h2>
+                <p className="text-xs uppercase tracking-wide text-text-tertiary font-semibold">Panel financiero</p>
+                <h2 className="text-lg font-bold text-text-primary font-ios-display">Historial de inversiones</h2>
               </div>
-              <button onClick={onClose} className="p-2 rounded-full bg-system-secondary text-text-secondary hover:text-white">
+              <button onClick={onClose} className="p-2 rounded-full bg-system-secondary text-text-secondary hover:text-text-primary transition-colors">
                 <FiX className="w-5 h-5" />
               </button>
             </header>
 
-            <div className="px-5 py-3 border-b border-white/10 flex gap-2">
+            {/* Tabs */}
+            <div className="px-4 py-3 border-b border-white/10 bg-white flex gap-2 overflow-x-auto">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
-                    activeTab === tab.key ? 'bg-ios-green text-white' : 'bg-system-secondary text-text-secondary'
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap ${
+                    activeTab === tab.key 
+                      ? 'bg-ios-green text-white shadow-ios-button' 
+                      : 'bg-system-secondary text-text-secondary hover:bg-gray-200'
                   }`}
                 >
+                  {tab.icon}
                   {tab.label}
                 </button>
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto pb-24">
-              {activeTab === 'tickets' && (
-                <section className="px-5 pt-4 pb-2 border-b border-white/5 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-ios bg-system-secondary/70 border border-white/10 p-3">
-                    <p className="text-xs text-text-tertiary uppercase tracking-wide">Pendientes</p>
-                    <p className="text-lg font-semibold text-text-primary">{ticketStats.pendingCount}</p>
-                    <p className="text-xs text-red-500 flex items-center gap-1">
-                      <FiClock className="w-3 h-3" />
-                      {ticketStats.pendingAmount.toFixed(2)} USDT en espera
-                    </p>
-                  </div>
-                  <div className="rounded-ios bg-ios-green/10 border border-ios-green/20 p-3">
-                    <p className="text-xs text-ios-green uppercase tracking-wide">Acreditado</p>
-                    <p className="text-lg font-semibold text-text-primary">{ticketStats.completedCount}</p>
-                    <p className="text-xs text-ios-green flex items-center gap-1">
-                      <FiCheckCircle className="w-3 h-3" />
-                      {ticketStats.completedAmount.toFixed(2)} USDT recibidos
-                    </p>
-                  </div>
-                </div>
-                <div className="px-3 py-2 rounded-ios bg-system-secondary/60 text-xs text-text-secondary flex justify-between">
-                  <span>Total de tickets</span>
-                  <span>{ticketStats.totalCount} • {ticketStats.totalAmount.toFixed(2)} USDT</span>
-                </div>
-              </section>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto pb-24 bg-system-background">{activeTab === 'tickets' && (
+                <>
+                  <section className="px-5 pt-4 pb-3 space-y-3 bg-white">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-ios-xl bg-gradient-to-br from-yellow-50 to-yellow-100/80 border border-yellow-200/50 p-4 shadow-ios-card">
+                        <p className="text-xs text-yellow-700 uppercase tracking-wide font-bold">Pendientes</p>
+                        <p className="text-2xl font-bold text-yellow-900 font-ios-display">{ticketStats.pendingCount}</p>
+                        <p className="text-xs text-yellow-600 flex items-center gap-1 mt-1 font-medium">
+                          <FiClock className="w-3 h-3" />
+                          ${ticketStats.pendingAmount.toFixed(2)} USDT
+                        </p>
+                      </div>
+                      <div className="rounded-ios-xl bg-gradient-to-br from-green-50 to-ios-green/10 border border-ios-green/20 p-4 shadow-ios-card">
+                        <p className="text-xs text-ios-green uppercase tracking-wide font-bold">Acreditados</p>
+                        <p className="text-2xl font-bold text-ios-green font-ios-display">{ticketStats.completedCount}</p>
+                        <p className="text-xs text-ios-green flex items-center gap-1 mt-1 font-medium">
+                          <FiCheckCircle className="w-3 h-3" />
+                          ${ticketStats.completedAmount.toFixed(2)} USDT
+                        </p>
+                      </div>
+                    </div>
+                    <div className="px-4 py-3 rounded-ios-xl bg-gray-50 border border-gray-200 text-xs text-text-secondary flex justify-between items-center font-medium">
+                      <span>Total de tickets</span>
+                      <span className="font-semibold text-text-primary">{ticketStats.totalCount} • ${ticketStats.totalAmount.toFixed(2)}</span>
+                    </div>
+                  </section>
+
+                  <section className="px-5 py-4 space-y-5">
+                    {isLoadingTickets ? (
+                      <div className="py-10"><Loader text="Cargando tickets..." /></div>
+                    ) : tickets.length === 0 ? (
+                      <div className="p-6 bg-white rounded-ios-xl text-center text-text-secondary text-sm border border-gray-200 shadow-ios-card">
+                        <p className="font-medium">Aún no tienes tickets de depósito.</p>
+                        <p className="text-xs text-text-tertiary mt-1">Tus depósitos aparecerán aquí.</p>
+                      </div>
+                    ) : (
+                      statusDisplayOrder.map((status) => {
+                        const config = statusConfig[status] || statusConfig.pending;
+                        return (
+                          <div key={status} className="space-y-3">
+                            <div className="flex items-center gap-2 text-sm font-bold text-text-primary">
+                              <span className={`text-base ${config.tone}`}>{config.icon}</span>
+                              {config.label}
+                              <span className={`ml-auto text-xs px-2.5 py-1 rounded-full font-semibold ${config.badge}`}>
+                                {groupedTickets[status].length}
+                              </span>
+                            </div>
+                            <div className="space-y-3">
+                              {groupedTickets[status].map((ticket) => (
+                                <motion.div
+                                  key={ticket.ticketId}
+                                  layout
+                                  className="p-4 rounded-ios-xl bg-white border border-gray-200 space-y-3 shadow-ios-card hover:border-ios-green/40 hover:shadow-lg transition-all"
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-baseline gap-2">
+                                      <span className="text-xl font-bold text-text-primary font-ios-display">
+                                        ${Number(ticket.amount).toFixed(2)}
+                                      </span>
+                                      <span className="text-sm font-semibold text-text-secondary">{ticket.currency}</span>
+                                    </div>
+                                    <div className="text-xs text-text-tertiary text-right leading-tight font-medium">
+                                      {new Date(ticket.createdAt).toLocaleDateString('es-ES', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      })}
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {ticket.methodName && (
+                                      <span className="px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold">
+                                        {ticket.methodName}
+                                      </span>
+                                    )}
+                                    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+                                      ticket.methodType === 'automatic' 
+                                        ? 'bg-green-50 text-green-700 border border-green-200' 
+                                        : 'bg-orange-50 text-orange-700 border border-orange-200'
+                                    }`}>
+                                      {ticket.methodType === 'manual' ? 'Manual' : 'Automático'}
+                                    </span>
+                                    {ticket.chain && (
+                                      <span className="px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-xs font-semibold">
+                                        {ticket.chain}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {ticket.depositAddress && (
+                                    <div className="text-xs font-mono text-text-secondary bg-gray-50 border border-gray-200 rounded-ios p-3 break-all">
+                                      <span className="text-text-tertiary uppercase tracking-wide mr-1 font-bold">Destino:</span>
+                                      {ticket.depositAddress}
+                                    </div>
+                                  )}
+                                  {ticket.instructions && ticket.methodType === 'manual' && (
+                                    <div className="rounded-ios border-2 border-yellow-400 bg-yellow-50 px-3 py-2.5">
+                                      <p className="text-xs font-semibold text-yellow-800 leading-snug">
+                                        {ticket.instructions}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {ticket.expiresAt && (
+                                    <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+                                      ⏱️ Expira: {new Date(ticket.expiresAt).toLocaleString('es-ES')}
+                                    </p>
+                                  )}
+                                  <div className="flex flex-col gap-2 pt-2">
+                                    {['pending', 'processing', 'awaiting_manual_review'].includes(ticket.status) && (
+                                      <button
+                                        onClick={() => window.open(`/deposit/pending/${ticket.ticketId}`, '_self')}
+                                        className="w-full inline-flex items-center justify-center gap-2 rounded-full border-2 border-ios-green bg-ios-green/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-ios-green hover:bg-ios-green hover:text-white transition-all shadow-ios-button"
+                                      >
+                                        Ver detalle
+                                        <FiArrowRightCircle className="w-4 h-4" />
+                                      </button>
+                                    )}
+
+                                    {['pending', 'awaiting_manual_review'].includes(ticket.status) && (
+                                      <button
+                                        onClick={() => handleCancelTicket(ticket.ticketId)}
+                                        disabled={cancellingTicketId === ticket.ticketId}
+                                        className="w-full inline-flex items-center justify-center gap-2 rounded-full border-2 border-red-500 bg-red-50 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-red-600 hover:bg-red-500 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-ios-button"
+                                      >
+                                        <FiXCircle className="w-4 h-4" />
+                                        {cancellingTicketId === ticket.ticketId ? 'Cancelando...' : 'Cancelar ticket'}
+                                      </button>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </section>
+                </>
               )}
 
-              {activeTab === 'tickets' && (
-                <section className="px-5 py-4 space-y-5">
-                  {isLoadingTickets ? (
-                    <div className="py-10"><Loader text="Cargando tickets..." /></div>
-                  ) : tickets.length === 0 ? (
-                    <div className="p-6 bg-system-secondary rounded-ios text-center text-text-secondary text-sm">
-                      Aún no tienes tickets de depósito.
-                    </div>
+              {/* Market Tab - Inversiones de mercado */}
+              {activeTab === 'market' && (
+                <section className="px-5 py-4 space-y-4">
+                  {isLoadingTransactions ? (
+                    <div className="py-10"><Loader text="Cargando inversiones..." /></div>
                   ) : (
-                    statusDisplayOrder.map((status) => {
-                      const config = statusConfig[status] || statusConfig.pending;
-                      return (
-                        <div key={status} className="space-y-3">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-                          <span className={`text-base ${config.tone}`}>{config.icon}</span>
-                          {config.label}
-                          <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${config.badge}`}>
-                            {groupedTickets[status].length}
-                          </span>
+                    <>
+                      {/* Summary Cards */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-ios-xl bg-gradient-to-br from-blue-50 to-blue-100/80 border border-blue-200/50 p-4 shadow-ios-card">
+                          <p className="text-xs text-blue-700 uppercase tracking-wide font-bold flex items-center gap-1">
+                            <FiTrendingUp className="w-3 h-3" />
+                            Total invertido
+                          </p>
+                          <p className="text-2xl font-bold text-blue-900 font-ios-display mt-1">
+                            ${investmentSummaries.marketPurchases.reduce((acc, item) => acc + (item.invested || 0), 0).toFixed(2)}
+                          </p>
+                          <p className="text-xs text-blue-600 mt-1 font-medium">
+                            {investmentSummaries.marketPurchases.length} activos
+                          </p>
                         </div>
-                        <div className="space-y-2">
-                          {groupedTickets[status].map((ticket) => (
-                            <motion.div
-                              key={ticket.ticketId}
-                              layout
-                              className="p-4 rounded-2xl bg-system-secondary border border-white/8 space-y-3 shadow-[0_12px_24px_-18px_rgba(0,0,0,0.65)] hover:border-ios-green/40 transition-colors"
-                            >
-                              <div className="flex items-start justify-between gap-3 text-sm">
-                                <div className="text-text-primary text-base font-semibold tracking-tight">
-                                  {ticket.currency} {Number(ticket.amount).toFixed(2)}
-                                </div>
-                                <div className="text-xs text-text-tertiary text-right leading-tight font-medium">
-                                  {new Date(ticket.createdAt).toLocaleString()}
-                                </div>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
-                                {ticket.methodName && (
-                                  <span className="px-2 py-1 rounded-full bg-white/5 text-text-secondary border border-white/10">
-                                    {ticket.methodName}
-                                  </span>
-                                )}
-                                <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10">
-                                  {ticket.methodType === 'manual' ? 'Manual' : 'Automático'}
-                                </span>
-                                {ticket.chain && (
-                                  <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10">{ticket.chain}</span>
-                                )}
-                              </div>
-                              {ticket.depositAddress && (
-                                <div className="text-xs font-medium text-text-secondary bg-black/15 border border-white/8 rounded-lg p-2.5 break-all">
-                                  <span className="text-text-tertiary uppercase tracking-wide mr-1">Destino:</span>
-                                  {ticket.depositAddress}
-                                </div>
-                              )}
-                              {ticket.instructions && ticket.methodType === 'manual' && (
-                                <div className="rounded-xl border border-yellow-400/70 bg-[#FEF3C7]/90 px-3 py-2">
-                                  <p className="text-[11px] font-semibold text-[#7C5200] leading-snug">
-                                    {ticket.instructions}
-                                  </p>
-                                </div>
-                              )}
-                              {ticket.expiresAt && (
-                                <p className="text-[11px] font-medium text-text-tertiary uppercase tracking-wide">
-                                  Expira: {new Date(ticket.expiresAt).toLocaleString()}
-                                </p>
-                              )}
-                              <div className="flex flex-col gap-2 mt-1">
-                                {['pending', 'processing', 'awaiting_manual_review'].includes(ticket.status) && (
-                                  <button
-                                    onClick={() => window.open(`/deposit/pending/${ticket.ticketId}`, '_self')}
-                                    className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-ios-green/40 bg-ios-green/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-ios-green hover:border-ios-green/80 hover:bg-ios-green/20 hover:text-white transition-colors"
-                                  >
-                                    Ver detalle
-                                    <FiArrowRightCircle className="w-4 h-4" />
-                                  </button>
-                                )}
+                        <div className="rounded-ios-xl bg-gradient-to-br from-green-50 to-ios-green/10 border border-ios-green/20 p-4 shadow-ios-card">
+                          <p className="text-xs text-ios-green uppercase tracking-wide font-bold flex items-center gap-1">
+                            <FiZap className="w-3 h-3" />
+                            Ganancia diaria
+                          </p>
+                          <p className="text-2xl font-bold text-ios-green font-ios-display mt-1">
+                            ${investmentSummaries.marketPurchases.reduce((acc, item) => acc + (item.daily || 0), 0).toFixed(2)}
+                          </p>
+                          <p className="text-xs text-ios-green/80 mt-1 font-medium">
+                            Rendimiento activo
+                          </p>
+                        </div>
+                      </div>
 
-                                {['pending', 'awaiting_manual_review'].includes(ticket.status) && (
-                                  <button
-                                    onClick={() => handleCancelTicket(ticket.ticketId)}
-                                    disabled={cancellingTicketId === ticket.ticketId}
-                                    className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-red-400 bg-red-500/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-red-500 hover:border-red-300 hover:bg-red-500/20 hover:text-red-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                                  >
-                                    <FiXCircle className="w-4 h-4" />
-                                    {cancellingTicketId === ticket.ticketId ? 'Cancelando...' : 'Cancelar ticket'}
-                                  </button>
-                                )}
+                      {/* Market Items */}
+                      {investmentSummaries.marketPurchases.length === 0 ? (
+                        <div className="p-8 bg-white rounded-ios-xl text-center border border-gray-200 shadow-ios-card">
+                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-3">
+                            <FiTrendingUp className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <p className="font-semibold text-text-primary mb-1">Sin inversiones de mercado</p>
+                          <p className="text-xs text-text-tertiary">Tus compras aparecerán aquí</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {investmentSummaries.marketPurchases.map((item) => (
+                            <motion.div
+                              key={item.id}
+                              layout
+                              className="bg-white rounded-ios-xl border border-gray-200 shadow-ios-card overflow-hidden hover:shadow-lg transition-shadow"
+                            >
+                              {/* Header */}
+                              <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                    <span className="text-lg font-bold text-white">{item.symbol?.[0] || 'M'}</span>
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-white font-ios-display">{item.name}</p>
+                                    <p className="text-xs text-blue-100 font-medium">{item.symbol || 'MARKET'}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xs text-blue-100 uppercase tracking-wide">Rentabilidad</p>
+                                  <p className="text-lg font-bold text-white">+{item.profitPercentage}%</p>
+                                </div>
+                              </div>
+
+                              {/* Body */}
+                              <div className="p-4 space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="bg-gray-50 rounded-ios-xl p-3 border border-gray-200">
+                                    <p className="text-xs text-text-tertiary uppercase tracking-wide font-semibold">Inversión</p>
+                                    <p className="text-lg font-bold text-text-primary font-ios-display">${item.invested.toFixed(2)}</p>
+                                  </div>
+                                  <div className="bg-green-50 rounded-ios-xl p-3 border border-green-200">
+                                    <p className="text-xs text-green-700 uppercase tracking-wide font-semibold">Diario</p>
+                                    <p className="text-lg font-bold text-ios-green font-ios-display">+${item.daily.toFixed(2)}</p>
+                                  </div>
+                                </div>
+
+                                <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-ios-xl p-3 border border-blue-200">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">Retorno esperado</span>
+                                    <span className="text-xs text-blue-600 font-semibold">{item.duration} días</span>
+                                  </div>
+                                  <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-bold text-blue-900 font-ios-display">
+                                      ${(item.invested + item.expectedReturn).toFixed(2)}
+                                    </span>
+                                    <span className="text-sm text-blue-600 font-medium">
+                                      (+${item.expectedReturn.toFixed(2)})
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs text-text-tertiary pt-2 border-t border-gray-200">
+                                  <span className="flex items-center gap-1 font-medium">
+                                    <FiClock className="w-3 h-3" />
+                                    Fecha de compra
+                                  </span>
+                                  <span className="font-semibold">
+                                    {new Date(item.createdAt).toLocaleDateString('es-ES', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric'
+                                    })}
+                                  </span>
+                                </div>
                               </div>
                             </motion.div>
                           ))}
                         </div>
-                        </div>
-                      );
-                    })
+                      )}
+                    </>
                   )}
                 </section>
               )}
 
-              {activeTab === 'investments' && (
-                <section className="px-5 py-4 space-y-5">
-                  {(isLoadingTransactions && transactions.length === 0) ? (
-                    <div className="py-10"><Loader text="Cargando movimientos..." /></div>
+              {/* Quantitative Tab - Planes cuantitativos */}
+              {activeTab === 'quantitative' && (
+                <section className="px-5 py-4 space-y-4">
+                  {isLoadingTransactions ? (
+                    <div className="py-10"><Loader text="Cargando planes..." /></div>
                   ) : (
                     <>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-ios bg-system-secondary/70 border border-white/10 p-3">
-                        <p className="text-xs text-text-tertiary uppercase tracking-wide">Ganancia diaria total</p>
-                        <p className="text-lg font-semibold text-text-primary">
-                          {investmentSummaries.marketPurchases.reduce((acc, item) => acc + (item.daily || 0), 0).toFixed(2)} USDT
-                        </p>
-                        <p className="text-xs text-text-secondary">Mercado + planes activos</p>
+                      {/* Summary Cards */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-ios-xl bg-gradient-to-br from-purple-50 to-purple-100/80 border border-purple-200/50 p-4 shadow-ios-card">
+                          <p className="text-xs text-purple-700 uppercase tracking-wide font-bold flex items-center gap-1">
+                            <FiZap className="w-3 h-3" />
+                            Capital total
+                          </p>
+                          <p className="text-2xl font-bold text-purple-900 font-ios-display mt-1">
+                            ${investmentSummaries.quantitativePurchases.reduce((acc, item) => acc + (item.invested || 0), 0).toFixed(2)}
+                          </p>
+                          <p className="text-xs text-purple-600 mt-1 font-medium">
+                            {investmentSummaries.quantitativePurchases.length} planes
+                          </p>
+                        </div>
+                        <div className="rounded-ios-xl bg-gradient-to-br from-amber-50 to-amber-100/80 border border-amber-200/50 p-4 shadow-ios-card">
+                          <p className="text-xs text-amber-700 uppercase tracking-wide font-bold flex items-center gap-1">
+                            <FiTrendingUp className="w-3 h-3" />
+                            Activos
+                          </p>
+                          <p className="text-2xl font-bold text-amber-900 font-ios-display mt-1">
+                            {user?.activeInvestments?.filter(inv => inv.type === 'quantitative').length || 0}
+                          </p>
+                          <p className="text-xs text-amber-600 mt-1 font-medium">
+                            En ejecución
+                          </p>
+                        </div>
                       </div>
-                      <div className="rounded-ios bg-ios-green/10 border border-ios-green/20 p-3">
-                        <p className="text-xs text-ios-green uppercase tracking-wide">Capital invertido</p>
-                        <p className="text-lg font-semibold text-text-primary">
-                          {(investmentSummaries.marketPurchases.reduce((acc, item) => acc + (item.invested || 0), 0) + investmentSummaries.quantitativePurchases.reduce((acc, item) => acc + (item.invested || 0), 0)).toFixed(2)} USDT
-                        </p>
-                        <p className="text-xs text-text-secondary">Suma de compras registradas</p>
-                      </div>
-                    </div>
 
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-text-primary">Compras de mercado</h3>
-                      {investmentSummaries.marketPurchases.length === 0 ? (
-                        <p className="text-xs text-text-secondary bg-system-secondary px-3 py-3 rounded-ios">
-                          No registras compras de mercado por ahora.
-                        </p>
-                      ) : (
-                        investmentSummaries.marketPurchases.map((item) => (
-                          <div key={item.id} className="p-4 rounded-ios bg-system-secondary border border-white/5 text-sm space-y-1">
-                            <div className="flex justify-between text-text-primary font-medium">
-                              <span>{item.name}</span>
-                              <span>{new Date(item.createdAt).toLocaleDateString()}</span>
-                            </div>
-                            <p className="text-xs text-text-secondary">Inversión: {item.invested.toFixed(2)} USDT</p>
-                            <p className="text-xs text-text-secondary">Ganancia diaria estimada: {item.daily.toFixed(2)} USDT</p>
-                              <p className="text-xs text-text-secondary">Retorno en {item.duration} días: {(item.invested + item.expectedReturn).toFixed(2)} USDT</p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-text-primary">Planes cuantitativos</h3>
+                      {/* Quantitative Items */}
                       {investmentSummaries.quantitativePurchases.length === 0 ? (
-                        <p className="text-xs text-text-secondary bg-system-secondary px-3 py-3 rounded-ios">
-                          Tus compras cuantitativas aparecerán aquí cuando se registren.
-                        </p>
+                        <div className="p-8 bg-white rounded-ios-xl text-center border border-gray-200 shadow-ios-card">
+                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-3">
+                            <FiZap className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <p className="font-semibold text-text-primary mb-1">Sin planes cuantitativos</p>
+                          <p className="text-xs text-text-tertiary">Tus inversiones aparecerán aquí</p>
+                        </div>
                       ) : (
-                        investmentSummaries.quantitativePurchases.map((item) => (
-                          <div key={item.id} className="p-4 rounded-ios bg-system-secondary border border-white/5 text-sm space-y-1">
-                            <div className="flex justify-between text-text-primary font-medium">
-                              <span>{item.name}</span>
-                              <span>{new Date(item.createdAt).toLocaleDateString()}</span>
-                            </div>
-                            <p className="text-xs text-text-secondary">Inversión: {item.invested.toFixed(2)} USDT</p>
-                            <p className="text-xs text-text-tertiary">
-                              Cuando el plan distribuya ganancias aparecerán aquí los totales acreditados.
-                            </p>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                        <div className="space-y-3">
+                          {investmentSummaries.quantitativePurchases.map((item) => {
+                            // Buscar la inversión activa correspondiente
+                            const activeInv = user?.activeInvestments?.find(
+                              inv => inv.type === 'quantitative' && 
+                              Math.abs(inv.amount - item.invested) < 0.01
+                            );
 
-                    {user?.activeInvestments && user.activeInvestments.length > 0 && (
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-text-primary">Inversiones activas</h3>
-                        {user.activeInvestments.map((inv, index) => (
-                          <div key={`${inv.transactionId}-${index}`} className="p-3 rounded-ios bg-system-secondary border border-white/5 text-xs text-text-secondary space-y-1">
-                            <p className="text-text-primary font-medium">Saldo asignado: {Number(inv.amount || 0).toFixed(2)} USDT</p>
-                            {inv.symbol && <p>Activo vinculado: {inv.symbol}</p>}
-                            {inv.type && (
-                              <p className="uppercase tracking-wide text-[10px] text-text-tertiary">
-                                Tipo: {inv.type === 'quantitative' ? 'Plan Cuantitativo' : 'Mercado'}
-                              </p>
-                            )}
-                            {inv.endDate && <p>Finaliza: {new Date(inv.endDate).toLocaleDateString()}</p>}
-                            {(inv.dailyProfitAmount ?? inv.dailyProfit) ? (
-                              <p className="text-ios-green flex items-center gap-1">
-                                <FiZap className="w-3 h-3" /> Rendimiento diario:{' '}
-                                {Number((inv.dailyProfitAmount ?? inv.dailyProfit) || 0).toFixed(2)} USDT
-                              </p>
-                            ) : null}
-                            {typeof inv.accruedProfit === 'number' && inv.accruedProfit > 0 && (
-                              <p>Ganancia acumulada: {Number(inv.accruedProfit).toFixed(2)} USDT</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-              </section>
-            )}
+                            return (
+                              <motion.div
+                                key={item.id}
+                                layout
+                                className="bg-white rounded-ios-xl border border-gray-200 shadow-ios-card overflow-hidden hover:shadow-lg transition-shadow"
+                              >
+                                {/* Header */}
+                                <div className="bg-gradient-to-r from-purple-500 to-purple-600 px-4 py-3 flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                      <FiZap className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-white font-ios-display">{item.name}</p>
+                                      <p className="text-xs text-purple-100 font-medium">Plan cuantitativo</p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-xs text-purple-100 uppercase tracking-wide">Rentabilidad</p>
+                                    <p className="text-lg font-bold text-white">+{item.profitPercentage}%</p>
+                                  </div>
+                                </div>
+
+                                {/* Body */}
+                                <div className="p-4 space-y-3">
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-gray-50 rounded-ios-xl p-3 border border-gray-200">
+                                      <p className="text-xs text-text-tertiary uppercase tracking-wide font-semibold">Inversión</p>
+                                      <p className="text-lg font-bold text-text-primary font-ios-display">${item.invested.toFixed(2)}</p>
+                                    </div>
+                                    {activeInv?.dailyProfitAmount && (
+                                      <div className="bg-purple-50 rounded-ios-xl p-3 border border-purple-200">
+                                        <p className="text-xs text-purple-700 uppercase tracking-wide font-semibold">Diario</p>
+                                        <p className="text-lg font-bold text-purple-600 font-ios-display">+${activeInv.dailyProfitAmount.toFixed(2)}</p>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {activeInv?.accruedProfit && activeInv.accruedProfit > 0 && (
+                                    <div className="bg-gradient-to-r from-green-50 to-green-100/50 rounded-ios-xl p-3 border border-green-200">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-green-700 uppercase tracking-wide flex items-center gap-1">
+                                          <FiCheckCircle className="w-3 h-3" />
+                                          Ganancia acumulada
+                                        </span>
+                                        <span className="text-xl font-bold text-ios-green font-ios-display">
+                                          +${activeInv.accruedProfit.toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {item.duration > 0 && (
+                                    <div className="bg-blue-50 rounded-ios-xl p-3 border border-blue-200">
+                                      <div className="flex items-center justify-between mb-1">
+                                        <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">Duración</span>
+                                        <span className="text-sm font-bold text-blue-900">{item.duration} días</span>
+                                      </div>
+                                      {activeInv?.endDate && (
+                                        <p className="text-xs text-blue-600 font-medium">
+                                          Finaliza: {new Date(activeInv.endDate).toLocaleDateString('es-ES')}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  <div className="flex items-center justify-between text-xs text-text-tertiary pt-2 border-t border-gray-200">
+                                    <span className="flex items-center gap-1 font-medium">
+                                      <FiClock className="w-3 h-3" />
+                                      Fecha de compra
+                                    </span>
+                                    <span className="font-semibold">
+                                      {new Date(item.createdAt).toLocaleDateString('es-ES', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      })}
+                                    </span>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </section>
+              )}
             </div>
           </motion.aside>
         </motion.div>
