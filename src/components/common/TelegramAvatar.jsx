@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import useTelegramPhoto from "@/hooks/useTelegramPhoto";
 
 const DEFAULT_FALLBACK = "https://i.postimg.cc/mD21B6r7/user-avatar-placeholder.png";
@@ -14,19 +14,40 @@ const TelegramAvatar = ({
   renderFallback,
   ...imgProps
 }) => {
-  const { src } = useTelegramPhoto(telegramId, { cacheBust, refreshKey });
-  // CORREGIDO: Solo usamos el src del hook, ignoramos photoUrl para evitar 401
-  const resolvedSrc = src;
+  const { src, loading, error } = useTelegramPhoto(telegramId, { cacheBust, refreshKey });
+  const [imageError, setImageError] = useState(false);
+  
+  console.log('[TelegramAvatar]', { telegramId, src, loading, error, imageError });
 
-  if (resolvedSrc) {
-    return <img src={resolvedSrc} alt={alt} className={className} {...imgProps} />;
+  // Si está cargando, mostrar fallback temporalmente
+  if (loading) {
+    if (typeof renderFallback === "function") {
+      return renderFallback({ className, alt, cacheBust, refreshKey });
+    }
+    return <img src={fallbackSrc} alt={alt} className={className} {...imgProps} />;
   }
 
-  if (typeof renderFallback === "function") {
-    return renderFallback({ className, alt, cacheBust, refreshKey });
+  // Si hay error o la imagen falló al cargar, mostrar fallback
+  if (error || imageError || !src) {
+    if (typeof renderFallback === "function") {
+      return renderFallback({ className, alt, cacheBust, refreshKey });
+    }
+    return <img src={fallbackSrc} alt={alt} className={className} {...imgProps} />;
   }
 
-  return <img src={fallbackSrc} alt={alt} className={className} {...imgProps} />;
+  // Mostrar la imagen con manejo de errores
+  return (
+    <img 
+      src={src} 
+      alt={alt} 
+      className={className} 
+      onError={(e) => {
+        console.error('[TelegramAvatar] Error cargando imagen:', src);
+        setImageError(true);
+      }}
+      {...imgProps} 
+    />
+  );
 };
 
 export default TelegramAvatar;

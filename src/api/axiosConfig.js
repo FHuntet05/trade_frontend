@@ -1,7 +1,23 @@
 // frontend/src/api/axiosConfig.js (VERSIÓN UNIFICADA Y ROBUSTA v25.0)
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+// Detectar automáticamente la URL del backend basándose en el entorno
+const getApiBaseUrl = () => {
+  // Si está definida la variable de entorno, usarla
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // En producción (Vercel), usar la URL del backend desplegado
+  if (import.meta.env.PROD) {
+    return 'https://trade-backend-hut.vercel.app/api';
+  }
+  
+  // En desarrollo local
+  return 'http://localhost:5000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 console.log(`[Axios Config] API Base URL: ${API_BASE_URL}`);
 
 const api = axios.create({

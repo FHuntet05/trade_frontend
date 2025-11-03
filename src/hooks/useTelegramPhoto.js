@@ -54,24 +54,29 @@ export const useTelegramPhoto = (telegramId, options = {}) => {
       try {
         setState((prev) => ({ ...prev, loading: true, error: null }));
         
-        // Construir la URL con el parámetro de cache bust si es necesario
+        // Construir la URL completa para la foto
         const baseUrl = `/user/photo/${telegramId}`;
         const url = cacheBust ? `${baseUrl}?v=${Date.now()}` : baseUrl;
         
-        // Usar la URL directamente ya que el backend hace redirect
-        const photoUrl = `${api.defaults.baseURL}${url}`;
+        // La URL completa debe incluir el baseURL de la API
+        const fullUrl = `${api.defaults.baseURL}${url}`;
+        
+        console.log(`[useTelegramPhoto] Cargando foto desde: ${fullUrl}`);
 
         if (cancelled) {
           return;
         }
 
+        // No hacemos fetch aquí, simplemente usamos la URL directamente
+        // El backend se encarga de servir la imagen o hacer redirect
         if (!cacheBust) {
-          photoCache.set(cacheKey, photoUrl);
+          photoCache.set(cacheKey, fullUrl);
           registerCacheCleanup();
         }
 
-        setState({ src: photoUrl, loading: false, error: null });
+        setState({ src: fullUrl, loading: false, error: null });
       } catch (error) {
+        console.error('[useTelegramPhoto] Error:', error);
         if (!cancelled) {
           setState({ src: null, loading: false, error });
         }
