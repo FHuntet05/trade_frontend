@@ -444,8 +444,8 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <p className="text-xs text-blue-100 uppercase tracking-wide">Rentabilidad</p>
-                                  <p className="text-lg font-bold text-white">+{item.profitPercentage}%</p>
+                                  <p className="text-xs text-blue-100 uppercase tracking-wide">ROI Total</p>
+                                  <p className="text-lg font-bold text-white">+{item.profitPercentage.toFixed(2)}%</p>
                                 </div>
                               </div>
 
@@ -521,16 +521,16 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                             {investmentSummaries.quantitativePurchases.length} planes
                           </p>
                         </div>
-                        <div className="rounded-ios-xl bg-gradient-to-br from-amber-50 to-amber-100/80 border border-amber-200/50 p-4 shadow-ios-card">
-                          <p className="text-xs text-amber-700 uppercase tracking-wide font-bold flex items-center gap-1">
-                            <FiTrendingUp className="w-3 h-3" />
-                            Activos
+                        <div className="rounded-ios-xl bg-gradient-to-br from-green-50 to-ios-green/10 border border-ios-green/20 p-4 shadow-ios-card">
+                          <p className="text-xs text-ios-green uppercase tracking-wide font-bold flex items-center gap-1">
+                            <FiDollarSign className="w-3 h-3" />
+                            Ganancia diaria
                           </p>
-                          <p className="text-2xl font-bold text-amber-900 font-ios-display mt-1">
-                            {user?.activeInvestments?.filter(inv => inv.type === 'quantitative').length || 0}
+                          <p className="text-2xl font-bold text-ios-green font-ios-display mt-1">
+                            ${(user?.activeInvestments?.filter(inv => inv.type === 'quantitative').reduce((acc, inv) => acc + (inv.dailyProfitAmount || 0), 0) || 0).toFixed(2)}
                           </p>
-                          <p className="text-xs text-amber-600 mt-1 font-medium">
-                            En ejecución
+                          <p className="text-xs text-ios-green/80 mt-1 font-medium">
+                            A saldo retirable
                           </p>
                         </div>
                       </div>
@@ -571,8 +571,8 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-xs text-purple-100 uppercase tracking-wide">Rentabilidad</p>
-                                    <p className="text-lg font-bold text-white">+{item.profitPercentage}%</p>
+                                    <p className="text-xs text-purple-100 uppercase tracking-wide">ROI Total</p>
+                                    <p className="text-lg font-bold text-white">+{item.profitPercentage.toFixed(2)}%</p>
                                   </div>
                                 </div>
 
@@ -583,12 +583,15 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                                       <p className="text-xs text-text-tertiary uppercase tracking-wide font-semibold">Inversión</p>
                                       <p className="text-lg font-bold text-text-primary font-ios-display">${item.invested.toFixed(2)}</p>
                                     </div>
-                                    {activeInv?.dailyProfitAmount && (
-                                      <div className="bg-purple-50 rounded-ios-xl p-3 border border-purple-200">
-                                        <p className="text-xs text-purple-700 uppercase tracking-wide font-semibold">Diario</p>
-                                        <p className="text-lg font-bold text-purple-600 font-ios-display">+${activeInv.dailyProfitAmount.toFixed(2)}</p>
-                                      </div>
-                                    )}
+                                    <div className="bg-purple-50 rounded-ios-xl p-3 border border-purple-200">
+                                      <p className="text-xs text-purple-700 uppercase tracking-wide font-semibold">Diario</p>
+                                      <p className="text-lg font-bold text-purple-600 font-ios-display">
+                                        {activeInv?.dailyProfitAmount 
+                                          ? `+$${activeInv.dailyProfitAmount.toFixed(2)}`
+                                          : `+$${((item.invested * item.profitPercentage / 100) / (item.duration || 1)).toFixed(2)}`
+                                        }
+                                      </p>
+                                    </div>
                                   </div>
 
                                   {activeInv?.accruedProfit && activeInv.accruedProfit > 0 && (
