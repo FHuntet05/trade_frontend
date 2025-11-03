@@ -5,8 +5,10 @@ import TelegramAvatar from '../common/TelegramAvatar';
 
 export const ProfileHeader = ({ user, idLabel }) => {
   const displayName = user?.fullName || user?.username || 'Usuario';
-  const telegramId = user?.telegramId || '---';
+  const telegramId = user?.telegramId;
   const fallbackInitial = displayName.charAt(0)?.toUpperCase?.() || 'U';
+
+  console.log('[ProfileHeader] User data:', { telegramId, fullName: user?.fullName, username: user?.username });
 
   return (
     <div className="flex flex-col items-center gap-3 rounded-3xl bg-white p-6 shadow-lg">
@@ -25,7 +27,7 @@ export const ProfileHeader = ({ user, idLabel }) => {
 
       <div className="text-center">
         <p className="text-xl font-semibold text-slate-900">{displayName}</p>
-        <p className="text-sm text-slate-500">{idLabel}: {telegramId}</p>
+        <p className="text-sm text-slate-500">{idLabel}: {telegramId || '---'}</p>
       </div>
     </div>
   );

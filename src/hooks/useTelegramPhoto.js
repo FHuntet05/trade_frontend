@@ -36,7 +36,9 @@ export const useTelegramPhoto = (telegramId, options = {}) => {
   });
 
   useEffect(() => {
-    if (!telegramId) {
+    // Validar que telegramId sea válido (no vacío, no '---', debe ser numérico)
+    if (!telegramId || telegramId === '---' || isNaN(telegramId)) {
+      console.log('[useTelegramPhoto] TelegramId inválido:', telegramId);
       setState({ src: null, loading: false, error: null });
       return;
     }
@@ -44,6 +46,7 @@ export const useTelegramPhoto = (telegramId, options = {}) => {
     const cacheKey = `photo_${telegramId}`;
 
     if (!cacheBust && photoCache.has(cacheKey)) {
+      console.log('[useTelegramPhoto] Foto encontrada en caché:', cacheKey);
       setState({ src: photoCache.get(cacheKey), loading: false, error: null });
       return;
     }
