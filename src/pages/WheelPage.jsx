@@ -575,10 +575,9 @@ const WheelPage = () => {
                       data={segmentsNoText}
                       onStopSpinning={() => { /* no-op: manejado por la capa superior */ }}
                       perpendicularText={true}
-                      // Ocultar texto en capa inferior (solo imágenes y tablero)
-                      textColors={["rgba(0,0,0,0)"]}
-                      fontSize={1}
-                      textDistance={82}
+                      // Capa inferior: NO mostrar texto, solo imágenes y tablero
+                      fontSize={0}
+                      textDistance={1}
                       backgroundColors={["#FFFFFF", "#F2F2F7"]}
                       outerBorderColor={"#e2e8f0"}
                       outerBorderWidth={5}
@@ -600,7 +599,7 @@ const WheelPage = () => {
                     />
                   </div>
 
-                  {/* Capa superior: solo texto (transparente el tablero) */}
+                  {/* Capa superior: SOLO texto */}
                   <div className="absolute inset-0">
                     <Wheel
                       mustStartSpinning={mustSpin}
@@ -608,7 +607,7 @@ const WheelPage = () => {
                       data={segmentsTextOnly}
                       onStopSpinning={handleStopSpinning}
                       perpendicularText={true}
-                      textDistance={60}
+                      textDistance={75}
                       fontSize={14}
                       // Tablero transparente para que se vea la capa inferior
                       backgroundColors={["rgba(0,0,0,0)", "rgba(0,0,0,0)"]}
