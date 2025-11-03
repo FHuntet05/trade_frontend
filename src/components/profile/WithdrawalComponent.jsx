@@ -7,16 +7,20 @@ import useUserStore from '@/store/userStore';
 import { IOSButton } from '../ui/IOSComponents';
 import { FiX } from 'react-icons/fi';
 import { formatters } from '@/utils/formatters';
+import axiosInstance from '@/api/axiosInstance';
+import toast from 'react-hot-toast';
 
 const WithdrawalComponent = ({ isVisible, onClose }) => {
-  const { user, settings } = useUserStore();
+  const { user, settings, refreshUserProfile } = useUserStore();
   const [withdrawalPassword, setWithdrawalPassword] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [amount, setAmount] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useTranslation();
 
   const withdrawableBalance = user?.withdrawableBalance || 0;
   const minimumWithdrawal = settings?.minimumWithdrawal || 10;
+  const withdrawalFeePercent = settings?.withdrawalFeePercent || 0;
 
   // Pre-cargar la billetera del usuario cuando se abre el modal
   React.useEffect(() => {
@@ -27,6 +31,14 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
 
   const hasWithdrawalPassword = user?.hasWithdrawalPassword || false;
   const hasWallet = Boolean(user?.wallet);
+
+  // Calcular comisión y monto neto
+  const calculatedAmounts = useMemo(() => {
+    const grossAmount = parseFloat(amount) || 0;
+    const feeAmount = (grossAmount * withdrawalFeePercent) / 100;
+    const netAmount = grossAmount - feeAmount;
+    return { grossAmount, feeAmount, netAmount };
+  }, [amount, withdrawalFeePercent]);
 
   const isWithdrawalDisabled = useMemo(() => {
     return withdrawableBalance < minimumWithdrawal || !hasWithdrawalPassword || !hasWallet;
@@ -49,10 +61,51 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
     });
   }, [minimumWithdrawal, t, withdrawableBalance, hasWithdrawalPassword, hasWallet]);
 
-  const handleConfirmWithdrawal = () => {
-    console.log({ withdrawalPassword, walletAddress, amount });
-    // Aquí iría la lógica de validación y llamada a la API de retiro.
-    onClose();
+  const handleConfirmWithdrawal = async () => {
+    if (!withdrawalPassword || !walletAddress || !amount) {
+      toast.error('Por favor completa todos los campos.');
+      return;
+    }
+
+    const withdrawalAmount = parseFloat(amount);
+    if (isNaN(withdrawalAmount) || withdrawalAmount <= 0) {
+      toast.error('El monto debe ser un número positivo.');
+      return;
+    }
+
+    if (withdrawalAmount > withdrawableBalance) {
+      toast.error('Saldo insuficiente.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await axiosInstance.post('/user/withdrawal', {
+        amount: withdrawalAmount,
+        walletAddress,
+        password: withdrawalPassword
+      });
+
+      if (response.data.success) {
+        const { netAmount } = response.data.transaction;
+        toast.success(`Retiro solicitado: recibirás ${formatters.formatCurrency(netAmount)} USDT`);
+        
+        // Actualizar perfil para reflejar el nuevo saldo
+        await refreshUserProfile();
+        
+        // Limpiar formulario y cerrar modal
+        setWithdrawalPassword('');
+        setAmount('');
+        onClose();
+      }
+    } catch (error) {
+      console.error('[WITHDRAWAL ERROR]', error);
+      const errorMessage = error.response?.data?.message || 'Error al procesar el retiro.';
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const backdropVariants = {
@@ -143,16 +196,36 @@ const WithdrawalComponent = ({ isVisible, onClose }) => {
                   {helperText}
                 </p>
               </div>
+
+              {/* Mostrar información de comisión */}
+              {calculatedAmounts.grossAmount > 0 && (
+                <div className="bg-internal-card rounded-xl p-3 space-y-2 border border-gray-200">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-text-secondary">Monto a retirar:</span>
+                    <span className="font-semibold text-text-primary">{formatters.formatCurrency(calculatedAmounts.grossAmount)} USDT</span>
+                  </div>
+                  {withdrawalFeePercent > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-text-secondary">Comisión ({withdrawalFeePercent}%):</span>
+                      <span className="font-semibold text-orange-500">-{formatters.formatCurrency(calculatedAmounts.feeAmount)} USDT</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
+                    <span className="text-text-secondary font-semibold">Recibirás:</span>
+                    <span className="font-bold text-ios-green">{formatters.formatCurrency(calculatedAmounts.netAmount)} USDT</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-6">
               <IOSButton
                 onClick={handleConfirmWithdrawal}
-                disabled={isWithdrawalDisabled || !withdrawalPassword || !walletAddress || !amount || parseFloat(amount) <= 0}
+                disabled={isSubmitting || isWithdrawalDisabled || !withdrawalPassword || !walletAddress || !amount || parseFloat(amount) <= 0}
                 variant="primary"
                 className="w-full"
               >
-                {t('withdrawalModal.confirmButton')}
+                {isSubmitting ? 'Procesando...' : t('withdrawalModal.confirmButton')}
               </IOSButton>
             </div>
           </motion.div>
