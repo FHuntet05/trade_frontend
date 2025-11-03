@@ -292,23 +292,17 @@ const WheelPage = () => {
         if (apiSegments.length) {
           const normalizedSegments = apiSegments.map((segment, index) => {
             const type = ["usdt", "spins", "none"].includes(segment.type) ? segment.type : "none";
-            const hasImage = Boolean(segment.imageUrl);
             const numericValue = Number(segment.value ?? 0);
             const normalizedValue = Number.isFinite(numericValue) ? numericValue : 0;
-            const configuredText = (segment.text ?? "").trim();
-            const fallbackLabel = configuredText
-              || (type === "usdt"
-                ? `${normalizedValue.toFixed(2)} USDT`
-                : type === "spins"
-                ? `${normalizedValue} giros`
-                : "Sin premio");
-            const label = fallbackLabel || `Premio ${index + 1}`;
+            const configuredText = (segment.text || "").trim();
+            const fallbackLabel = type === "usdt" ? `$${Number(normalizedValue).toFixed(2)} USDT` : `${normalizedValue} ${type}`;
+            const hasImage = !!segment.imageUrl;
 
             return {
               // option se usa en la capa inferior (no visible) y como respaldo general
-              option: label,
+              option: fallbackLabel,
               // Guardamos SOLO el texto configurado para la capa superior visible
-              text: configuredText,
+              text: configuredText || fallbackLabel,
               type,
               value: normalizedValue,
               weight: Number(segment.weight ?? 1) || 1,
@@ -504,6 +498,7 @@ const WheelPage = () => {
         }
         // Persistimos el flag de reclamado en el estado local
         updateUser({
+          ...user,
           claimedTasks: {
             ...(user?.claimedTasks || {}),
             [task.claimKey]: true,
@@ -515,6 +510,14 @@ const WheelPage = () => {
       // Si ya estaba reclamado, backend responde 200 con claimed=true o 200 con mensaje; si lanza error lo ignoramos suavemente
       const msg = error?.response?.data?.message;
       if (msg && /ya/i.test(msg)) {
+        // Si el backend confirma que ya estaba reclamado, lo marcamos en el frontend por si no estaba sincronizado
+        updateUser({
+          ...user,
+          claimedTasks: {
+            ...(user?.claimedTasks || {}),
+            [task.claimKey]: true,
+          }
+        });
         toast('Ya reclamado anteriormente');
       }
     } finally {
@@ -571,7 +574,7 @@ const WheelPage = () => {
                       prizeNumber={prizeNumber}
                       data={segmentsNoText}
                       onStopSpinning={() => { /* no-op: manejado por la capa superior */ }}
-                      perpendicularText={false}
+                      perpendicularText={true}
                       // Ocultar texto en capa inferior (solo imágenes y tablero)
                       textColors={["rgba(0,0,0,0)"]}
                       fontSize={1}
@@ -604,8 +607,8 @@ const WheelPage = () => {
                       prizeNumber={prizeNumber}
                       data={segmentsTextOnly}
                       onStopSpinning={handleStopSpinning}
-                      perpendicularText={false}
-                      textDistance={50}
+                      perpendicularText={true}
+                      textDistance={60}
                       fontSize={14}
                       // Tablero transparente para que se vea la capa inferior
                       backgroundColors={["rgba(0,0,0,0)", "rgba(0,0,0,0)"]}
