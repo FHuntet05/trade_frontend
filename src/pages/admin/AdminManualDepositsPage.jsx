@@ -1,7 +1,7 @@
 // RUTA: frontend/src/pages/admin/AdminManualDepositsPage.jsx
 // --- VERSIÓN FINAL Y COMPLETA CON INTEGRACIÓN DEL MODAL ---
 
-import React, 'useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import adminApi from '@/pages/admin/api/adminApi';
 import toast from 'react-hot-toast';
 import Loader from '@/components/common/Loader';
