@@ -1,34 +1,17 @@
 // RUTA: frontend/src/pages/PendingDepositPage.jsx
-// --- INICIO DE LA SOLUCIÓN DEFINITIVA CON IMPORTACIÓN DINÁMICA ---
+// --- VERSIÓN ACTUALIZADA CON REACCIÓN AL ESTADO 'COMPLETED' ---
 
-import React, { useState, useEffect, lazy, Suspense } from 'react'; // 1. Se añaden 'lazy' y 'Suspense' de React.
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import toast from 'react-hot-toast';
-// 2. La importación 'import { QRCode } from 'qrcode.react';' SE ELIMINA de aquí.
+// import toast from 'react-hot-toast'; // Se elimina la importación de toast
 import useCountdown from '@/hooks/useCountdown';
 import api from '@/api/axiosConfig';
 import { IOSLayout, IOSBackButton, IOSButton, IOSCard } from '@/components/ui/IOSComponents';
 import Loader from '@/components/common/Loader';
-import { FiCopy } from 'react-icons/fi';
+import { FiCopy, FiCheckCircle } from 'react-icons/fi';
 
-// 3. Se define el componente QRCode para que se cargue de forma "perezosa" (lazy).
-//    React no cargará el código de esta librería hasta que sea estrictamente necesario.
-const QRCode = lazy(async () => {
-  const mod = await import('qrcode.react');
-  const component =
-    mod.QRCodeCanvas ||
-    mod.QRCodeSVG ||
-    mod.default?.QRCodeCanvas ||
-    mod.default?.QRCodeSVG ||
-    mod.default;
-
-  if (!component) {
-    throw new Error('No se encontró el componente QRCode en qrcode.react');
-  }
-
-  return { default: component };
-});
+const QRCode = lazy(() => import('qrcode.react').then(mod => ({ default: mod.QRCodeCanvas })));
 
 const PendingDepositPage = () => {
   const { ticketId } = useParams();
@@ -40,52 +23,57 @@ const PendingDepositPage = () => {
   const { timeLeft, isFinished } = useCountdown(ticket?.expiresAt);
   const isStaticWalletTicket = Boolean(ticket?.metadata?.staticWalletKey);
 
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Guardamos si la compra se ha completado para evitar que el sondeo lo revierta
+  const [isPurchaseCompleted, setIsPurchaseCompleted] = useState(false);
+  // --- FIN DE LA MODIFICACIÓN ---
+
   useEffect(() => {
     let intervalId;
 
     const fetchTicketDetails = async () => {
+      // Si la compra ya se marcó como completa, detenemos el sondeo.
+      if (isPurchaseCompleted) {
+        clearInterval(intervalId);
+        return;
+      }
+
       try {
         const response = await api.get(`/deposits/ticket/${ticketId}`);
         if (response.data.success) {
-          setTicket(response.data.data);
+          const fetchedTicket = response.data.data;
+          setTicket(fetchedTicket);
+
+          // Lógica CRÍTICA: Si el backend nos dice que el ticket está 'completed',
+          // actualizamos nuestro estado local para reflejarlo permanentemente.
+          if (fetchedTicket.status === 'completed') {
+            setIsPurchaseCompleted(true);
+            clearInterval(intervalId); // Detenemos futuras llamadas a la API
+          }
         } else {
           throw new Error('Ticket no encontrado');
         }
       } catch (err) {
         if (err.response?.status === 404) {
-          setTicket(null);
           setError('No se pudo cargar la información del ticket. Puede que haya expirado o no sea válido.');
-          clearInterval(intervalId);
         } else {
           setError('Error al obtener la información del ticket. Intenta nuevamente.');
         }
+        clearInterval(intervalId);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchTicketDetails();
-    intervalId = setInterval(fetchTicketDetails, 10000); // refrescar cada 10s
+    intervalId = setInterval(fetchTicketDetails, 10000);
 
     return () => clearInterval(intervalId);
-  }, [ticketId]);
+  }, [ticketId, isPurchaseCompleted]); // Se añade 'isPurchaseCompleted' a las dependencias
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text);
-    toast.success('Copiado al portapapeles');
-  };
-
-  const handleManualConfirmation = () => {
-    if (!ticket) return;
-    if (ticket.methodType === 'manual') {
-      toast('Nuestro equipo revisará tu comprobante y acreditará el depósito automáticamente.', {
-        icon: '🧾'
-      });
-    } else {
-      toast('Estamos verificando la transacción en la blockchain. Se actualizará automáticamente al confirmarse.', {
-        icon: '⏳'
-      });
-    }
+    // Ya no se muestra un toast. El usuario puede confiar en que la copia funciona.
   };
 
   if (isLoading) return <div className="w-full h-screen flex justify-center items-center"><Loader /></div>;
@@ -93,6 +81,41 @@ const PendingDepositPage = () => {
 
   const isAutomatic = ticket.methodType === 'automatic';
   const showCountdown = isAutomatic && Boolean(ticket.expiresAt);
+
+  // --- INICIO DE LA MODIFICACIÓN (Renderizado Condicional) ---
+  // Si la compra/depósito se completó, mostramos una pantalla de éxito.
+  if (isPurchaseCompleted || ticket?.status === 'completed') {
+    return (
+      <IOSLayout>
+        <div className="flex flex-col min-h-screen bg-system-background p-4 justify-center items-center text-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+          >
+            <IOSCard className="p-8">
+              <div className="w-20 h-20 bg-green-100 text-ios-green rounded-full flex items-center justify-center mx-auto mb-6">
+                <FiCheckCircle size={40} />
+              </div>
+              <h1 className="font-ios-display font-bold text-2xl text-text-primary">
+                {ticket.metadata.context === 'quantitative_purchase' ? 'Inversión Activada' : 'Depósito Confirmado'}
+              </h1>
+              <p className="text-text-secondary mt-2 mb-6">
+                {ticket.metadata.context === 'quantitative_purchase'
+                  ? 'Tu plan de inversión ya está activo y generando ganancias. Puedes ver los detalles en tu historial.'
+                  : 'Tus fondos han sido acreditados a tu saldo principal.'
+                }
+              </p>
+              <IOSButton variant="primary" onClick={() => navigate('/home')} className="w-full">
+                Volver al Inicio
+              </IOSButton>
+            </IOSCard>
+          </motion.div>
+        </div>
+      </IOSLayout>
+    );
+  }
+  // --- FIN DE LA MODIFICACIÓN (Renderizado Condicional) ---
 
   return (
     <IOSLayout>
@@ -108,7 +131,7 @@ const PendingDepositPage = () => {
             <p className="text-sm">
               {isAutomatic
                 ? 'Envía la cantidad indicada a la dirección asignada antes de que el ticket expire.'
-                : 'Sigue las instrucciones para completar tu depósito. Una vez enviado, envia el comprobante al soporte si es necesario.'}
+                : 'Sigue las instrucciones para completar tu depósito.'}
             </p>
           </div>
 
@@ -118,9 +141,7 @@ const PendingDepositPage = () => {
               <p className="text-3xl font-ios-display font-bold text-text-primary">{Number(ticket.amount).toFixed(2)}</p>
               <span className="text-lg text-text-secondary">{ticket.currency}</span>
             </div>
-            {ticket.chain && (
-              <p className="text-xs text-text-tertiary">Red: {ticket.chain}</p>
-            )}
+            {ticket.chain && (<p className="text-xs text-text-tertiary">Red: {ticket.chain}</p>)}
           </IOSCard>
 
           {ticket.depositAddress && (
@@ -145,7 +166,7 @@ const PendingDepositPage = () => {
             <IOSCard className="bg-blue-50 border border-blue-200 text-blue-900">
               <p className="text-xs font-semibold mb-1">Billetera fija</p>
               <p className="text-xs">
-                Este ticket usa una billetera fija configurada por el equipo para {ticket.currency}. Verifica la red indicada ({ticket.chain || 'red especificada'}) y guarda tu comprobante para soporte.
+                Este ticket usa una billetera fija. Verifica la red ({ticket.chain || 'especificada'}) y guarda tu comprobante.
               </p>
             </IOSCard>
           )}
@@ -153,9 +174,7 @@ const PendingDepositPage = () => {
           {ticket.instructions && (
             <IOSCard className="bg-yellow-50 border border-yellow-200 text-yellow-900">
               <p className="text-sm font-semibold mb-2">Instrucciones</p>
-              <p className="text-xs whitespace-pre-line text-left">
-                {ticket.instructions}
-              </p>
+              <p className="text-xs whitespace-pre-line text-left">{ticket.instructions}</p>
             </IOSCard>
           )}
           
@@ -169,14 +188,6 @@ const PendingDepositPage = () => {
             </div>
           )}
 
-          <IOSButton
-            onClick={handleManualConfirmation}
-            disabled={isAutomatic && isFinished}
-            variant="primary"
-            className="w-full"
-          >
-            He realizado el pago
-          </IOSButton>
         </motion.div>
       </div>
     </IOSLayout>

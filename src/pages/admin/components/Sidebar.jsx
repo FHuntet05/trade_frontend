@@ -1,4 +1,5 @@
-// RUTA: frontend/src/pages/admin/components/Sidebar.jsx (VERSIÓN ACTUALIZADA)
+// RUTA: frontend/src/pages/admin/components/Sidebar.jsx
+// --- VERSIÓN ACTUALIZADA CON NUEVO ENLACE Y FONDO SÓLIDO ---
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
@@ -14,7 +15,8 @@ import {
   HiOutlineMegaphone, 
   HiOutlineCommandLine,
   HiOutlineChartBar,
-  HiOutlineCalculator // Importamos el nuevo icono
+  HiOutlineCalculator,
+  HiOutlineDocumentMagnifyingGlass // --- INICIO DE LA MODIFICACIÓN (Nuevo Ícono) ---
 } from 'react-icons/hi2';
 
 const navLinks = [
@@ -22,18 +24,17 @@ const navLinks = [
   { name: 'Usuarios', href: '/admin/users', icon: HiOutlineUsers },
   { name: 'Transacciones', href: '/admin/transactions', icon: HiOutlineReceiptRefund },
   { name: 'Inversiones (Mercado)', href: '/admin/investments', icon: HiOutlineChartBar },
-  
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Se cambia el nombre, el icono y la ruta para reflejar la nueva funcionalidad.
   { name: 'Cuantitativo', href: '/admin/tools', icon: HiOutlineCalculator },
-  // --- FIN DE LA MODIFICACIÓN ---
-  
   { name: 'Retiros Pendientes', href: '/admin/withdrawals', icon: HiOutlineQuestionMarkCircle },
+  
+  // --- INICIO DE LA MODIFICACIÓN (Nuevo Enlace) ---
+  { name: 'Depósitos Manuales', href: '/admin/manual-deposits', icon: HiOutlineDocumentMagnifyingGlass },
+  // --- FIN DE LA MODIFICACIÓN (Nuevo Enlace) ---
+  
   { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary },
   { name: 'Dispensador Gas', href: '/admin/gas-dispenser', icon: HiOutlineFunnel },
   { name: 'Notificaciones', href: '/admin/notifications', icon: HiOutlineMegaphone },
   { name: 'Monitor Blockchain', href: '/admin/blockchain-monitor', icon: HiOutlineCommandLine },
-  //{ name: 'Seguridad', href: '/admin/security', icon: HiOutlineShieldCheck },
   { name: 'Ajustes', href: '/admin/settings', icon: HiOutlineCog6Tooth },
 ];
 
@@ -42,6 +43,8 @@ const Sidebar = ({ onLinkClick = () => {} }) => {
     const activeLinkClasses = "bg-accent-start/20 text-white font-bold";
   
     return (
+      // --- MODIFICACIÓN DE ESTILO ---
+      // La clase `bg-dark-secondary` asegura un fondo sólido oscuro.
       <aside className="w-64 bg-dark-secondary p-4 flex flex-col border-r border-white/10 h-full">
         <div className="text-center py-4 mb-4 border-b border-white/10">
           <h1 className="text-2xl font-bold text-accent-start tracking-wider">AiBrokTradePro</h1>
