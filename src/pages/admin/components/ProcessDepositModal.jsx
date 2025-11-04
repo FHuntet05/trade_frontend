@@ -1,5 +1,5 @@
 // RUTA: frontend/src/pages/admin/components/ProcessDepositModal.jsx
-// --- ARCHIVO NUEVO ---
+// --- VERSIÓN CORREGIDA Y MEJORADA ---
 
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -7,8 +7,9 @@ import toast from 'react-hot-toast';
 import adminApi from '@/pages/admin/api/adminApi';
 
 const Modal = ({ children, onClose }) => (
+    // Se elimina la transparencia del fondo (`bg-black/60`) y se usa un color sólido
     <div 
-        className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center"
+        className="fixed inset-0 bg-dark-primary z-50 flex justify-center items-center"
         onClick={onClose}
     >
         <div 
@@ -24,8 +25,8 @@ const ProcessDepositModal = ({ isOpen, onClose, ticket, onSuccess }) => {
     const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm();
     
     useEffect(() => {
-        // Pre-rellenar el formulario cuando se selecciona un ticket
         if (ticket) {
+            // El monto acreditado por defecto es el solicitado en la moneda original
             setValue('creditedAmount', Number(ticket.amount).toFixed(2));
             setValue('adminNotes', '');
         }
@@ -36,16 +37,21 @@ const ProcessDepositModal = ({ isOpen, onClose, ticket, onSuccess }) => {
     const processAction = async (status, data) => {
         const payload = {
             status,
+            // CORRECCIÓN IMPORTANTE: El backend espera `creditedAmount`, no `amount`.
             creditedAmount: Number(data.creditedAmount),
             adminNotes: data.adminNotes || ''
         };
         
+        // --- CORRECCIÓN CRÍTICA: ID INDEFINIDO ---
+        // El problema era que el objeto 'ticket' tiene 'ticketId', no '_id'.
+        // Usamos ticket.ticketId para construir la URL correctamente.
         const promise = adminApi.post(`/admin/deposits/${ticket.ticketId}/process-manual`, payload);
+        // --- FIN DE LA CORRECCIÓN ---
 
         toast.promise(promise, {
             loading: `Procesando como '${status}'...`,
             success: (res) => {
-                onSuccess(); // Llama a la función de éxito para cerrar modal y refrescar
+                onSuccess();
                 return res.data.message || 'Operación completada.';
             },
             error: (err) => err.response?.data?.message || 'Ocurrió un error.'
@@ -105,7 +111,8 @@ const ProcessDepositModal = ({ isOpen, onClose, ticket, onSuccess }) => {
                 <div className="p-6 space-y-4">
                     <div>
                         <label htmlFor="creditedAmount" className="block text-sm font-medium text-text-secondary mb-1">
-                            Monto Acreditado ({ticket.currency})
+                            {/* MEJORA: Se aclara que el monto es en la moneda original */}
+                            Monto Recibido ({ticket.currency})
                         </label>
                         <input
                             id="creditedAmount"
@@ -115,11 +122,13 @@ const ProcessDepositModal = ({ isOpen, onClose, ticket, onSuccess }) => {
                             className="w-full bg-dark-tertiary p-2 rounded-md border border-white/10 text-white"
                         />
                         {errors.creditedAmount && <p className="text-red-500 text-xs mt-1">Este campo es requerido.</p>}
-                        <p className="text-xs text-text-secondary mt-1">Ajusta este valor si la cantidad recibida es diferente a la solicitada.</p>
+                        <p className="text-xs text-text-secondary mt-1">
+                            Ajusta este valor a la cantidad exacta recibida. El sistema lo convertirá y acreditará en USDT al usuario.
+                        </p>
                     </div>
                     <div>
                         <label htmlFor="adminNotes" className="block text-sm font-medium text-text-secondary mb-1">
-                            Notas del Administrador (Opcional para aprobar y Requerido para rechazar)
+                            Notas del Administrador (Requerido para rechazar)
                         </label>
                         <textarea
                             id="adminNotes"

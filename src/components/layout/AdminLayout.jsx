@@ -1,15 +1,11 @@
-// RUTA: frontend/src/components/layout/AdminLayout.jsx (VERSIÓN CON RUTA DE IMPORTACIÓN CORREGIDA)
+// RUTA: frontend/src/components/layout/AdminLayout.jsx
+// --- VERSIÓN COMPLETA Y CORREGIDA ---
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '@/pages/admin/components/Sidebar';
 import AdminHeaderMobile from '@/pages/admin/components/AdminHeaderMobile';
 import MobileDrawer from '@/pages/admin/components/MobileDrawer';
-
-// --- INICIO DE LA CORRECCIÓN DE RUTA ---
-// Se cambia la ruta relativa incorrecta "../store/adminStore" por la ruta con alias "@".
-// '@' apunta a la carpeta 'src', por lo que la ruta correcta es '@/store/adminStore'.
 import useAdminStore from '@/store/adminStore';
-// --- FIN DE LA CORRECCIÓN DE RUTA ---
 
 const getPageTitle = (pathname) => {
     const segments = pathname.split('/').filter(Boolean);
@@ -32,12 +28,17 @@ const AdminLayout = () => {
     const currentPageTitle = getPageTitle(location.pathname);
 
     return (
-        // Se mantienen las clases del tema oscuro
+        // --- CORRECCIÓN DE ESTILO ---
+        // Se asegura que el contenedor principal tenga el fondo oscuro primario
         <div className="flex min-h-screen bg-dark-primary text-white font-sans admin-container">
             <MobileDrawer isOpen={isDrawerOpen} setIsOpen={setIsDrawerOpen} />
+            
+            {/* El sidebar ahora heredará el fondo del div padre si el suyo es transparente,
+                pero ya lo forzamos a ser sólido en su propio componente. Esta es una doble seguridad. */}
             <div className="hidden md:flex md:flex-shrink-0">
                 <Sidebar onLinkClick={() => {}} />
             </div>
+            
             <div className="flex-grow flex flex-col w-full md:w-0">
                 <header className="hidden md:flex bg-dark-secondary p-4 justify-end items-center border-b border-dark-tertiary">
                     <div className="flex items-center gap-4">
