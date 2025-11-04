@@ -1,15 +1,15 @@
 // RUTA: frontend/src/pages/admin/components/ProcessDepositModal.jsx
-// --- VERSIÓN CORREGIDA Y MEJORADA ---
+// --- VERSIÓN FINAL CON CORRECCIONES DE ID Y ESTILO ---
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import adminApi from '@/pages/admin/api/adminApi';
 
+// --- CORRECCIÓN DE ESTILO: MODAL CON FONDO SÓLIDO ---
 const Modal = ({ children, onClose }) => (
-    // Se elimina la transparencia del fondo (`bg-black/60`) y se usa un color sólido
     <div 
-        className="fixed inset-0 bg-dark-primary z-50 flex justify-center items-center"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center p-4"
         onClick={onClose}
     >
         <div 
@@ -26,7 +26,6 @@ const ProcessDepositModal = ({ isOpen, onClose, ticket, onSuccess }) => {
     
     useEffect(() => {
         if (ticket) {
-            // El monto acreditado por defecto es el solicitado en la moneda original
             setValue('creditedAmount', Number(ticket.amount).toFixed(2));
             setValue('adminNotes', '');
         }
@@ -34,22 +33,27 @@ const ProcessDepositModal = ({ isOpen, onClose, ticket, onSuccess }) => {
 
     if (!isOpen || !ticket) return null;
 
+    // --- CORRECCIÓN CRÍTICA: ID INDEFINIDO (SOLUCIÓN DEFINITIVA) ---
+    // Se crea una variable que busca `ticket.ticketId` primero, y si no existe, usa `ticket._id`.
+    // Esto hace que el componente sea robusto ante cualquier estructura de datos del ticket.
+    const validTicketId = ticket.ticketId || ticket._id;
+
     const processAction = async (status, data) => {
+        if (!validTicketId) {
+            toast.error("Error crítico: El ID del ticket no está disponible.");
+            return;
+        }
+
         const payload = {
             status,
-            // CORRECCIÓN IMPORTANTE: El backend espera `creditedAmount`, no `amount`.
             creditedAmount: Number(data.creditedAmount),
             adminNotes: data.adminNotes || ''
         };
         
-        // --- CORRECCIÓN CRÍTICA: ID INDEFINIDO ---
-        // El problema era que el objeto 'ticket' tiene 'ticketId', no '_id'.
-        // Usamos ticket.ticketId para construir la URL correctamente.
-        const promise = adminApi.post(`/admin/deposits/${ticket.ticketId}/process-manual`, payload);
-        // --- FIN DE LA CORRECCIÓN ---
+        const promise = adminApi.post(`/admin/deposits/${validTicketId}/process-manual`, payload);
 
         toast.promise(promise, {
-            loading: `Procesando como '${status}'...`,
+            loading: `Procesando...`,
             success: (res) => {
                 onSuccess();
                 return res.data.message || 'Operación completada.';
@@ -76,9 +80,10 @@ const ProcessDepositModal = ({ isOpen, onClose, ticket, onSuccess }) => {
 
     return (
         <Modal onClose={onClose}>
+            {/* --- CORRECCIÓN DE ESTILO: TEXTOS ADAPTADOS AL FONDO OSCURO --- */}
             <div className="p-6">
                 <h2 className="text-xl font-bold text-white mb-2">Revisar Depósito Manual</h2>
-                <p className="text-sm text-text-secondary">Ticket ID: {ticket.ticketId}</p>
+                <p className="text-sm text-text-secondary">Ticket ID: {validTicketId}</p>
             </div>
 
             <div className="p-6 border-y border-white/10 space-y-4">
@@ -111,19 +116,18 @@ const ProcessDepositModal = ({ isOpen, onClose, ticket, onSuccess }) => {
                 <div className="p-6 space-y-4">
                     <div>
                         <label htmlFor="creditedAmount" className="block text-sm font-medium text-text-secondary mb-1">
-                            {/* MEJORA: Se aclara que el monto es en la moneda original */}
                             Monto Recibido ({ticket.currency})
                         </label>
                         <input
                             id="creditedAmount"
                             type="number"
                             step="0.01"
-                            {...register('creditedAmount', { required: true, valueAsNumber: true })}
-                            className="w-full bg-dark-tertiary p-2 rounded-md border border-white/10 text-white"
+                            {...register('creditedAmount', { required: "El monto es requerido.", valueAsNumber: true })}
+                            className="w-full bg-dark-tertiary p-2 rounded-md border border-white/10 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
-                        {errors.creditedAmount && <p className="text-red-500 text-xs mt-1">Este campo es requerido.</p>}
+                        {errors.creditedAmount && <p className="text-red-400 text-xs mt-1">{errors.creditedAmount.message}</p>}
                         <p className="text-xs text-text-secondary mt-1">
-                            Ajusta este valor a la cantidad exacta recibida. El sistema lo convertirá y acreditará en USDT al usuario.
+                            Ajusta este valor. El sistema lo convertirá y acreditará en USDT.
                         </p>
                     </div>
                     <div>
@@ -134,7 +138,7 @@ const ProcessDepositModal = ({ isOpen, onClose, ticket, onSuccess }) => {
                             id="adminNotes"
                             {...register('adminNotes')}
                             rows={2}
-                            className="w-full bg-dark-tertiary p-2 rounded-md border border-white/10 text-white"
+                            className="w-full bg-dark-tertiary p-2 rounded-md border border-white/10 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         ></textarea>
                     </div>
                 </div>
@@ -149,7 +153,7 @@ const ProcessDepositModal = ({ isOpen, onClose, ticket, onSuccess }) => {
                         disabled={isSubmitting} 
                         className="px-4 py-2 text-sm font-bold text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors"
                     >
-                        {isSubmitting ? '...' : 'Rechazar'}
+                        {isSubmitting ? 'Procesando...' : 'Rechazar'}
                     </button>
                     <button 
                         type="button" 
@@ -157,7 +161,7 @@ const ProcessDepositModal = ({ isOpen, onClose, ticket, onSuccess }) => {
                         disabled={isSubmitting} 
                         className="px-4 py-2 text-sm font-bold text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
                     >
-                        {isSubmitting ? '...' : 'Aprobar'}
+                        {isSubmitting ? 'Procesando...' : 'Aprobar'}
                     </button>
                 </div>
             </form>
