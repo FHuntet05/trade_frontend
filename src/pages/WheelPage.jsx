@@ -88,14 +88,14 @@ const SPECIAL_TASKS = [
     id: "telegram_group",
     title: "Únete al grupo oficial de Telegram",
     description: "Participa en la comunidad y consigue 10 giros extra.",
-    rewardSpins: 10,
+    rewardSpins: 2,
     envKey: "VITE_TELEGRAM_GROUP_URL",
   },
   {
     id: "telegram_channel",
     title: "Sigue el canal de anuncios",
     description: "Mantente al día con las novedades y suma 10 giros adicionales.",
-    rewardSpins: 10,
+    rewardSpins: 2,
     envKey: "VITE_TELEGRAM_CHANNEL_URL",
   },
 ];
