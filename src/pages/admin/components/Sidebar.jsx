@@ -1,5 +1,5 @@
 // RUTA: frontend/src/pages/admin/components/Sidebar.jsx
-// --- VERSIÓN ACTUALIZADA CON NUEVO ENLACE Y FONDO SÓLIDO ---
+// --- VERSIÓN FINAL CON ESTILOS CORREGIDOS Y ENLACE VALIDADO ---
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
@@ -10,13 +10,12 @@ import {
   HiOutlineQuestionMarkCircle, 
   HiOutlineCog6Tooth, 
   HiOutlineBuildingLibrary, 
-  HiOutlineShieldCheck, 
   HiOutlineFunnel, 
   HiOutlineMegaphone, 
   HiOutlineCommandLine,
   HiOutlineChartBar,
   HiOutlineCalculator,
-  HiOutlineDocumentMagnifyingGlass // --- INICIO DE LA MODIFICACIÓN (Nuevo Ícono) ---
+  HiOutlineDocumentMagnifyingGlass 
 } from 'react-icons/hi2';
 
 const navLinks = [
@@ -26,11 +25,7 @@ const navLinks = [
   { name: 'Inversiones (Mercado)', href: '/admin/investments', icon: HiOutlineChartBar },
   { name: 'Cuantitativo', href: '/admin/tools', icon: HiOutlineCalculator },
   { name: 'Retiros Pendientes', href: '/admin/withdrawals', icon: HiOutlineQuestionMarkCircle },
-  
-  // --- INICIO DE LA MODIFICACIÓN (Nuevo Enlace) ---
   { name: 'Depósitos Manuales', href: '/admin/manual-deposits', icon: HiOutlineDocumentMagnifyingGlass },
-  // --- FIN DE LA MODIFICACIÓN (Nuevo Enlace) ---
-  
   { name: 'Tesorería', href: '/admin/treasury', icon: HiOutlineBuildingLibrary },
   { name: 'Dispensador Gas', href: '/admin/gas-dispenser', icon: HiOutlineFunnel },
   { name: 'Notificaciones', href: '/admin/notifications', icon: HiOutlineMegaphone },
@@ -39,15 +34,16 @@ const navLinks = [
 ];
 
 const Sidebar = ({ onLinkClick = () => {} }) => {
-    const linkClasses = "flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-accent-start/10 hover:text-white transition-colors duration-200";
-    const activeLinkClasses = "bg-accent-start/20 text-white font-bold";
+    // Clases para los enlaces: texto secundario por defecto, blanco al pasar el ratón
+    const linkClasses = "flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-white/5 hover:text-white transition-colors duration-200";
+    // Clases para el enlace activo: fondo sutil y texto blanco brillante
+    const activeLinkClasses = "bg-white/10 text-white font-semibold";
   
     return (
-      // --- MODIFICACIÓN DE ESTILO ---
-      // La clase `bg-dark-secondary` asegura un fondo sólido oscuro.
-      <aside className="w-64 bg-dark-secondary p-4 flex flex-col border-r border-white/10 h-full">
+      // Fondo oscuro sólido para todo el sidebar
+      <aside className="w-64 bg-dark-primary p-4 flex flex-col border-r border-white/10 h-full">
         <div className="text-center py-4 mb-4 border-b border-white/10">
-          <h1 className="text-2xl font-bold text-accent-start tracking-wider">AiBrokTradePro</h1>
+          <h1 className="text-2xl font-bold text-white tracking-wider">AiBrokTradePro</h1>
           <p className="text-sm text-text-secondary">Admin Panel</p>
         </div>
         <nav className="flex flex-col gap-2 overflow-y-auto">

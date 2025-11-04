@@ -23,7 +23,7 @@ import GasDispenserPage from '../pages/admin/GasDispenserPage';
 import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage'; 
 import AdminBlockchainMonitorPage from '../pages/admin/AdminBlockchainMonitorPage';
 import AdminInvestmentsPage from '../pages/admin/AdminInvestmentsPage';
-
+import AdminManualDepositsPage from '@/pages/admin/AdminManualDepositsPage';
 function AdminApp() {
   const { isAuthenticated, _hasHydrated } = useAdminStore();
 
@@ -57,6 +57,7 @@ function AdminApp() {
             <Route path="users/:id" element={<AdminUserDetailPage />} />
             <Route path="transactions" element={<AdminTransactionsPage />} />
             <Route path="withdrawals" element={<AdminWithdrawalsPage />} />
+            <Route path="/admin/manual-deposits" element={<AdminManualDepositsPage />} />
             <Route path="tools" element={<AdminToolsPage />} />
             <Route path="factories" element={<AdminToolsPage />} /> {/* Alias para consistencia con sidebar */}
             <Route path="security" element={<AdminSecurityPage />} />
@@ -67,6 +68,7 @@ function AdminApp() {
             <Route path="gas-dispenser" element={<GasDispenserPage />} />
             <Route path="blockchain-monitor" element={<AdminBlockchainMonitorPage />} />
             <Route path="investments" element={<AdminInvestmentsPage />} />
+
             {/* Redirección: si se accede a /admin, ir a dashboard */}
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
