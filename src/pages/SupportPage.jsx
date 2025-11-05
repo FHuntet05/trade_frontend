@@ -8,7 +8,7 @@ const SupportPage = () => {
   const { t } = useTranslation();
   // Enlaces hardcodeados solicitados por el usuario
   const assistantUrl = 'https://t.me/HonyAsistent';
-  const supportUrl = 'https://t.me/AlBrokTradePro';
+  const supportUrl = 'https://t.me/AIBrokTrade';
 
   return (
     <div className="flex flex-col h-full space-y-6 animate-fade-in">
