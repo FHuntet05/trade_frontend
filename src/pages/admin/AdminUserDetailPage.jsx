@@ -1,4 +1,4 @@
-// RUTA: frontend/src/pages/admin/AdminUserDetailPage.jsx (VERSIÓN FINAL CON MODALES INTEGRADOS)
+// RUTA: frontend/src/pages/admin/AdminUserDetailPage.jsx
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -422,29 +422,37 @@ const AdminUserDetailPage = () => {
         fetchAllDetails();
     }, [fetchAllDetails]);
 
-    // --- INICIO DE LA MODIFICACIÓN: Lógica de guardado corregida ---
     const handleSaveUser = async (userId, formData) => {
         setIsEditModalOpen(false);
         let profileUpdated = false;
 
-        // Separamos los datos del perfil de los datos de ajuste de saldo
+        const currentUser = userData?.user;
+        if (!currentUser) {
+            toast.error("No se pueden guardar los cambios, datos del usuario no cargados.");
+            return;
+        }
+
         const profileData = {
             username: formData.username,
             status: formData.status,
             role: formData.role,
             wallet: formData.wallet,
-            // Solo incluimos las contraseñas si el usuario escribió algo
             ...(formData.password && { password: formData.password }),
             ...(formData.withdrawalPassword && { withdrawalPassword: formData.withdrawalPassword }),
         };
 
+        const currentUsdt = currentUser.balance?.usdt || 0;
+        const currentSpins = currentUser.balance?.spins || 0;
+
+        const usdtAdjustment = formData.newUsdtBalance - currentUsdt;
+        const spinsAdjustment = formData.newSpinsBalance - currentSpins;
+
         const adjustmentData = {
-            usdt: formData.usdtAdjustment || 0,
-            spins: formData.spinsAdjustment || 0,
+            usdt: usdtAdjustment,
+            spins: spinsAdjustment,
             reason: formData.adjustmentReason || '',
         };
 
-        // 1. Ejecutar la actualización del perfil
         try {
             await toast.promise(
                 adminApi.put(`/admin/users/${userId}`, profileData),
@@ -456,20 +464,16 @@ const AdminUserDetailPage = () => {
             );
             profileUpdated = true;
         } catch (error) {
-            // Si el perfil falla, no continuamos al ajuste de saldo
             console.error("Error al actualizar perfil:", error);
-            // No es necesario un toast de error aquí, toast.promise ya lo maneja
         }
 
-        // 2. Si el perfil se actualizó y hay un ajuste de saldo pendiente, ejecutarlo
         const hasAdjustment = adjustmentData.usdt !== 0 || adjustmentData.spins !== 0;
         if (profileUpdated && hasAdjustment) {
             if (!adjustmentData.reason) {
-                toast.error("Se requiere una razón para realizar un ajuste de saldo.");
-                fetchAllDetails(); // Recargamos para mostrar los datos correctos
+                toast.error("Se requiere una razón para realizar un cambio de saldo.");
+                fetchAllDetails();
                 return;
             }
-
             try {
                 await toast.promise(
                     adminApi.post(`/admin/users/${userId}/adjust-balance`, adjustmentData),
@@ -484,7 +488,6 @@ const AdminUserDetailPage = () => {
             }
         }
         
-        // 3. Recargar todos los datos al final para reflejar todos los cambios
         fetchAllDetails();
     };
     // --- FIN DE LA MODIFICACIÓN ---
