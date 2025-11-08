@@ -422,39 +422,72 @@ const AdminUserDetailPage = () => {
         fetchAllDetails();
     }, [fetchAllDetails]);
 
+    // --- INICIO DE LA MODIFICACIÓN: Lógica de guardado corregida ---
     const handleSaveUser = async (userId, formData) => {
         setIsEditModalOpen(false);
-        const { usdtAdjustment, spinsAdjustment, adjustmentReason, ...profileData } = formData;
+        let profileUpdated = false;
 
-        // 1. Actualizar el perfil del usuario
-        await toast.promise(adminApi.put(`/admin/users/${userId}`, profileData), {
-            loading: 'Actualizando perfil...',
-            success: 'Perfil actualizado correctamente.',
-            error: (err) => err.response?.data?.message || 'Error al actualizar el perfil.',
-        });
+        // Separamos los datos del perfil de los datos de ajuste de saldo
+        const profileData = {
+            username: formData.username,
+            status: formData.status,
+            role: formData.role,
+            wallet: formData.wallet,
+            // Solo incluimos las contraseñas si el usuario escribió algo
+            ...(formData.password && { password: formData.password }),
+            ...(formData.withdrawalPassword && { withdrawalPassword: formData.withdrawalPassword }),
+        };
 
-        // 2. Si hay ajustes de saldo, hacer la segunda llamada a la API
-        const hasAdjustment = usdtAdjustment !== 0 || spinsAdjustment !== 0;
-        if (hasAdjustment) {
-            if (!adjustmentReason) {
+        const adjustmentData = {
+            usdt: formData.usdtAdjustment || 0,
+            spins: formData.spinsAdjustment || 0,
+            reason: formData.adjustmentReason || '',
+        };
+
+        // 1. Ejecutar la actualización del perfil
+        try {
+            await toast.promise(
+                adminApi.put(`/admin/users/${userId}`, profileData),
+                {
+                    loading: 'Actualizando perfil de usuario...',
+                    success: 'Perfil actualizado con éxito.',
+                    error: (err) => err.response?.data?.message || 'Error al actualizar perfil.'
+                }
+            );
+            profileUpdated = true;
+        } catch (error) {
+            // Si el perfil falla, no continuamos al ajuste de saldo
+            console.error("Error al actualizar perfil:", error);
+            // No es necesario un toast de error aquí, toast.promise ya lo maneja
+        }
+
+        // 2. Si el perfil se actualizó y hay un ajuste de saldo pendiente, ejecutarlo
+        const hasAdjustment = adjustmentData.usdt !== 0 || adjustmentData.spins !== 0;
+        if (profileUpdated && hasAdjustment) {
+            if (!adjustmentData.reason) {
                 toast.error("Se requiere una razón para realizar un ajuste de saldo.");
-                fetchAllDetails(); // Recargar para deshacer cambios visuales no guardados
+                fetchAllDetails(); // Recargamos para mostrar los datos correctos
                 return;
             }
-            
-            await toast.promise(adminApi.post(`/admin/users/${userId}/adjust-balance`, {
-                usdt: usdtAdjustment,
-                spins: spinsAdjustment,
-                reason: adjustmentReason
-            }), {
-                loading: 'Aplicando ajuste de saldo...',
-                success: 'Ajuste de saldo aplicado con éxito.',
-                error: (err) => err.response?.data?.message || 'Error al ajustar el saldo.',
-            });
+
+            try {
+                await toast.promise(
+                    adminApi.post(`/admin/users/${userId}/adjust-balance`, adjustmentData),
+                    {
+                        loading: 'Aplicando ajuste de saldo...',
+                        success: 'Ajuste de saldo aplicado con éxito.',
+                        error: (err) => err.response?.data?.message || 'Error al ajustar saldo.'
+                    }
+                );
+            } catch (error) {
+                console.error("Error al ajustar saldo:", error);
+            }
         }
         
-        fetchAllDetails(); // Recargar todos los datos al final
+        // 3. Recargar todos los datos al final para reflejar todos los cambios
+        fetchAllDetails();
     };
+    // --- FIN DE LA MODIFICACIÓN ---
     
     const handleResetPassword = async (adminId) => {
         const promise = adminApi.post(`/admin/users/${adminId}/reset-password`);
