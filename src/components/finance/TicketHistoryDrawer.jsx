@@ -1,5 +1,5 @@
 // RUTA: frontend/src/components/finance/TicketHistoryDrawer.jsx
-// VERSIÓN COMPLETA FINAL - SIN OMISIONES
+// VERSIÓN CORREGIDA - MANEJO DE FECHAS COMO STRINGS
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -10,6 +10,7 @@ import Loader from '@/components/common/Loader';
 import useUserStore from '@/store/userStore';
 import { useTranslation } from 'react-i18next';
 
+// ... (El código de configuración y las funciones de ayuda iniciales no cambian) ...
 const STATUS_ORDER = ['pending', 'awaiting_manual_review', 'processing', 'completed', 'expired', 'cancelled', 'rejected'];
 
 const statusConfig = (t) => ({
@@ -37,7 +38,9 @@ const formatPaymentDate = (dateString, locale) => {
   });
 };
 
+
 const TicketHistoryDrawer = ({ isOpen, onClose }) => {
+  // ... (toda la lógica de estado y useEffect se mantiene igual) ...
   const [activeTab, setActiveTab] = useState('tickets');
   const [isLoadingTickets, setIsLoadingTickets] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
@@ -411,7 +414,11 @@ const TicketHistoryDrawer = ({ isOpen, onClose }) => {
                   ) : (
                     <div className="space-y-3">
                       {user.activeInvestments.filter(inv => inv.type === 'quantitative').map((investment) => {
-                        const nextPaymentDate = new Date((investment.lastProfitAt || investment.startDate).getTime() + 24 * 60 * 60 * 1000);
+                        // --- INICIO DE LA CORRECCIÓN ---
+                        // Creamos un objeto Date a partir del string que viene del backend
+                        const lastPaymentDate = new Date(investment.lastProfitAt || investment.startDate);
+                        const nextPaymentDate = new Date(lastPaymentDate.getTime() + 24 * 60 * 60 * 1000);
+                        // --- FIN DE LA CORRECCIÓN ---
 
                         return (
                           <motion.div
