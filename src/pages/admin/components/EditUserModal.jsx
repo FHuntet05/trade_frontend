@@ -1,4 +1,5 @@
-// RUTA: frontend/src/pages/admin/components/EditUserModal.jsx (NUEVA VERSIÓN FUSIONADA)
+// RUTA: frontend/src/pages/admin/components/EditUserModal.jsx
+// VERSIÓN FINAL Y CORRECTA
 
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -6,22 +7,39 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HiXMark } from 'react-icons/hi2';
 
 const EditUserModal = ({ user, onSave, onClose, isSuperAdmin }) => {
-    const { register, handleSubmit, reset } = useForm();
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Usamos 'defaultValues' para inicializar el formulario con los datos del usuario.
+    // Esto es crucial para que los campos de saldo muestren el valor actual.
+    const { register, handleSubmit, reset } = useForm({
+        defaultValues: {
+            username: user?.username || '',
+            status: user?.status || 'active',
+            role: user?.role || 'user',
+            wallet: user?.wallet || '',
+            // Nombres correctos para los campos de "establecer saldo"
+            newUsdtBalance: user?.balance?.usdt?.toFixed(2) || '0.00',
+            newSpinsBalance: user?.balance?.spins || 0,
+            adjustmentReason: '', // La razón siempre empieza vacía
+        }
+    });
 
+    // useEffect para resetear el formulario si el objeto 'user' cambia.
     useEffect(() => {
-        // Inicializa el formulario con los datos existentes del usuario
         if (user) {
             reset({
                 username: user.username,
                 status: user.status,
                 role: user.role,
                 wallet: user.wallet || '',
+                newUsdtBalance: user.balance?.usdt?.toFixed(2) || '0.00',
+                newSpinsBalance: user.balance?.spins || 0,
+                adjustmentReason: '',
             });
         }
     }, [user, reset]);
+    // --- FIN DE LA CORRECCIÓN ---
 
     const onSubmit = (data) => {
-        // La función onSave en la página principal se encargará de la lógica
         onSave(user._id, data);
     };
 
@@ -35,7 +53,7 @@ const EditUserModal = ({ user, onSave, onClose, isSuperAdmin }) => {
                     </header>
                     <form onSubmit={handleSubmit(onSubmit)}>
                         <main className="p-6 grid grid-cols-2 gap-x-4 gap-y-3 max-h-[70vh] overflow-y-auto">
-                            {/* --- Sección de Datos del Perfil --- */}
+                            {/* --- Sección de Datos del Perfil (sin cambios) --- */}
                             <div className="col-span-2">
                                 <label className="text-sm font-medium text-white">Username</label>
                                 <input {...register('username', { required: true })} className="w-full mt-1 p-2 bg-white text-black rounded" />
@@ -58,8 +76,6 @@ const EditUserModal = ({ user, onSave, onClose, isSuperAdmin }) => {
                                 <label className="text-sm font-medium text-white">Nueva Contraseña (Opcional)</label>
                                 <input type="password" {...register('password')} placeholder="Dejar en blanco para no cambiar" className="w-full mt-1 p-2 bg-white text-black rounded" />
                             </div>
-
-                            {/* --- Sección de Seguridad de Retiros --- */}
                             <div className="col-span-2 pt-4 border-t border-dark-tertiary">
                                 <h3 className="text-lg font-semibold text-accent">Configuración de Retiros</h3>
                                 <p className="text-xs text-text-secondary">Gestiona la contraseña de retiro y dirección de billetera del usuario.</p>
@@ -67,31 +83,30 @@ const EditUserModal = ({ user, onSave, onClose, isSuperAdmin }) => {
                             <div className="col-span-2">
                                 <label className="text-sm font-medium text-white">Nueva Contraseña de Retiro (Opcional)</label>
                                 <input type="password" {...register('withdrawalPassword')} placeholder="Dejar en blanco para no cambiar" className="w-full mt-1 p-2 bg-white text-black rounded" />
-                                <p className="text-xs text-text-tertiary mt-1">Por seguridad, no se muestra la contraseña actual. Solo ingresa una nueva si deseas cambiarla.</p>
                             </div>
                             <div className="col-span-2">
                                 <label className="text-sm font-medium text-white">Dirección de Billetera para Retiros</label>
                                 <input type="text" {...register('wallet')} placeholder="Dirección de la billetera" className="w-full mt-1 p-2 bg-white text-black rounded" />
-                                {user.wallet && <p className="text-xs text-emerald-400 mt-1">✓ Billetera configurada</p>}
                             </div>
 
-                            {/* --- Sección de Ajuste de Saldos --- */}
+                            {/* --- INICIO DE LA CORRECCIÓN EN EL JSX --- */}
                             <div className="col-span-2 pt-4 border-t border-dark-tertiary">
-                                <h3 className="text-lg font-semibold text-accent">Ajustar Saldos (Crédito/Débito)</h3>
-                                <p className="text-xs text-text-secondary">Usa valores positivos para añadir y negativos para restar.</p>
+                                <h3 className="text-lg font-semibold text-accent">Establecer Saldos</h3>
+                                <p className="text-xs text-text-secondary">El valor que ingreses será el nuevo saldo final del usuario.</p>
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-white">Ajustar USDT</label>
-                                <input type="number" step="0.01" {...register('usdtAdjustment', { valueAsNumber: true })} defaultValue="0" className="w-full mt-1 p-2 bg-white text-black rounded" />
+                                <label className="text-sm font-medium text-white">Nuevo Saldo USDT</label>
+                                <input type="number" step="0.01" {...register('newUsdtBalance', { valueAsNumber: true })} className="w-full mt-1 p-2 bg-white text-black rounded" />
                             </div>
                              <div>
-                                <label className="text-sm font-medium text-white">Ajustar Giros (Spins)</label>
-                                <input type="number" {...register('spinsAdjustment', { valueAsNumber: true })} defaultValue="0" className="w-full mt-1 p-2 bg-white text-black rounded" />
+                                <label className="text-sm font-medium text-white">Nuevo Saldo de Giros</label>
+                                <input type="number" {...register('newSpinsBalance', { valueAsNumber: true })} className="w-full mt-1 p-2 bg-white text-black rounded" />
                             </div>
                             <div className="col-span-2">
-                                <label className="text-sm font-medium text-white">Razón del Ajuste (Obligatorio si se ajusta saldo)</label>
-                                <input {...register('adjustmentReason')} placeholder="Ej: Bono por evento, corrección manual..." className="w-full mt-1 p-2 bg-white text-black rounded" />
+                                <label className="text-sm font-medium text-white">Razón del Cambio (Obligatorio si se modifica saldo)</label>
+                                <input {...register('adjustmentReason')} placeholder="Ej: Corrección manual de saldo..." className="w-full mt-1 p-2 bg-white text-black rounded" />
                             </div>
+                            {/* --- FIN DE LA CORRECCIÓN EN EL JSX --- */}
                         </main>
                         <footer className="p-4 border-t border-dark-tertiary text-right">
                             <button type="submit" className="px-6 py-2 bg-green-600 font-bold rounded-lg hover:bg-green-700 transition-colors">Guardar Cambios</button>
