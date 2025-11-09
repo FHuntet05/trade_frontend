@@ -441,64 +441,62 @@ const AdminUserDetailPage = () => {
         ...(formData.withdrawalPassword && { withdrawalPassword: formData.withdrawalPassword }),
     };
 
-    // --- INICIO DE LA CORRECCIÓN: Blindaje de los valores ---
-    // Nos aseguramos de que todos los valores sean números antes de calcular.
-    // Usamos '|| 0' para convertir cualquier valor "falsy" (undefined, null, NaN) a 0.
-    const newUsdtBalance = formData.newUsdtBalance || 0;
-    const newSpinsBalance = formData.newSpinsBalance || 0;
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Ya no calculamos la diferencia. Simplemente preparamos los nuevos saldos.
+    const newUsdtBalance = formData.newUsdtBalance;
+    const newSpinsBalance = formData.newSpinsBalance;
     
     const currentUsdt = currentUser.balance?.usdt || 0;
     const currentSpins = currentUser.balance?.spins || 0;
-    
-    // El cálculo ahora es seguro.
-    const usdtAdjustment = newUsdtBalance - currentUsdt;
-    const spinsAdjustment = newSpinsBalance - currentSpins;
-    // --- FIN DE LA CORRECCIÓN ---
 
-    const adjustmentData = {
-        usdt: usdtAdjustment,
-        spins: spinsAdjustment,
-        reason: formData.adjustmentReason || '',
+    // Comprobamos si el administrador realmente cambió el saldo.
+    const usdtChanged = newUsdtBalance !== currentUsdt;
+    const spinsChanged = newSpinsBalance !== currentSpins;
+    const hasBalanceChange = usdtChanged || spinsChanged;
+
+    const balanceData = {
+      // Enviamos solo los saldos que queremos establecer
+      ...(usdtChanged && { newUsdtBalance: Number(newUsdtBalance) }),
+      ...(spinsChanged && { newSpinsBalance: Number(newSpinsBalance) }),
+      reason: formData.adjustmentReason || '',
     };
+    // --- FIN DE LA MODIFICACIÓN ---
 
-    // 1. Ejecutar la actualización del perfil
+    // 1. Actualizar perfil (lógica sin cambios)
     try {
-        await toast.promise(
-            adminApi.put(`/admin/users/${userId}`, profileData),
-            {
-                loading: 'Actualizando perfil de usuario...',
-                success: 'Perfil actualizado con éxito.',
-                error: (err) => err.response?.data?.message || 'Error al actualizar perfil.'
-            }
-        );
+        await toast.promise(adminApi.put(`/admin/users/${userId}`, profileData), {
+            loading: 'Actualizando perfil de usuario...',
+            success: 'Perfil actualizado con éxito.',
+            error: (err) => err.response?.data?.message || 'Error al actualizar perfil.'
+        });
         profileUpdated = true;
     } catch (error) {
         console.error("Error al actualizar perfil:", error);
     }
 
-    // 2. Ejecutar el ajuste de saldo
-    const hasAdjustment = adjustmentData.usdt !== 0 || adjustmentData.spins !== 0;
-    if (profileUpdated && hasAdjustment) {
-        if (!adjustmentData.reason) {
+    // 2. Ejecutar el cambio de saldo si es necesario
+    if (profileUpdated && hasBalanceChange) {
+        if (!balanceData.reason) {
             toast.error("Se requiere una razón para realizar un cambio de saldo.");
             fetchAllDetails();
             return;
         }
         try {
             await toast.promise(
-                adminApi.post(`/admin/users/${userId}/adjust-balance`, adjustmentData),
+                // Enviamos los 'balanceData' al endpoint
+                adminApi.post(`/admin/users/${userId}/adjust-balance`, balanceData),
                 {
-                    loading: 'Aplicando ajuste de saldo...',
-                    success: 'Ajuste de saldo aplicado con éxito.',
-                    error: (err) => err.response?.data?.message || 'Error al ajustar saldo.'
+                    loading: 'Estableciendo nuevo saldo...',
+                    success: 'Saldo actualizado con éxito.',
+                    error: (err) => err.response?.data?.message || 'Error al actualizar saldo.'
                 }
             );
         } catch (error) {
-            console.error("Error al ajustar saldo:", error);
+            console.error("Error al actualizar saldo:", error);
         }
     }
     
-    // 3. Recargar todos los datos al final
+    // 3. Recargar datos al final
     fetchAllDetails();
 };
     // --- FIN DE LA MODIFICACIÓN ---
