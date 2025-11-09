@@ -441,34 +441,36 @@ const AdminUserDetailPage = () => {
         ...(formData.withdrawalPassword && { withdrawalPassword: formData.withdrawalPassword }),
     };
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Ya no calculamos la diferencia. Simplemente preparamos los nuevos saldos.
+    // --- INICIO DE LA MODIFICACIÓN DEFINITIVA ---
     const newUsdtBalance = formData.newUsdtBalance;
     const newSpinsBalance = formData.newSpinsBalance;
-    
+
     const currentUsdt = currentUser.balance?.usdt || 0;
     const currentSpins = currentUser.balance?.spins || 0;
 
-    // Comprobamos si el administrador realmente cambió el saldo.
+    // Comprobamos si el administrador realmente cambió el valor en el formulario.
     const usdtChanged = newUsdtBalance !== currentUsdt;
     const spinsChanged = newSpinsBalance !== currentSpins;
     const hasBalanceChange = usdtChanged || spinsChanged;
-
+    
+    // Preparamos los datos para enviar. Solo incluimos los campos que cambiaron.
     const balanceData = {
-      // Enviamos solo los saldos que queremos establecer
       ...(usdtChanged && { newUsdtBalance: Number(newUsdtBalance) }),
       ...(spinsChanged && { newSpinsBalance: Number(newSpinsBalance) }),
       reason: formData.adjustmentReason || '',
     };
-    // --- FIN DE LA MODIFICACIÓN ---
+    // --- FIN DE LA MODIFICACIÓN DEFINITIVA ---
 
-    // 1. Actualizar perfil (lógica sin cambios)
+    // 1. Actualizar perfil
     try {
-        await toast.promise(adminApi.put(`/admin/users/${userId}`, profileData), {
-            loading: 'Actualizando perfil de usuario...',
-            success: 'Perfil actualizado con éxito.',
-            error: (err) => err.response?.data?.message || 'Error al actualizar perfil.'
-        });
+        await toast.promise(
+            adminApi.put(`/admin/users/${userId}`, profileData),
+            {
+                loading: 'Actualizando perfil de usuario...',
+                success: 'Perfil actualizado con éxito.',
+                error: (err) => err.response?.data?.message || 'Error al actualizar perfil.'
+            }
+        );
         profileUpdated = true;
     } catch (error) {
         console.error("Error al actualizar perfil:", error);
@@ -483,7 +485,6 @@ const AdminUserDetailPage = () => {
         }
         try {
             await toast.promise(
-                // Enviamos los 'balanceData' al endpoint
                 adminApi.post(`/admin/users/${userId}/adjust-balance`, balanceData),
                 {
                     loading: 'Estableciendo nuevo saldo...',
@@ -496,7 +497,6 @@ const AdminUserDetailPage = () => {
         }
     }
     
-    // 3. Recargar datos al final
     fetchAllDetails();
 };
     // --- FIN DE LA MODIFICACIÓN ---
