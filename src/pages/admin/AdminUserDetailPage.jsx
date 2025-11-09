@@ -423,73 +423,84 @@ const AdminUserDetailPage = () => {
     }, [fetchAllDetails]);
 
     const handleSaveUser = async (userId, formData) => {
-        setIsEditModalOpen(false);
-        let profileUpdated = false;
+    setIsEditModalOpen(false);
+    let profileUpdated = false;
 
-        const currentUser = userData?.user;
-        if (!currentUser) {
-            toast.error("No se pueden guardar los cambios, datos del usuario no cargados.");
+    const currentUser = userData?.user;
+    if (!currentUser) {
+        toast.error("No se pueden guardar los cambios, datos del usuario no cargados.");
+        return;
+    }
+
+    const profileData = {
+        username: formData.username,
+        status: formData.status,
+        role: formData.role,
+        wallet: formData.wallet,
+        ...(formData.password && { password: formData.password }),
+        ...(formData.withdrawalPassword && { withdrawalPassword: formData.withdrawalPassword }),
+    };
+
+    // --- INICIO DE LA CORRECCIÓN: Blindaje de los valores ---
+    // Nos aseguramos de que todos los valores sean números antes de calcular.
+    // Usamos '|| 0' para convertir cualquier valor "falsy" (undefined, null, NaN) a 0.
+    const newUsdtBalance = formData.newUsdtBalance || 0;
+    const newSpinsBalance = formData.newSpinsBalance || 0;
+    
+    const currentUsdt = currentUser.balance?.usdt || 0;
+    const currentSpins = currentUser.balance?.spins || 0;
+    
+    // El cálculo ahora es seguro.
+    const usdtAdjustment = newUsdtBalance - currentUsdt;
+    const spinsAdjustment = newSpinsBalance - currentSpins;
+    // --- FIN DE LA CORRECCIÓN ---
+
+    const adjustmentData = {
+        usdt: usdtAdjustment,
+        spins: spinsAdjustment,
+        reason: formData.adjustmentReason || '',
+    };
+
+    // 1. Ejecutar la actualización del perfil
+    try {
+        await toast.promise(
+            adminApi.put(`/admin/users/${userId}`, profileData),
+            {
+                loading: 'Actualizando perfil de usuario...',
+                success: 'Perfil actualizado con éxito.',
+                error: (err) => err.response?.data?.message || 'Error al actualizar perfil.'
+            }
+        );
+        profileUpdated = true;
+    } catch (error) {
+        console.error("Error al actualizar perfil:", error);
+    }
+
+    // 2. Ejecutar el ajuste de saldo
+    const hasAdjustment = adjustmentData.usdt !== 0 || adjustmentData.spins !== 0;
+    if (profileUpdated && hasAdjustment) {
+        if (!adjustmentData.reason) {
+            toast.error("Se requiere una razón para realizar un cambio de saldo.");
+            fetchAllDetails();
             return;
         }
-
-        const profileData = {
-            username: formData.username,
-            status: formData.status,
-            role: formData.role,
-            wallet: formData.wallet,
-            ...(formData.password && { password: formData.password }),
-            ...(formData.withdrawalPassword && { withdrawalPassword: formData.withdrawalPassword }),
-        };
-
-        const currentUsdt = currentUser.balance?.usdt || 0;
-        const currentSpins = currentUser.balance?.spins || 0;
-
-        const usdtAdjustment = formData.newUsdtBalance - currentUsdt;
-        const spinsAdjustment = formData.newSpinsBalance - currentSpins;
-
-        const adjustmentData = {
-            usdt: usdtAdjustment,
-            spins: spinsAdjustment,
-            reason: formData.adjustmentReason || '',
-        };
-
         try {
             await toast.promise(
-                adminApi.put(`/admin/users/${userId}`, profileData),
+                adminApi.post(`/admin/users/${userId}/adjust-balance`, adjustmentData),
                 {
-                    loading: 'Actualizando perfil de usuario...',
-                    success: 'Perfil actualizado con éxito.',
-                    error: (err) => err.response?.data?.message || 'Error al actualizar perfil.'
+                    loading: 'Aplicando ajuste de saldo...',
+                    success: 'Ajuste de saldo aplicado con éxito.',
+                    error: (err) => err.response?.data?.message || 'Error al ajustar saldo.'
                 }
             );
-            profileUpdated = true;
         } catch (error) {
-            console.error("Error al actualizar perfil:", error);
+            console.error("Error al ajustar saldo:", error);
         }
-
-        const hasAdjustment = adjustmentData.usdt !== 0 || adjustmentData.spins !== 0;
-        if (profileUpdated && hasAdjustment) {
-            if (!adjustmentData.reason) {
-                toast.error("Se requiere una razón para realizar un cambio de saldo.");
-                fetchAllDetails();
-                return;
-            }
-            try {
-                await toast.promise(
-                    adminApi.post(`/admin/users/${userId}/adjust-balance`, adjustmentData),
-                    {
-                        loading: 'Aplicando ajuste de saldo...',
-                        success: 'Ajuste de saldo aplicado con éxito.',
-                        error: (err) => err.response?.data?.message || 'Error al ajustar saldo.'
-                    }
-                );
-            } catch (error) {
-                console.error("Error al ajustar saldo:", error);
-            }
-        }
-        
-        fetchAllDetails();
-    };
+    }
+    
+    // 3. Recargar todos los datos al final
+    fetchAllDetails();
+};
     // --- FIN DE LA MODIFICACIÓN ---
     
     const handleResetPassword = async (adminId) => {
